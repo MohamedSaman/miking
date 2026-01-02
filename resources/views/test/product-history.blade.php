@@ -50,7 +50,7 @@
         <!-- Product History Modal Content (Standalone) -->
         <div class="card border-0 shadow-lg">
             <!-- Header -->
-            <div class="card-header border-0 text-white" style="background: linear-gradient(135deg, #3b5b0c 0%, #8eb922 100%);">
+            <div class="card-header border-0 text-white" style="background: linear-gradient(135deg, #000000 0%, #000000 100%);">
                 <h5 class="mb-0 fw-bold">
                     <i class="bi bi-clock-history me-2"></i>
                     Product History - {{ $product->name }}

@@ -21,45 +21,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* Theme tokens: change colors here to affect entire layout */
+        /* Theme tokens: Black & White theme */
         :root {
-            /* Backgrounds */
-            --page-bg: #f5f7fa;
-            /* body background */
+            /* Backgrounds - White */
+            --page-bg: #ffffff;
             --surface: #ffffff;
-            /* cards, sidebar surface */
 
+            /* Primary / Brand - Black */
+            --primary: #000000;
+            --primary-600: #333333;
+            --primary-100: #f0f0f0;
 
-            /* Primary / Brand */
-            --primary: #fff;
-            /* main blue (links, active) */
-            --primary-600: #0b5ed7;
-            /* hover background for links */
-            --primary-100: #8eb922;
-            /* main blue (links, active) */
-
-
-
-
-
-            /* Accent */
+            /* Accent - keep for amounts */
             --accent: #198754;
-            /* green (amounts, success) */
 
+            /* Muted / borders / text - Black tones */
+            --muted: #555555;
+            --muted-2: #333333;
+            --border: #cccccc;
+            --muted-3: #dddddd;
 
-            /* Muted / borders / text */
-            --muted: #6c757d;
-            /* secondary text */
-            --muted-2: #495057;
-            /* nav link text */
-            --border: #e0e0e0;
-            /* general border color */
-            --muted-3: #dee2e6;
-            /* scrollbar / thumb */
-
-
-
-            /* Status colors */
+            /* Status colors - keep distinct */
             --success-bg: #d1e7dd;
             --success-text: #0f5132;
             --warning-bg: #fff3cd;
@@ -67,24 +49,22 @@
             --danger-bg: #f8d7da;
             --danger-text: #842029;
 
-
-            /* Topbar / sidebar specifics */
+            /* Topbar / sidebar - Black */
             --sidebar-bg: #000000;
             --topbar-bg: #000000;
 
-
-            /* Text */
-            --text: #212529;
-
+            /* Text - Black */
+            --text: #000000;
 
             /* Avatars */
-            --avatar-bg: var(--primary);
+            --avatar-bg: #000000;
             --avatar-text: #ffffff;
         }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: var(--page-bg);
+            color: var(--text);
             letter-spacing: -0.01em;
         }
 
@@ -281,9 +261,9 @@
 
 
         .nav-link.active {
-            background: #3B5B0C;
-            background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);
-            color: var(--primary);
+            background: #333333;
+            background: linear-gradient(0deg, #222222 0%, #444444 100%);
+            color: #ffffff;
             font-weight: 500;
         }
 
@@ -380,7 +360,7 @@
         }
 
         .top-bar .title {
-            color: #8eb922;
+            color: #ffffff;
         }
 
         /* User info styles */
@@ -395,7 +375,7 @@
         }
 
         .admin-info:hover {
-            background-color: #8eb922;
+            background-color: #333333;
         }
 
         .admin-avatar,
@@ -455,7 +435,7 @@
             margin-left: 260px;
             margin-top: 60px;
             padding: 20px;
-            background-color: #f5fdf1ff;
+            background-color: #ffffff;
             min-height: calc(100vh - 60px);
             width: calc(100% - 250px);
             transition: all 0.3s ease;
@@ -706,22 +686,64 @@
             border-top: none;
             font-weight: 600;
             color: #ffffff;
-            background: #3B5B0C;
-            background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);
+            background: #000000;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .btn {
-            background: #8eb922;
-            background: linear-gradient(0deg, rgba(142, 185, 34, 1) 0%, rgba(59, 91, 12, 1) 100%);
+            background: #0d6efd;
+            color: #ffffff;
+            border: none;
+        }
+
+        .btn-primary {
+            background: #0d6efd;
             color: #ffffff;
         }
 
+        .btn-success {
+            background: #198754;
+            color: #ffffff;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: #ffffff;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #000000;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: #ffffff;
+        }
+
+        .btn-outline-primary {
+            background: transparent;
+            color: #0d6efd;
+            border: 1px solid #0d6efd;
+        }
+
+        .btn-outline-secondary {
+            background: transparent;
+            color: #6c757d;
+            border: 1px solid #6c757d;
+        }
+
+        .btn-outline-danger {
+            background: transparent;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
         .modal-header {
-            background: #3B5B0C;
-            background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);
+            background: #000000;
             color: #ffffff;
         }
 
@@ -771,7 +793,7 @@
             <div class="sidebar-header d-flex justify-content-center">
                 <div class="sidebar-title">
 
-                    <img src="{{ asset('images/MI-King.png') }}" alt="Logo" width="200">
+                    <img src="{{ asset('images/MI-King.png') }}" alt="Logo" width="100">
 
                 </div>
             </div>
@@ -1126,7 +1148,7 @@
 
             <!-- Editable Cash in Hand Display -->
             <div class="badge  bg-opacity-10 rounded-pill shadow-sm border  border-opacity-25 d-flex align-items-center gap-2 me-2 "
-                style="color:#8eb922;border-color:#8eb922; font-size: 0.9rem; cursor: pointer;"
+                style="color:#000000;border-color:#000000; font-size: 0.9rem; cursor: pointer;"
                 onclick="handlePOSClick()"
                 role="button">
                 <div class="d-flex align-items-center gap-1 px-2 py-1 fs-6">
@@ -1651,7 +1673,7 @@
                             title: 'Register Already Closed',
                             text: 'The POS register has already been closed for today. You cannot access the POS system again until tomorrow.',
                             confirmButtonText: 'OK',
-                            confirmButtonColor: '#3b5b0c'
+                            confirmButtonColor: '#000000'
                         });
                         return;
                     }

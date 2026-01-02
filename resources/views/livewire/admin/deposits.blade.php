@@ -1,4 +1,4 @@
-<div class="container-fluid py-4" style="background-color:#f5fdf1ff;">
+<div class="container-fluid py-4" style="background-color:#ffffff;">
     {{-- Page Header --}}
     <div class="row mb-4">
         <div class="col-12">
@@ -6,13 +6,13 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h4 class="mb-0 fw-bold" style="color:#3b5b0c;">
-                                <i class="bi bi-bank2 me-2" style="color:#8eb922;"></i>Deposits Management
+                            <h4 class="mb-0 fw-bold" style="color:#000000;">
+                                <i class="bi bi-bank2 me-2" style="color:#000000;"></i>Deposits Management
                             </h4>
                             <small class="text-muted">Manage cash deposits and view history</small>
                         </div>
                         <div>
-                            <button class="btn btn-sm rounded-0" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%); color:white;" wire:click="resetFilters">
+                            <button class="btn btn-sm rounded-0" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); color:white;" wire:click="resetFilters">
                                 <i class="bi bi-arrow-clockwise me-1"></i>Reset Filters
                             </button>
                             <button class="btn btn-success btn-sm rounded-0 ms-2" wire:click="openAddModal">
@@ -30,14 +30,14 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <h5 class="fw-bold mb-3" style="color:#3b5b0c;">
-                        <i class="bi bi-wallet2 me-2" style="color:#8eb922;"></i>Today's Cash Summary
+                    <h5 class="fw-bold mb-3" style="color:#000000;">
+                        <i class="bi bi-wallet2 me-2" style="color:#000000;"></i>Today's Cash Summary
                     </h5>
                     <div class="row">
                         <div class="col-md-3">
                             <div class="text-center p-3 rounded" style="background-color: #f8f9fa;">
                                 <h6 class="text-muted mb-1">Opening Cash</h6>
-                                <h5 class="fw-bold" style="color:#3b5b0c;">Rs. {{ number_format($openingCash, 2) }}</h5>
+                                <h5 class="fw-bold" style="color:#000000;">Rs. {{ number_format($openingCash, 2) }}</h5>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -49,7 +49,7 @@
                         <div class="col-md-3">
                             <div class="text-center p-3 rounded" style="background-color: #fff3cd;">
                                 <h6 class="text-muted mb-1">Deposited</h6>
-                                <h5 class="fw-bold" style="color:#8eb922;">Rs. {{ number_format($todayDepositAmount, 2) }}</h5>
+                                <h5 class="fw-bold" style="color:#000000;">Rs. {{ number_format($todayDepositAmount, 2) }}</h5>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -69,7 +69,7 @@
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <label class="form-label fw-semibold" style="color:#3b5b0c;">
+                    <label class="form-label fw-semibold" style="color:#000000;">
                         <i class="bi bi-search me-1"></i>Search
                     </label>
                     <input type="text" class="form-control rounded-0" wire:model.live="search" placeholder="Search by description or amount...">
@@ -79,7 +79,7 @@
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <label class="form-label fw-semibold" style="color:#3b5b0c;">
+                    <label class="form-label fw-semibold" style="color:#000000;">
                         <i class="bi bi-calendar-event me-1"></i>From Date
                     </label>
                     <input type="date" class="form-control rounded-0" wire:model.live="dateFrom">
@@ -89,7 +89,7 @@
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <label class="form-label fw-semibold" style="color:#3b5b0c;">
+                    <label class="form-label fw-semibold" style="color:#000000;">
                         <i class="bi bi-calendar-event me-1"></i>To Date
                     </label>
                     <input type="date" class="form-control rounded-0" wire:model.live="dateTo">
@@ -103,8 +103,8 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3">
-                    <h5 class="mb-0 fw-bold" style="color:#3b5b0c;">
-                        <i class="bi bi-list-ul me-2" style="color:#8eb922;"></i>Deposits History ({{ $deposits->total() }})
+                    <h5 class="mb-0 fw-bold" style="color:#000000;">
+                        <i class="bi bi-list-ul me-2" style="color:#000000;"></i>Deposits History ({{ $deposits->total() }})
                     </h5>
                 </div>
                 <div class="card-body p-0">
@@ -129,7 +129,7 @@
                                     onmouseout="this.style.backgroundColor='';">
                                     <td>{{ $deposits->firstItem() + $index }}</td>
                                     <td>
-                                        <strong style="color:#3b5b0c;">{{ \Carbon\Carbon::parse($deposit->date)->format('d/m/Y') }}</strong>
+                                        <strong style="color:#000000;">{{ \Carbon\Carbon::parse($deposit->date)->format('d/m/Y') }}</strong>
                                         <br>
                                         <small class="text-muted">{{ \Carbon\Carbon::parse($deposit->date)->format('l') }}</small>
                                     </td>
@@ -179,7 +179,7 @@
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-0">
-                <div class="modal-header" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%); color:white;">
+                <div class="modal-header" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); color:white;">
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-plus-circle me-2"></i>Add New Deposit
                     </h5>
@@ -188,13 +188,13 @@
                 <form wire:submit.prevent="addDeposit">
                     <div class="modal-body">
                         {{-- Today's Cash Summary --}}
-                        <div class="p-3 mb-4 rounded-0" style="background-color: #f5fdf1ff; border: 1px solid #8eb922;">
-                            <h6 class="fw-bold mb-3" style="color:#3b5b0c;">
-                                <i class="bi bi-wallet2 me-2" style="color:#8eb922;"></i>Today's Cash Summary
+                        <div class="p-3 mb-4 rounded-0" style="background-color: #ffffff; border: 1px solid #000000;">
+                            <h6 class="fw-bold mb-3" style="color:#000000;">
+                                <i class="bi bi-wallet2 me-2" style="color:#000000;"></i>Today's Cash Summary
                             </h6>
                             <div class="d-flex justify-content-between small mb-2">
                                 <span class="text-muted">Opening Cash:</span>
-                                <span class="fw-semibold" style="color:#3b5b0c;">Rs. {{ number_format($openingCash, 2) }}</span>
+                                <span class="fw-semibold" style="color:#000000;">Rs. {{ number_format($openingCash, 2) }}</span>
                             </div>
                             <div class="d-flex justify-content-between small mb-2">
                                 <span class="text-muted">Today's Cash Amount:</span>
@@ -210,9 +210,9 @@
                             </div>
                             <div class="d-flex justify-content-between small mb-2">
                                 <span class="text-muted">Today's Deposit Amount:</span>
-                                <span class="fw-semibold" style="color:#8eb922;">Rs. {{ number_format($todayDepositAmount, 2) }}</span>
+                                <span class="fw-semibold" style="color:#000000;">Rs. {{ number_format($todayDepositAmount, 2) }}</span>
                             </div>
-                            <hr style="border-color: #8eb922;">
+                            <hr style="border-color: #000000;">
                             <div class="d-flex justify-content-between small">
                                 <span class="text-muted fw-bold">Remaining Cash:</span>
                                 <span class="fw-bold text-success">Rs. {{ number_format($openingCash + $todayCashAmount - $todayExpenses - $todayRefunds - $todayDepositAmount, 2) }}</span>
@@ -222,12 +222,12 @@
                         {{-- Date & Amount --}}
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold" style="color:#3b5b0c;">Date</label>
+                                <label class="form-label fw-semibold" style="color:#000000;">Date</label>
                                 <input type="date" class="form-control rounded-0" wire:model="depositDate">
                                 @error('depositDate') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold" style="color:#3b5b0c;">Amount (Rs.)</label>
+                                <label class="form-label fw-semibold" style="color:#000000;">Amount (Rs.)</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light rounded-0">Rs.</span>
                                     <input type="number" step="0.01" class="form-control rounded-0" wire:model="depositAmount" placeholder="0.00">
@@ -238,7 +238,7 @@
 
                         {{-- Description --}}
                         <div class="mb-3">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Description / Source</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Description / Source</label>
                             <input type="text" class="form-control rounded-0" wire:model="depositDescription" placeholder="e.g., POS Sales / Invoice #125">
                             @error('depositDescription') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
@@ -250,7 +250,7 @@
                     </div>
                     <div class="modal-footer border-0">
                         <button type="button" class="btn btn-light rounded-0" wire:click="closeAddModal">Cancel</button>
-                        <button type="submit" class="btn rounded-0" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%); color:white;">
+                        <button type="submit" class="btn rounded-0" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); color:white;">
                             <i class="bi bi-check2-circle me-1"></i>Add Deposit
                         </button>
                     </div>
@@ -265,7 +265,7 @@
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-0">
-                <div class="modal-header" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%); color:white;">
+                <div class="modal-header" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); color:white;">
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-eye me-2"></i>Deposit Details
                     </h5>
@@ -274,23 +274,23 @@
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6 class="fw-semibold" style="color:#3b5b0c;">Date:</h6>
+                            <h6 class="fw-semibold" style="color:#000000;">Date:</h6>
                             <p>{{ \Carbon\Carbon::parse($selectedDeposit->date)->format('d M Y, l') }}</p>
                         </div>
                         <div class="col-md-6">
-                            <h6 class="fw-semibold" style="color:#3b5b0c;">Amount:</h6>
+                            <h6 class="fw-semibold" style="color:#000000;">Amount:</h6>
                             <p class="fw-bold text-success">Rs. {{ number_format($selectedDeposit->amount, 2) }}</p>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-12">
-                            <h6 class="fw-semibold" style="color:#3b5b0c;">Description:</h6>
+                            <h6 class="fw-semibold" style="color:#000000;">Description:</h6>
                             <p>{{ $selectedDeposit->description }}</p>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-12">
-                            <h6 class="fw-semibold" style="color:#3b5b0c;">Created:</h6>
+                            <h6 class="fw-semibold" style="color:#000000;">Created:</h6>
                             <p>{{ $selectedDeposit->created_at->format('d M Y, H:i A') }}</p>
                         </div>
                     </div>

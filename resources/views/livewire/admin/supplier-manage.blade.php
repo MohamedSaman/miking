@@ -394,7 +394,7 @@
     }
 
     .card-header {
-        background-color: #f5fdf1ff;
+        background-color: #ffffff;
         border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         border-radius: 12px 12px 0 0 !important;
         padding: 1.25rem 1.5rem;

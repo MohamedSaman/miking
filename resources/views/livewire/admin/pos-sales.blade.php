@@ -806,8 +806,8 @@ use App\Models\Sale;
         font-weight: 600;
         border-top: none;
         color: #ffffff;
-        background: #3B5B0C;
-        background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);
+        background: #000000;
+        background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);
         font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -825,7 +825,7 @@ use App\Models\Sale;
 
     .modal-header {
         border-bottom: 1px solid #dee2e6;
-        background: linear-gradient(90deg, #3b5b0c, #8eb922);
+        background: linear-gradient(90deg, #000000, #000000);
         color: #fff;
     }
 
@@ -911,7 +911,7 @@ use App\Models\Sale;
             text-align: center !important;
             margin-bottom: 15px !important;
             background: transparent !important;
-            border-bottom: 2px solid #3b5b0c !important;
+            border-bottom: 2px solid #000000 !important;
         }
 
         .modal-header img {

@@ -1,4 +1,4 @@
-<div class="container-fluid py-4" style="background-color:#f5fdf1ff;">
+<div class="container-fluid py-4" style="background-color:#ffffff;">
     {{-- Page Header --}}
     <div class="row mb-4">
         <div class="col-12">
@@ -6,13 +6,13 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h4 class="mb-0 fw-bold" style="color:#3b5b0c;">
-                                <i class="bi bi-calendar-check me-2" style="color:#8eb922;"></i>Day Summary List & Deposit by Cash
+                            <h4 class="mb-0 fw-bold" style="color:#000000;">
+                                <i class="bi bi-calendar-check me-2" style="color:#000000;"></i>Day Summary List & Deposit by Cash
                             </h4>
                             <small class="text-muted">View all closed POS sessions</small>
                         </div>
                         <div>
-                            <button class="btn btn-sm rounded-0" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%); color:white;" wire:click="resetFilters">
+                            <button class="btn btn-sm rounded-0" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); color:white;" wire:click="resetFilters">
                                 <i class="bi bi-arrow-clockwise me-1"></i>Reset Filters
                             </button>
                             <a href="{{ route('admin.deposits') }}" class="btn btn-success btn-sm rounded-0 ms-2">
@@ -30,7 +30,7 @@
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <label class="form-label fw-semibold" style="color:#3b5b0c;">
+                    <label class="form-label fw-semibold" style="color:#000000;">
                         <i class="bi bi-search me-1"></i>Search
                     </label>
                     <input type="text" class="form-control rounded-0" wire:model.live="search" placeholder="Search by date or user...">
@@ -40,7 +40,7 @@
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <label class="form-label fw-semibold" style="color:#3b5b0c;">
+                    <label class="form-label fw-semibold" style="color:#000000;">
                         <i class="bi bi-calendar-event me-1"></i>From Date
                     </label>
                     <input type="date" class="form-control rounded-0" wire:model.live="dateFrom">
@@ -50,7 +50,7 @@
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <label class="form-label fw-semibold" style="color:#3b5b0c;">
+                    <label class="form-label fw-semibold" style="color:#000000;">
                         <i class="bi bi-calendar-event me-1"></i>To Date
                     </label>
                     <input type="date" class="form-control rounded-0" wire:model.live="dateTo">
@@ -64,8 +64,8 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0 fw-bold" style="color:#3b5b0c;">
-                        <i class="bi bi-list-ul me-2" style="color:#8eb922;"></i>POS Sessions ({{ $sessions->total() }})
+                    <h5 class="mb-0 fw-bold" style="color:#000000;">
+                        <i class="bi bi-list-ul me-2" style="color:#000000;"></i>POS Sessions ({{ $sessions->total() }})
                     </h5>
                     <div class="d-flex align-items-center gap-2">
                         <label class="text-sm text-muted fw-medium">Show</label>
@@ -105,18 +105,18 @@
                                     onmouseout="this.style.backgroundColor='';">
                                     <td>{{ $sessions->firstItem() + $index }}</td>
                                     <td>
-                                        <strong style="color:#3b5b0c;">{{ \Carbon\Carbon::parse($session->session_date)->format('d/m/Y') }}</strong>
+                                        <strong style="color:#000000;">{{ \Carbon\Carbon::parse($session->session_date)->format('d/m/Y') }}</strong>
                                         <br>
                                         <small class="text-muted">{{ \Carbon\Carbon::parse($session->session_date)->format('l') }}</small>
                                     </td>
                                     <td>
-                                        <i class="bi bi-person-circle me-1" style="color:#8eb922;"></i>
+                                        <i class="bi bi-person-circle me-1" style="color:#000000;"></i>
                                         {{ $session->user->name ?? 'N/A' }}
                                     </td>
                                     <td>Rs.{{ number_format($session->opening_cash, 2) }}</td>
                                     <td>Rs.{{ number_format($session->closing_cash, 2) }}</td>
                                     <td>
-                                        <strong style="color:#3b5b0c;">Rs.{{ number_format($session->total_sales, 2) }}</strong>
+                                        <strong style="color:#000000;">Rs.{{ number_format($session->total_sales, 2) }}</strong>
                                     </td>
                                     <td>Rs.{{ number_format($session->cash_sales, 2) }}</td>
                                     <td>Rs.{{ number_format($session->expenses, 2) }}</td>

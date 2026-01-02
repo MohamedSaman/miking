@@ -487,8 +487,8 @@
         border-top: none;
         font-weight: 600;
         color: #ffffff;
-        background: #3B5B0C;
-        background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);
+        background: #000000;
+        background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);
         font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;

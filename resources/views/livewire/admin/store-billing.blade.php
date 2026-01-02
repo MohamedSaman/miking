@@ -1,10 +1,10 @@
-<div class="container-fluid py-3" style="background-color:#f5fdf1ff;">
+<div class="container-fluid py-3" style="background-color:#ffffff;">
     {{-- Opening Cash Modal --}}
     @if($showOpeningCashModal)
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.8);" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-0 border-0 shadow-lg">
-                <div class="modal-header text-white rounded-0" style="background: linear-gradient(135deg, #3b5b0c 0%, #8eb922 100%);">
+                <div class="modal-header text-white rounded-0" style="background: linear-gradient(135deg, #000000 0%, #000000 100%);">
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-cash-stack me-2"></i>Enter Opening Cash Amount
                     </h5>
@@ -12,8 +12,8 @@
 
                 <div class="modal-body p-4">
                     <div class="text-center mb-4">
-                        <i class="bi bi-calendar-check" style="font-size: 3rem; color: #8eb922;"></i>
-                        <h5 class="mt-3 mb-1 fw-bold" style="color: #3b5b0c;">Start New POS Session</h5>
+                        <i class="bi bi-calendar-check" style="font-size: 3rem; color: #000000;"></i>
+                        <h5 class="mt-3 mb-1 fw-bold" style="color: #000000;">Start New POS Session</h5>
                         <p class="text-muted">{{ now()->format('l, F d, Y') }}</p>
                     </div>
 
@@ -23,7 +23,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="openingCashAmount" class="form-label fw-semibold" style="color:#3b5b0c;">
+                        <label for="openingCashAmount" class="form-label fw-semibold" style="color:#000000;">
                             Opening Cash Amount (Rs.) *
                         </label>
                         <input type="number"
@@ -33,7 +33,7 @@
                             step="0.01"
                             min="0"
                             placeholder="0.00"
-                            style="font-size: 1.5rem; border: 2px solid #8eb922;"
+                            style="font-size: 1.5rem; border: 2px solid #000000;"
                             autofocus>
                         @error('openingCashAmount')
                         <div class="text-danger mt-1 small">{{ $message }}</div>
@@ -51,7 +51,7 @@
                 <div class="modal-footer justify-content-center rounded-0 bg-light">
                     <button type="button"
                         class="btn btn-lg rounded-0 text-white px-5"
-                        style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%); border-color:#3b5b0c;"
+                        style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); border-color:#000000;"
                         wire:click="submitOpeningCash">
                         <i class="bi bi-check-circle me-2"></i>Start POS Session
                     </button>
@@ -70,7 +70,7 @@
                     <i class="bi bi-shop fs-3 text-success"></i>
                 </div>
                 <div>
-                    <h4 class="mb-0 fw-bold" style="color:#3b5b0c;">MI-KING</h4>
+                    <h4 class="mb-0 fw-bold" style="color:#000000;">MI-KING</h4>
                     <small class="text-muted">Point of Sale System</small>
                 </div>
             </div>
@@ -78,11 +78,11 @@
             <!-- POS Button -->
             <div class="d-flex align-items-center">
                 <div class="badge d-flex align-items-center px-3 py-2 rounded-2 shadow-sm"
-                    style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%); color:white; border:1px solid #3b5b0c; cursor: pointer; transition: all 0.2s ease;"
+                    style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); color:white; border:1px solid #000000; cursor: pointer; transition: all 0.2s ease;"
                     wire:click="viewCloseRegisterReport"
                     role="button"
-                    onmouseover="this.style.background='linear-gradient(0deg, rgba(40, 70, 5, 1) 0%, rgba(120, 160, 25, 1) 100%)';"
-                    onmouseout="this.style.background='linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%)';">
+                    onmouseover="this.style.background='linear-gradient(0deg, rgba(34, 34, 34, 1) 0%, rgba(85, 85, 85, 1) 100%)';"
+                    onmouseout="this.style.background='linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%)';">
                     <i class="bi bi-file-earmark-text me-2"></i>
                     <span class="fw-semibold">View Report</span>
                 </div>
@@ -95,10 +95,10 @@
         <div class="col-6 mb-4">
             <div class="card border-2 shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                    <h5 class="card-title mb-0 fw-bold" style="color:#3b5b0c;">
-                        <i class="bi bi-person me-2" style="color:#8eb922;"></i>Customer Information
+                    <h5 class="card-title mb-0 fw-bold" style="color:#000000;">
+                        <i class="bi bi-person me-2" style="color:#000000;"></i>Customer Information
                     </h5>
-                    <button class="btn btn-sm rounded-1 text-white" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%); border-color: #3b5b0c;" wire:click="openCustomerModal">
+                    <button class="btn btn-sm rounded-1 text-white" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); border-color: #000000;" wire:click="openCustomerModal">
                         <i class="bi bi-plus-circle me-1"></i> Add New Customer
                     </button>
                 </div>
@@ -114,7 +114,7 @@
 
                     <div class="row g-3">
                         <div class="col-md-12">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Select Customer *</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Select Customer *</label>
                             <select class="form-select rounded-0 border" wire:model.live="customerId">
                                 @foreach($customers as $customer)
                                 <option value="{{ $customer->id }}" {{ $customer->name === 'Walking Customer' ? 'selected' : '' }}>
@@ -193,10 +193,10 @@
     <div class="col-md-12 mb-4">
         <div class="card border-2 shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                <h5 class="card-title mb-0 fw-bold" style="color:#3b5b0c;">
-                    <i class="bi bi-cart me-2" style="color:#8eb922;"></i>Sale Items
+                <h5 class="card-title mb-0 fw-bold" style="color:#000000;">
+                    <i class="bi bi-cart me-2" style="color:#000000;"></i>Sale Items
                 </h5>
-                <span class="badge rounded-1 text-white" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);">{{ count($cart) }} items</span>
+                <span class="badge rounded-1 text-white" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);">{{ count($cart) }} items</span>
             </div>
             <div class="card-body p-0">
                 @if(count($cart) > 0)
@@ -320,7 +320,7 @@
                             {{-- Grand Total --}}
                             <tr>
                                 <td colspan="5" class="text-end fw-bold fs-5">Grand Total:</td>
-                                <td class="fw-bold fs-5" style="color:#8eb922;">Rs.{{ number_format($grandTotal, 2) }}</td>
+                                <td class="fw-bold fs-5" style="color:#000000;">Rs.{{ number_format($grandTotal, 2) }}</td>
                                 <td></td>
                             </tr>
                         </tfoot>
@@ -348,14 +348,14 @@
         <div class="col-md-6 mb-4">
             <div class="card h-100 border-2 shadow-sm">
                 <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0 fw-bold" style="color:#3b5b0c;">
-                        <i class="bi bi-credit-card me-2" style="color:#8eb922;"></i>Payment Information
+                    <h5 class="card-title mb-0 fw-bold" style="color:#000000;">
+                        <i class="bi bi-credit-card me-2" style="color:#000000;"></i>Payment Information
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-12">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Payment Method *</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Payment Method *</label>
                             <select class="form-select rounded-0 border" wire:model.live="paymentMethod">
                                 <option value="cash">Cash</option>
                                 <option value="cheque">Cheque</option>
@@ -367,7 +367,7 @@
                         {{-- Cash Payment Fields --}}
                         @if($paymentMethod === 'cash')
                         <div class="col-md-12">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Cash Amount *</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Cash Amount *</label>
                             <div class="input-group">
                                 <span class="input-group-text rounded-0">Rs.</span>
                                 <input type="number" class="form-control rounded-0"
@@ -387,32 +387,32 @@
                         <div class="col-md-12">
                             <div class="card bg-light border-0">
                                 <div class="card-header d-flex justify-content-between align-items-center bg-white py-2">
-                                    <h6 class="mb-0 fw-semibold" style="color:#3b5b0c;">Add Cheque Details</h6>
+                                    <h6 class="mb-0 fw-semibold" style="color:#000000;">Add Cheque Details</h6>
                                 </div>
                                 <div class="card-body">
                                     <div class="row g-2">
                                         <div class="col-md-6">
-                                            <label class="form-label small fw-semibold" style="color:#3b5b0c;">Cheque Number *</label>
+                                            <label class="form-label small fw-semibold" style="color:#000000;">Cheque Number *</label>
                                             <input type="text" class="form-control form-control-sm rounded-0"
                                                 wire:model="tempChequeNumber"
                                                 placeholder="Enter cheque number">
                                             @error('tempChequeNumber') <span class="text-danger small">{{ $message }}</span> @enderror
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label small fw-semibold" style="color:#3b5b0c;">Bank Name *</label>
+                                            <label class="form-label small fw-semibold" style="color:#000000;">Bank Name *</label>
                                             <input type="text" class="form-control form-control-sm rounded-0"
                                                 wire:model="tempBankName"
                                                 placeholder="Enter bank name">
                                             @error('tempBankName') <span class="text-danger small">{{ $message }}</span> @enderror
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label small fw-semibold" style="color:#3b5b0c;">Cheque Date *</label>
+                                            <label class="form-label small fw-semibold" style="color:#000000;">Cheque Date *</label>
                                             <input type="date" class="form-control form-control-sm rounded-0"
                                                 wire:model="tempChequeDate">
                                             @error('tempChequeDate') <span class="text-danger small">{{ $message }}</span> @enderror
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label small fw-semibold" style="color:#3b5b0c;">Cheque Amount *</label>
+                                            <label class="form-label small fw-semibold" style="color:#000000;">Cheque Amount *</label>
                                             <input type="number" class="form-control form-control-sm rounded-0"
                                                 wire:model="tempChequeAmount"
                                                 min="0" step="0.01"
@@ -420,7 +420,7 @@
                                             @error('tempChequeAmount') <span class="text-danger small">{{ $message }}</span> @enderror
                                         </div>
                                         <div class="col-12">
-                                            <button type="button" class="btn btn-sm w-100 rounded-0 text-white" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%); border-color:#3b5b0c;"
+                                            <button type="button" class="btn btn-sm w-100 rounded-0 text-white" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); border-color:#000000;"
                                                 wire:click="addCheque">
                                                 <i class="bi bi-plus-circle me-1"></i> Add Cheque
                                             </button>
@@ -432,7 +432,7 @@
                             {{-- Cheques List --}}
                             @if(count($cheques) > 0)
                             <div class="mt-3">
-                                <h6 class="mb-2 fw-semibold" style="color:#3b5b0c;">Added Cheques ({{ count($cheques) }})</h6>
+                                <h6 class="mb-2 fw-semibold" style="color:#000000;">Added Cheques ({{ count($cheques) }})</h6>
                                 <div class="table-responsive">
                                     <table class="table table-sm table-bordered">
                                         <thead class="table-light">
@@ -478,7 +478,7 @@
                         {{-- Bank Transfer Fields --}}
                         @if($paymentMethod === 'bank_transfer')
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Bank Transfer Amount *</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Bank Transfer Amount *</label>
                             <div class="input-group">
                                 <span class="input-group-text rounded-0">Rs.</span>
                                 <input type="number" class="form-control rounded-0"
@@ -489,14 +489,14 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Bank Name *</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Bank Name *</label>
                             <input type="text" class="form-control rounded-0"
                                 wire:model="bankTransferBankName"
                                 placeholder="Enter bank name (e.g., BOC Bank)">
                             @error('bankTransferBankName') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                         <div class="col-md-12">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Reference Number (Optional)</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Reference Number (Optional)</label>
                             <input type="text" class="form-control rounded-0"
                                 wire:model="bankTransferReferenceNumber"
                                 placeholder="Enter transaction reference or receipt number">
@@ -521,7 +521,7 @@
                         @if($paymentMethod !== 'credit')
                         <div class="col-md-12">
                             <div class="border rounded-0 p-3 bg-light">
-                                <h6 class="mb-3 fw-semibold" style="color:#3b5b0c;">Payment Summary</h6>
+                                <h6 class="mb-3 fw-semibold" style="color:#000000;">Payment Summary</h6>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Grand Total:</span>
                                     <span class="fw-bold">Rs.{{ number_format($grandTotal, 2) }}</span>
@@ -563,8 +563,8 @@
         <div class="col-md-6 mb-4">
             <div class="card h-100 border-2 shadow-sm">
                 <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0 fw-bold" style="color:#3b5b0c;">
-                        <i class="bi bi-chat-text me-2" style="color:#8eb922;"></i>Notes
+                    <h5 class="card-title mb-0 fw-bold" style="color:#000000;">
+                        <i class="bi bi-chat-text me-2" style="color:#000000;"></i>Notes
                     </h5>
                 </div>
                 <div class="card-body">
@@ -579,7 +579,7 @@
     <div class="col-12">
         <div class="card border-0 shadow-sm">
             <div class="card-body text-center bg-light py-4">
-                <button class="btn btn-lg px-5 rounded-0 fw-bold text-white" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%); border-color:#3b5b0c;" wire:click="validateAndCreateSale"
+                <button class="btn btn-lg px-5 rounded-0 fw-bold text-white" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); border-color:#000000;" wire:click="validateAndCreateSale"
                     {{ count($cart) == 0 ? 'disabled' : '' }}>
                     <i class="bi bi-cart-check me-2"></i>Complete Sale
                 </button>
@@ -593,7 +593,7 @@
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-lg">
             <div class="modal-content rounded-0">
-                <div class="modal-header text-white rounded-0" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);">
+                <div class="modal-header text-white rounded-0" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);">
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-person-plus me-2"></i>Add New Customer
                     </h5>
@@ -602,22 +602,22 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Name *</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Name *</label>
                             <input type="text" class="form-control rounded-0" wire:model="customerName" placeholder="Enter customer name">
                             @error('customerName') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Phone *</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Phone *</label>
                             <input type="text" class="form-control rounded-0" wire:model="customerPhone" placeholder="Enter phone number">
                             @error('customerPhone') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Email</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Email</label>
                             <input type="email" class="form-control rounded-0" wire:model="customerEmail" placeholder="Enter email address">
                             @error('customerEmail') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Customer Type *</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Customer Type *</label>
                             <select class="form-select rounded-0" wire:model="customerType">
                                 <option value="retail">Retail</option>
                                 <option value="wholesale">Wholesale</option>
@@ -626,21 +626,21 @@
                             @error('customerType') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Business Name</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Business Name</label>
                             <input type="text" class="form-control rounded-0" wire:model="businessName" placeholder="Enter business name">
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold" style="color:#3b5b0c;">Address *</label>
+                            <label class="form-label fw-semibold" style="color:#000000;">Address *</label>
                             <textarea class="form-control rounded-0" wire:model="customerAddress" rows="3" placeholder="Enter address"></textarea>
                             @error('customerAddress') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer rounded-0">
-                    <button type="button" class="btn btn-secondary rounded-0" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);" wire:click="closeCustomerModal">
+                    <button type="button" class="btn btn-secondary rounded-0" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);" wire:click="closeCustomerModal">
                         <i class="bi bi-x-circle me-2"></i>Cancel
                     </button>
-                    <button type="button" class="btn rounded-0 text-white" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%); border-color:#3b5b0c;" wire:click="createCustomer">
+                    <button type="button" class="btn rounded-0 text-white" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); border-color:#000000;" wire:click="createCustomer">
                         <i class="bi bi-check-circle me-2"></i>Create Customer
                     </button>
                 </div>
@@ -654,7 +654,7 @@
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.7);">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-0">
-                <div class="modal-header text-white rounded-0" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);">
+                <div class="modal-header text-white rounded-0" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);">
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-exclamation-triangle me-2"></i>Partial Payment Confirmation
                     </h5>
@@ -682,10 +682,10 @@
                     </p>
                 </div>
                 <div class="modal-footer rounded-0">
-                    <button type="button" class="btn btn-secondary rounded-0" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);" wire:click="cancelSaleConfirmation">
+                    <button type="button" class="btn btn-secondary rounded-0" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);" wire:click="cancelSaleConfirmation">
                         <i class="bi bi-x-circle me-2"></i>Cancel
                     </button>
-                    <button type="button" class="btn rounded-0 text-white" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%); border-color:#3b5b0c;" wire:click="confirmSaleWithDue">
+                    <button type="button" class="btn rounded-0 text-white" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); border-color:#000000;" wire:click="confirmSaleWithDue">
                         <i class="bi bi-check-circle me-2"></i>Yes, Proceed with Due
                     </button>
                 </div>
@@ -699,7 +699,7 @@
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-lg">
             <div class="modal-content rounded-0">
-                <div class="modal-header text-white rounded-0" style="background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);">
+                <div class="modal-header text-white rounded-0" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);">
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-cart-check me-2"></i>
                         Sale Completed Successfully! - {{ $createdSale->invoice_number }}
@@ -876,7 +876,7 @@
     <div class="modal fade show d-block" id="closeRegisterModal" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" data-bs-backdrop="static">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(135deg, #3b5b0c 0%, #8eb922 100%); color: white;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #000000 0%, #000000 100%); color: white;">
                     <h5 class="modal-title fw-bold" id="closeRegisterModalLabel">
                         <i class="bi bi-x-circle me-2"></i>CLOSE REGISTER ({{ date('d/m/Y H:i') }})
                     </h5>
@@ -1030,7 +1030,7 @@
 @push('styles')
 <style>
     .container-fluid {
-        background-color: #f5fdf1ff !important;
+        background-color: #ffffff !important;
     }
 
     .header-section {
@@ -1064,7 +1064,7 @@
     .search-results {
         max-height: 400px;
         overflow-y: auto;
-        border: 2px solid #8eb922 !important;
+        border: 2px solid #000000 !important;
         border-radius: 0;
         position: relative;
         z-index: 10;
@@ -1080,12 +1080,12 @@
     }
 
     .search-results::-webkit-scrollbar-thumb {
-        background: #8eb922;
+        background: #000000;
         border-radius: 4px;
     }
 
     .search-results::-webkit-scrollbar-thumb:hover {
-        background: #3b5b0c;
+        background: #000000;
     }
 
     .search-item:last-child {

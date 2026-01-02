@@ -1,4 +1,4 @@
-<div class="container-fluid py-4" style="background-color:#f5fdf1ff;">
+<div class="container-fluid py-4" style="background-color:#ffffff;">
     {{-- Page Header --}}
     <div class="row mb-4">
         <div class="col-12">
@@ -6,8 +6,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h4 class="mb-1 fw-bold" style="color:#3b5b0c;">
-                                <i class="bi bi-calendar-check me-2" style="color:#8eb922;"></i>Register Report - {{ \Carbon\Carbon::parse($sessionDate)->format('d/m/Y') }}
+                            <h4 class="mb-1 fw-bold" style="color:#000000;">
+                                <i class="bi bi-calendar-check me-2" style="color:#000000;"></i>Register Report - {{ \Carbon\Carbon::parse($sessionDate)->format('d/m/Y') }}
                             </h4>
                             <p class="text-muted mb-0">
                                 <small>Cashier: {{ $session->user->name ?? 'N/A' }} | Session Date: {{ \Carbon\Carbon::parse($sessionDate)->format('l, F d, Y') }}</small>
@@ -104,8 +104,8 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3">
-                    <h5 class="mb-0 fw-bold" style="color:#3b5b0c;">
-                        <i class="bi bi-cash-coin me-2" style="color:#8eb922;"></i>💰 CASH SALES
+                    <h5 class="mb-0 fw-bold" style="color:#000000;">
+                        <i class="bi bi-cash-coin me-2" style="color:#000000;"></i>💰 CASH SALES
                     </h5>
                 </div>
                 <div class="card-body p-0 overflow-auto">

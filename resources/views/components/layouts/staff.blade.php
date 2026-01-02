@@ -23,7 +23,8 @@
     <style>
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: #f5f7fa;
+            background-color: #ffffff;
+            color: #000000;
         }
 
         .sidebar {
@@ -92,8 +93,8 @@
         }
 
         .nav-link.active {
-            background: #3B5B0C;
-            background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);
+            background: #333333;
+            background: linear-gradient(0deg, #222222 0%, #444444 100%);
             color: #fff;
             font-weight: 500;
         }
@@ -166,7 +167,7 @@
         }
 
         .admin-info:hover {
-            background-color: #8eb922;
+            background-color: #333333;
         }
 
         .admin-avatar,

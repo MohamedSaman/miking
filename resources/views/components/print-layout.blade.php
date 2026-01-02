@@ -33,7 +33,7 @@
 
         /* Global Header Styles */
         .global-header {
-            border-bottom: 3px solid #3b5b0c;
+            border-bottom: 3px solid #000000;
             padding: 10px 15px 10px 15px;
             margin: 0;
             background: white;
@@ -118,7 +118,7 @@
         }
 
         .global-footer .border-top {
-            border-top: 1px solid #3b5b0c;
+            border-top: 1px solid #000000;
             padding-top: 8px;
         }
 

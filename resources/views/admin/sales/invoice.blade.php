@@ -37,7 +37,7 @@
 
         /* Global Header Styles */
         .global-header {
-            border-bottom: 3px solid #3b5b0c;
+            border-bottom: 3px solid #000000;
             padding-bottom: 5px;
             margin-bottom: 25px;
         }
@@ -79,7 +79,7 @@
 
         .global-header .company-section p {
             font-size: 7pt;
-            color: #3b5b0c;
+            color: #000000;
             font-weight: 600;
             margin: 2px 0 0 0;
             padding: 0;
@@ -155,7 +155,7 @@
         }
 
         .global-footer .info-section {
-            border-top: 2px solid #3b5b0c;
+            border-top: 2px solid #000000;
             padding-top: 8px;
             margin-top: 8px;
         }

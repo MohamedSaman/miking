@@ -32,7 +32,7 @@
         .revenue-icon { background: #198754; }
         .expense-icon { background: #dc3545; }
         .salary-icon { background: #ffc107; }
-        .profit-icon { background: #8eb922; }
+        .profit-icon { background: #000000; }
 
         .metric-content h6 {
             color: #6c757d;
@@ -111,7 +111,7 @@
         }
 
         .filter-card .form-control:focus {
-            border-color: #8eb922;
+            border-color: #000000;
             box-shadow: 0 0 0 0.2rem rgba(142, 185, 34, 0.25);
         }
 
@@ -122,8 +122,8 @@
         }
 
         .filter-card .btn-primary {
-            background: #8eb922;
-            border-color: #8eb922;
+            background: #000000;
+            border-color: #000000;
         }
 
         .filter-card .btn-primary:hover {
@@ -220,7 +220,7 @@
             border-radius: 8px;
             padding: 1rem 1.25rem;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-            border-left: 4px solid #8eb922;
+            border-left: 4px solid #000000;
         }
     </style>
     @endpush
@@ -230,7 +230,7 @@
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h1>
-                    <i class="fas fa-chart-line me-3" style="color: #8eb922;"></i>Profit & Loss Statement
+                    <i class="fas fa-chart-line me-3" style="color: #000000;"></i>Profit & Loss Statement
                 </h1>
                 <p class="subtitle">📊 Financial overview and performance analysis</p>
             </div>

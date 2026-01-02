@@ -262,7 +262,7 @@
 <body>
     <div class="receipt-container">
         <!-- Global Header (same as print) -->
-        <div class="global-header" style="border-bottom: 3px solid #3b5b0c; padding-bottom: 15px; margin-bottom: 20px;">
+        <div class="global-header" style="border-bottom: 3px solid #000000; padding-bottom: 15px; margin-bottom: 20px;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <!-- Left: Logo -->
                 <div style="flex: 0 0 150px;">
@@ -407,7 +407,7 @@
                     
                 </div>
             </div>
-            <div style="border-top: 1px solid #3b5b0c; padding-top: 10px;">
+            <div style="border-top: 1px solid #000000; padding-top: 10px;">
                 <p style="text-align: center;"><strong>ADDRESS :</strong> 122/10A, Super Paradise Market, Keyzer Street, Colombo 11 .</p>
                 <p style="text-align: center;"><strong>TEL :</strong> (076) 1234567, <strong>EMAIL :</strong> sample@gmail.com</p>
                 <p style="text-align: center; font-size: 11px; margin-top: 8px;"><strong>Goods return will be accepted within 10 days only. Electrical and body parts non-returnable.</strong></p>

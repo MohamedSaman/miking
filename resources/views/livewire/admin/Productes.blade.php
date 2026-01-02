@@ -72,8 +72,8 @@
             border-top: none;
             font-weight: 600;
             color: #ffffff;
-            background: #3B5B0C;
-            background: linear-gradient(0deg, rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);
+            background: #000000;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -225,7 +225,7 @@
 
         /* History Table Styles */
         .history-table th {
-            background: linear-gradient(135deg, #3b5b0c 0%, #8eb922 100%);
+            background: linear-gradient(135deg, #000000 0%, #000000 100%);
             color: white;
             font-weight: 600;
             border: none;
@@ -368,7 +368,7 @@
 
         /* Stock Adjustment Modal Styles */
         #stockAdjustmentModal .modal-header {
-            background: linear-gradient(135deg, #3b5b0c 0%, #8eb922 100%) !important;
+            background: linear-gradient(135deg, #000000 0%, #000000 100%) !important;
         }
 
         #stockAdjustmentModal .alert-info {
@@ -718,7 +718,7 @@
             <div class="modal-dialog modal-dialog-centered modal-xl">
                 <div class="modal-content border-0 shadow-lg">
                     <div class="modal-header border-0 bg-gradient-primary text-white position-relative"
-                        style="background: linear-gradient(135deg, #3b5b0c 0%, #8eb922 100%); padding: 1.5rem;">
+                        style="background: linear-gradient(135deg, #000000 0%, #000000 100%); padding: 1.5rem;">
                         <h5 class="modal-title fw-bold d-flex align-items-center">
                             <i class="bi bi-box-seam me-2 fs-4"></i>
                             <span>Product Details</span>
@@ -1662,7 +1662,7 @@
 
                     <!-- Header -->
                     <div class="modal-header border-0 text-white"
-                        style="background: linear-gradient(135deg, #3b5b0c 0%, #8eb922 100%);">
+                        style="background: linear-gradient(135deg, #000000 0%, #000000 100%);">
                         <h5 class="modal-title fw-bold">
                             <i class="bi bi-clock-history me-2"></i>
                             Product History - {{ $historyProductName ?? 'Loading...' }}

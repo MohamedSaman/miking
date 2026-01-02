@@ -1031,7 +1031,7 @@
 
     /* Success animation */
     .alert-success {
-        border-left: 4px solid #8eb922;
+        border-left: 4px solid #000000;
         animation: slideIn 0.5s ease-out;
     }
 
@@ -1042,8 +1042,8 @@
 
     /* Checkbox styling */
     .form-check-input:checked {
-        background-color: #8eb922;
-        border-color: #3b5b0c;
+        background-color: #000000;
+        border-color: #000000;
     }
 </style>
 @endpush
@@ -1064,7 +1064,7 @@
                 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
                 <style>
                     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; }
-                    .receipt-header { border-bottom: 2px solid #8eb922; padding-bottom: 15px; margin-bottom: 20px; }
+                    .receipt-header { border-bottom: 2px solid #000000; padding-bottom: 15px; margin-bottom: 20px; }
                     .text-success { color: #198754 !important; }
                     .table th { background-color: #f8f9fa !important; }
                     @media print { 

@@ -129,7 +129,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content" id="printableReturnReceipt">
                 <!-- Header – logo + company name -->
-                <div class="modal-header text-center border-0" style="background: linear-gradient(90deg, #3b5b0c, #8eb922); color: #fff;">
+                <div class="modal-header text-center border-0" style="background: linear-gradient(90deg, #000000, #000000); color: #fff;">
                     <div class="w-100">
                         <img src="{{ asset('images/MI-King.png') }}" alt="Logo"
                              class="img-fluid mb-2" style="max-height:60px;">
@@ -319,8 +319,8 @@
             border-top: none;
             font-weight: 600;
             color: #ffffff;
-            background: #3B5B0C;
-            background: linear-gradient(0deg,rgba(59, 91, 12, 1) 0%, rgba(142, 185, 34, 1) 100%);
+            background: #000000;
+            background: linear-gradient(0deg,rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
