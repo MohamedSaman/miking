@@ -266,16 +266,16 @@
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <!-- Left: Logo -->
                 <div style="flex: 0 0 150px;">
-                    <img src="{{ public_path('images/USN.png') }}" alt="Logo" style="max-height:80px;">
+                    <img src="{{ public_path('images/MI-King.png') }}" alt="Logo" style="max-height:80px;">
                 </div>
                 <!-- Center: Company Name -->
                 <div style="flex: 1; text-align: center;">
-                    <h2 style="font-size: 2.5rem; letter-spacing: 2px; font-weight: bold; margin-bottom: 0;">USN AUTO PARTS</h2>
-                    <p style="color: #666; font-size: 0.875rem; margin-bottom: 0;">IMPORTERS & DISTRIBUTERS OF MAHINDRA AND TATA PARTS</p>
+                    <h2 style="font-size: 2.5rem; letter-spacing: 2px; font-weight: bold; margin-bottom: 0;">MI-KING</h2>
+                    <p style="color: #666; font-size: 0.875rem; margin-bottom: 0;">BEST IN BOYS</p>
                 </div>
-                <!-- Right: Motor Parts & Invoice -->
+                <!-- Right:  & Invoice -->
                 <div style="flex: 0 0 150px; text-align: right;">
-                    <h5 style="margin-bottom: 0; font-weight: bold;">MOTOR PARTS</h5>
+                    <h5 style="margin-bottom: 0; font-weight: bold;"></h5>
                     <h6 style="margin-bottom: 0; color: #666;">INVOICE</h6>
                 </div>
             </div>
@@ -394,22 +394,22 @@
                 <div style="flex: 0 0 33.3333%; max-width: 33.3333%; padding: 0 10px;">
                     <p><strong>.............................</strong></p>
                     <p style="margin-bottom: 8px;"><strong>Checked By</strong></p>
-                    <img src="{{ public_path('images/tata.png') }}" alt="TATA" style="height: 35px; margin: auto;">
+                    
                 </div>
                 <div style="flex: 0 0 33.3333%; max-width: 33.3333%; padding: 0 10px;">
                     <p><strong>.............................</strong></p>
                     <p style="margin-bottom: 8px;"><strong>Authorized Officer</strong></p>
-                    <img src="{{ public_path('images/USN.png') }}" alt="USN" style="height: 35px; margin: auto;">
+                    
                 </div>
                 <div style="flex: 0 0 33.3333%; max-width: 33.3333%; padding: 0 10px;">
                     <p><strong>.............................</strong></p>
                     <p style="margin-bottom: 8px;"><strong>Customer Stamp</strong></p>
-                    <img src="{{ public_path('images/mahindra.png') }}" alt="Mahindra" style="height: 35px; margin: auto;">
+                    
                 </div>
             </div>
             <div style="border-top: 1px solid #3b5b0c; padding-top: 10px;">
-                <p style="text-align: center;"><strong>ADDRESS :</strong> 103 H, Yatiyanthota Road, Seethawaka, Avissawella</p>
-                <p style="text-align: center;"><strong>TEL :</strong> (076) 9085352, <strong>EMAIL :</strong> autopartsusn@gmail.com</p>
+                <p style="text-align: center;"><strong>ADDRESS :</strong> 122/10A, Super Paradise Market, Keyzer Street, Colombo 11 .</p>
+                <p style="text-align: center;"><strong>TEL :</strong> (076) 1234567, <strong>EMAIL :</strong> sample@gmail.com</p>
                 <p style="text-align: center; font-size: 11px; margin-top: 8px;"><strong>Goods return will be accepted within 10 days only. Electrical and body parts non-returnable.</strong></p>
             </div>
         </div>

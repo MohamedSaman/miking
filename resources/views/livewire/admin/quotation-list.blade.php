@@ -455,9 +455,9 @@
             {{-- Header – logo + company name --}}
             <div class="modal-header text-center border-0 position-relative">
                 <div class="w-100">
-                    <img src="{{ asset('images/USN.png') }}" alt="Logo"
+                    <img src="{{ asset('images/MI-King.png') }}" alt="Logo"
                          class="img-fluid mb-2" style="max-height:60px;">
-                    <h4 class="mb-0 fw-bold">USN AUTO PARTS</h4>
+                    <h4 class="mb-0 fw-bold">MI-KING</h4>
                 </div>
                 {{-- Close button positioned absolutely in top-right corner --}}
                 <button type="button" class="btn-close btn-close-white position-absolute" 
@@ -572,8 +572,8 @@
                 {{-- Footer – logos + address + note --}}
                 <div class="mt-4 text-center small">
                     <p class="mb-0">
-                        <strong>ADDRESS :</strong> 103 H, Yatiyanthota Road, Seethawaka, Avissawella<br>
-                        <strong>TEL :</strong> (076) 9085352, <strong>EMAIL :</strong> autopartsusn@gmail.com
+                        <strong>ADDRESS :</strong> 122/10A, Super Paradise Market, Keyzer Street, Colombo 11 .<br>
+                        <strong>TEL :</strong> (076) 1234567, <strong>EMAIL :</strong> sample@gmail.com
                     </p>
                     <p class="mt-1 text-muted">
                         This quotation is valid until {{ $selectedQuotation->valid_until ? \Carbon\Carbon::parse($selectedQuotation->valid_until)->format('F d, Y') : 'specified date' }}.

@@ -812,7 +812,7 @@
         <div class="sidebar">
             <div class="sidebar-header d-flex justify-content-center">
                 <div class="sidebar-title">
-                    <img src="{{ asset('images/USN-Dark.png') }}" alt="Logo" width="200">
+                    <img src="{{ asset('images/MI-King-Dark.png') }}" alt="Logo" width="200">
                 </div>
             </div>
             <ul class="nav flex-column">

@@ -24,7 +24,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="company-name">USN Auto Parts</div>
+        <div class="company-name">MI-KING</div>
         <div class="receipt-title">PAYMENT RECEIPT</div>
     </div>
 

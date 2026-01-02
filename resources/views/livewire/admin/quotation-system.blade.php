@@ -397,9 +397,9 @@
                     <div class="quotation-preview p-4">
                         {{-- Header --}}
                         <div class="header text-center mb-4">
-                            <h2 class="text-success mb-1">USN AUTO PARTS</h2>
-                            <p class="mb-1">103 H, Yatiyanthota Road, Seethawaka, Avissawella</p>
-                            <p class="mb-1">Phone: (076) 9085352 | Email: autopartsusn@gmail.com</p>
+                            <h2 class="text-success mb-1">MI-KING</h2>
+                            <p class="mb-1">122/10A, Super Paradise Market, Keyzer Street, Colombo 11 .</p>
+                            <p class="mb-1">Phone: (076) 1234567 | Email: sample@gmail.com</p>
                         </div>
 
                         {{-- Customer & Quotation Details --}}

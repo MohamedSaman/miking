@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ $title ?? 'Page Title' }}</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/usnicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/mikingicon.png') }}">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -770,7 +770,9 @@
         <div class="sidebar">
             <div class="sidebar-header d-flex justify-content-center">
                 <div class="sidebar-title">
-                    <img src="{{ asset('images/USN-Dark.png') }}" alt="Log" width="200">
+
+                    <img src="{{ asset('images/MI-King.png') }}" alt="Logo" width="200">
+
                 </div>
             </div>
             <ul class="nav flex-column">
@@ -1115,7 +1117,7 @@
 
             <!-- Centered Company Name (hidden on small screens) -->
             <div class="flex-grow-1 d-none d-md-flex justify-content-center">
-                <h5 class="m-0 fw-bold" style="color: var(--primary-100); letter-spacing: -0.02em;">USN Auto Parts</h5>
+                <h5 class="m-0 fw-bold" style="color: var(--primary-100); letter-spacing: -0.02em;">MI-KING</h5>
             </div>
             @php
             use App\Models\CashInHand as CashModel;

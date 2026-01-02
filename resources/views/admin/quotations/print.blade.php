@@ -201,9 +201,9 @@
     <div class="invoice-container">
         
         <div class="header">
-            <h2>USN AUTO PARTS</h2>
-            <p>103 H, Yatiyanthota Road, Seethawaka, Avissawella</p>
-            <p>Phone: (076) 9085352 | Email: autopartsusn@gmail.com</p>
+            <h2>MI-KING</h2>
+            <p>122/10A, Super Paradise Market, Keyzer Street, Colombo 11 .</p>
+            <p>Phone: (076) 1234567 | Email: sample@gmail.com</p>
             <div class="quotation-title">QUOTATION</div>
         </div>
 

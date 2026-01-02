@@ -151,9 +151,9 @@
 <body>
     {{-- Header --}}
     <div class="header">
-        <img src="{{ public_path('images/USN.png') }}" alt="USN AUTO PARTS Logo">
-        <p>103 H, Yatiyanthota Road, Seethawaka, Avissawella</p>
-        <p><strong>TEL:</strong> (076) 9085352 | <strong>EMAIL:</strong> autopartsusn@gmail.com</p>
+        <img src="{{ public_path('images/MK-King') }}" alt="MI-KING Logo">
+        <p>122/10A, Super Paradise Market, Keyzer Street, Colombo 11 .</p>
+        <p><strong>TEL:</strong> (076) 1234567 | <strong>EMAIL:</strong> sample@gmail.com</p>
         <h1>CLOSE REGISTER SUMMARY</h1>
     </div>
 
@@ -262,7 +262,7 @@
     {{-- Footer --}}
     <div class="footer">
         <p>Date: {{ now()->format('d/m/Y H:i:s') }}</p>
-        <p><strong>USN AUTO PARTS</strong> - Point of Sale System</p>
+        <p><strong>MI-KING</strong> - Point of Sale System</p>
     </div>
 </body>
 

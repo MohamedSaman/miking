@@ -312,14 +312,14 @@
             <table>
                 <tr>
                     <td class="logo-section">
-                        <img src="{{ public_path('images/USN.png') }}" alt="Logo">
+                        <img src="{{ public_path('images/MK-King') }}" alt="Logo">
                     </td>
                     <td class="company-section">
-                        <h2>USN AUTO PARTS</h2>
-                        <p>IMPORTERS & DISTRIBUTORS OF MAHINDRA AND TATA PARTS</p>
+                        <h2>MI-KING</h2>
+                        <p>BEST IN BOYS</p>
                     </td>
                     <td class="invoice-section">
-                        <span style="font-size:10pt; font-weight:bold;">MOTOR PARTS</span>
+                        <span style="font-size:10pt; font-weight:bold;"></span>
                         <span style="font-size:9pt; font-weight:bold; color:#666; margin-left:8px;">INVOICE</span>
                     </td>
                 </tr>
@@ -480,23 +480,23 @@
                     <td>
                         <p class="signature-line"><strong>.............................</strong></p>
                         <p class="signature-label"><strong>Checked By</strong></p>
-                        <img src="{{ public_path('images/tata.png') }}" alt="Checked By">
+                        
                     </td>
                     <td>
                         <p class="signature-line"><strong>.............................</strong></p>
                         <p class="signature-label"><strong>Authorized Officer</strong></p>
-                        <img src="{{ public_path('images/USN.png') }}" alt="Authorized">
+                        
                     </td>
                     <td>
                         <p class="signature-line"><strong>.............................</strong></p>
                         <p class="signature-label"><strong>Customer Stamp</strong></p>
-                        <img src="{{ public_path('images/mahindra.png') }}" alt="Customer">
+                        
                     </td>
                 </tr>
             </table>
             <div class="info-section">
-                <p><strong>ADDRESS:</strong> 103 H, Yatiyanthota Road, Seethawaka, Avissawella</p>
-                <p><strong>TEL:</strong> (076) 9085352 | <strong>EMAIL:</strong> autopartsusn@gmail.com</p>
+                <p><strong>ADDRESS:</strong> 122/10A, Super Paradise Market, Keyzer Street, Colombo 11 .</p>
+                <p><strong>TEL:</strong> (076) 1234567 | <strong>EMAIL:</strong> sample@gmail.com</p>
                 <p style="margin-top: 6px;"><strong>Goods return will be accepted within 10 days only. Electrical and body parts non-returnable.</strong></p>
             </div>
         </div>
