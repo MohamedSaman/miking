@@ -51,7 +51,7 @@
 
             /* Topbar / sidebar - Black */
             --sidebar-bg: #000000;
-            --topbar-bg: #000000;
+            --topbar-bg: #ffffff;
 
             /* Text - Black */
             --text: #000000;
@@ -180,8 +180,8 @@
         .sidebar {
             width: 265px;
             height: 100vh;
-            background-color: #000000;
-            color: #ffffff;
+            background-color: #ffffff;
+            color: #000000;
 
             padding: 20px 0;
             position: fixed;
@@ -191,6 +191,7 @@
             /* Enable vertical scrolling */
             overflow-x: hidden;
             /* Hide horizontal overflow */
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.12);
         }
 
         /* Add custom scrollbar styling for sidebar */
@@ -199,11 +200,11 @@
         }
 
         .sidebar::-webkit-scrollbar-track {
-            background: #000000;
+            background: #ffffff;
         }
 
         .sidebar::-webkit-scrollbar-thumb {
-            background-color: #000000;
+            background-color: #ffffff;
 
         }
 
@@ -243,7 +244,7 @@
         .sidebar-title {
             font-weight: 600;
             font-size: 1.2rem;
-            color: #ffffff;
+            color: #000000;
             letter-spacing: -0.02em;
         }
 
@@ -254,7 +255,7 @@
         }
 
         .nav-link {
-            color: #fff;
+            color: #000;
             padding: 8px 20px;
             transition: all 0.2s;
         }
@@ -270,7 +271,7 @@
         .nav-link:focus,
         .nav-link:hover,
         .nav-link:focus-visible {
-            color: #fff;
+            color: #000;
 
             outline: none;
         }
@@ -353,6 +354,7 @@
             display: flex;
             align-items: center;
             transition: left 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
         }
 
         .top-bar.collapsed {
@@ -360,7 +362,7 @@
         }
 
         .top-bar .title {
-            color: #ffffff;
+            color: #000000;
         }
 
         /* User info styles */
@@ -371,11 +373,12 @@
             padding: 5px;
             border-radius: 5px;
             transition: background-color 0.2s;
-            color: #ffffff;
+            color: #000000;
         }
 
         .admin-info:hover {
             background-color: #333333;
+            color: #ffffff;
         }
 
         .admin-avatar,
@@ -752,6 +755,15 @@
 
         /* Responsive styles */
         @media (max-width: 767.98px) {
+            #sidebarToggler {
+                width: 50px !important;
+                height: 50px !important;
+            }
+
+            #sidebarToggler i {
+                font-size: 1.75rem !important;
+            }
+
             .sidebar {
                 transform: translateX(-100%);
                 width: 250px;
@@ -769,6 +781,10 @@
 
             .sidebar.collapsed.show {
                 width: 250px;
+            }
+            .none{
+                display:none;
+
             }
 
             .top-bar {
@@ -1133,13 +1149,13 @@
         <!-- Top Navigation Bar -->
         <nav class="top-bar d-flex justify-content-between align-items-center">
             <!-- Sidebar toggle button -->
-            <button id="sidebarToggler" class="btn btn-sm px-2 py-1  d-flex align-items-center" style="color:#ffffff; border-color:#ffffff;">
-                <i class="bi bi-list fs-5"></i>
+            <button id="sidebarToggler" class="btn d-flex align-items-center justify-content-center" style="color:#ffffff; border-color:#ffffff; width: 44px; height: 44px;">
+                <i class="bi bi-list" style="font-size: 1.5rem;"></i>
             </button>
 
             <!-- Centered Company Name (hidden on small screens) -->
             <div class="flex-grow-1 d-none d-md-flex justify-content-center">
-                <h5 class="m-0 fw-bold" style="color: var(--primary-100); letter-spacing: -0.02em;">MI-KING</h5>
+                <h5 class="m-0 fw-bold" style="letter-spacing: -0.02em;">MI-KING</h5>
             </div>
             @php
             use App\Models\CashInHand as CashModel;
@@ -1147,7 +1163,7 @@
             @endphp
 
             <!-- Editable Cash in Hand Display -->
-            <div class="badge  bg-opacity-10 rounded-pill shadow-sm border  border-opacity-25 d-flex align-items-center gap-2 me-2 "
+            <div class="badge  bg-opacity-10 rounded-pill shadow-sm border  border-opacity-25 d-none d-md-flex align-items-center gap-2 me-2"
                 style="color:#000000;border-color:#000000; font-size: 0.9rem; cursor: pointer;"
                 onclick="handlePOSClick()"
                 role="button">
