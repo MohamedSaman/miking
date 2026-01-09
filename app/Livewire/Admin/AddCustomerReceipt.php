@@ -34,7 +34,7 @@ class AddCustomerReceipt extends Component
         'reference_number' => '',
         'notes' => ''
     ];
-    
+
     // Cheque related properties
     public $cheque = [
         'cheque_number' => '',
@@ -48,7 +48,7 @@ class AddCustomerReceipt extends Component
         'transfer_date' => '',
         'reference_number' => ''
     ];
-    
+
     public $allocations = [];
     public $totalDueAmount = 0;
     public $totalPaymentAmount = 0;
@@ -108,14 +108,14 @@ class AddCustomerReceipt extends Component
         if ($this->totalPaymentAmount > $this->totalDueAmount) {
             $this->totalPaymentAmount = $this->totalDueAmount;
         }
-        
+
         if ($this->totalPaymentAmount < 0) {
             $this->totalPaymentAmount = 0;
         }
-        
+
         $this->calculateRemainingAmount();
         $this->autoAllocatePayment();
-        
+
         // Update cheque amount if payment method is cheque
         if ($this->paymentData['payment_method'] === 'cheque') {
             $this->cheque['amount'] = $this->totalPaymentAmount;
@@ -131,7 +131,7 @@ class AddCustomerReceipt extends Component
             'cheque_date' => now()->format('Y-m-d'),
             'amount' => $this->totalPaymentAmount
         ];
-        
+
         $this->bankTransfer = [
             'bank_name' => '',
             'transfer_date' => now()->format('Y-m-d'),
@@ -171,7 +171,7 @@ class AddCustomerReceipt extends Component
         } else {
             $this->selectedInvoices[] = $saleId;
         }
-        
+
         $this->calculateTotalDue();
         $this->totalPaymentAmount = 0;
         $this->remainingAmount = $this->totalDueAmount;
@@ -218,25 +218,31 @@ class AddCustomerReceipt extends Component
     {
         if (!$this->selectedCustomer) return;
 
-        $sales = Sale::with(['items', 'payments', 'returns'])
+        $query = Sale::with(['items', 'payments', 'returns'])
             ->where('customer_id', $this->selectedCustomer->id)
             ->where(function ($query) {
                 $query->where('payment_status', 'pending')
                     ->orWhere('payment_status', 'partial');
-            })
-            ->orderBy('created_at', 'asc')
+            });
+
+        // Filter by user for staff
+        if ($this->isStaff()) {
+            $query->where('user_id', Auth::id())->where('sale_type', 'staff');
+        }
+
+        $sales = $query->orderBy('created_at', 'asc')
             ->get();
 
         $this->customerSales = $sales->map(function ($sale) {
             $paidAmount = $sale->total_amount - $sale->due_amount;
-            
+
             // Calculate total return amount for this sale
             $returnAmount = $this->calculateReturnAmount($sale->id);
-            
+
             // Adjusted amounts after returns
             $adjustedTotalAmount = $sale->total_amount - $returnAmount;
             $adjustedDueAmount = max(0, $sale->due_amount - $returnAmount);
-            
+
             // If adjusted due amount is 0 or negative, update the sale status
             if ($adjustedDueAmount <= 0.01) {
                 $this->autoMarkSaleAsPaid($sale->id, $returnAmount);
@@ -304,7 +310,7 @@ class AddCustomerReceipt extends Component
 
         foreach ($this->customerSales as $sale) {
             $saleId = $sale['id'];
-            
+
             // Only allocate to selected invoices
             if (!in_array($saleId, $this->selectedInvoices)) {
                 continue;
@@ -367,7 +373,7 @@ class AddCustomerReceipt extends Component
 
         // Allocate payment
         $this->autoAllocatePayment();
-        
+
         // Show modal
         $this->showPaymentModal = true;
     }
@@ -393,7 +399,7 @@ class AddCustomerReceipt extends Component
     {
         $this->showReceiptModal = false;
         $this->latestPayment = null;
-        
+
         // Reset everything
         $this->selectedCustomer = null;
         $this->customerSales = [];
@@ -410,10 +416,10 @@ class AddCustomerReceipt extends Component
         ];
         $this->search = '';
         $this->resetPaymentData();
-        
+
         // Reset page
         $this->resetPage();
-        
+
         // Dispatch event to refresh the page
         $this->dispatch('payment-completed');
     }
@@ -443,14 +449,14 @@ class AddCustomerReceipt extends Component
     public function viewSale($saleId)
     {
         $this->selectedSale = Sale::with(['customer', 'items', 'payments', 'returns.product'])->find($saleId);
-        
+
         // Calculate return amount for display
         if ($this->selectedSale) {
             $this->selectedSale->return_amount = $this->calculateReturnAmount($saleId);
             $this->selectedSale->adjusted_total = $this->selectedSale->total_amount - $this->selectedSale->return_amount;
             $this->selectedSale->adjusted_due = max(0, $this->selectedSale->due_amount - $this->selectedSale->return_amount);
         }
-        
+
         $this->showViewModal = true;
     }
 
@@ -463,7 +469,7 @@ class AddCustomerReceipt extends Component
             $sale = Sale::find($saleId);
             if ($sale && $sale->due_amount <= $returnAmount) {
                 DB::beginTransaction();
-                
+
                 // Create a system payment record for the return adjustment
                 $payment = Payment::create([
                     'customer_id' => $sale->customer_id,
@@ -492,7 +498,7 @@ class AddCustomerReceipt extends Component
                 $sale->save();
 
                 DB::commit();
-                
+
                 Log::info('Sale automatically marked as paid due to returns', [
                     'sale_id' => $saleId,
                     'return_amount' => $returnAmount,
@@ -521,10 +527,10 @@ class AddCustomerReceipt extends Component
             $this->validate();
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation failed', ['errors' => $e->errors()]);
-            
+
             // Get first error message
             $firstError = collect($e->errors())->flatten()->first();
-            
+
             $this->dispatch('show-toast', [
                 'type' => 'error',
                 'message' => $firstError ?? 'Please fill all required fields correctly.'
@@ -600,12 +606,12 @@ class AddCustomerReceipt extends Component
             // Process each sale allocation
             foreach ($this->customerSales as $sale) {
                 $saleId = $sale['id'];
-                
+
                 // Only process selected invoices
                 if (!in_array($saleId, $this->selectedInvoices)) {
                     continue;
                 }
-                
+
                 $allocation = $this->allocations[$saleId];
                 $paymentAmount = $allocation['payment_amount'];
 
@@ -616,7 +622,7 @@ class AddCustomerReceipt extends Component
                 if ($saleModel) {
                     $newDueAmount = $saleModel->due_amount - $paymentAmount;
                     $returnAmount = $this->calculateReturnAmount($saleId);
-                    
+
                     // Adjust for returns
                     $adjustedDueAmount = max(0, $newDueAmount - $returnAmount);
                     $saleModel->due_amount = $adjustedDueAmount;
@@ -627,9 +633,9 @@ class AddCustomerReceipt extends Component
                     } else {
                         $saleModel->payment_status = 'partial';
                     }
-                    
+
                     $saleModel->save();
-                    
+
                     // Create payment allocation record
                     DB::table('payment_allocations')->insert([
                         'payment_id' => $payment->id,
@@ -638,7 +644,7 @@ class AddCustomerReceipt extends Component
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
-                    
+
                     Log::info('Sale updated and allocation created', [
                         'sale_id' => $saleId,
                         'payment_amount' => $paymentAmount,
@@ -662,7 +668,7 @@ class AddCustomerReceipt extends Component
             $this->paymentSuccess = true;
             $this->showPaymentModal = false;
             $this->latestPayment = $payment;
-            
+
             $this->dispatch('show-toast', [
                 'type' => 'success',
                 'message' => "Payment of Rs." . number_format($totalProcessed, 2) . " processed successfully!"
@@ -670,22 +676,21 @@ class AddCustomerReceipt extends Component
 
             // Open receipt modal
             $this->openReceiptModal();
-
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Payment processing failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             // Check if it's a duplicate entry error for cheque number
             $errorMessage = $e->getMessage();
             if (strpos($errorMessage, 'Duplicate entry') !== false && strpos($errorMessage, 'cheques_cheque_number_unique') !== false) {
                 // Extract cheque number from error message
                 preg_match("/Duplicate entry '([^']+)'/", $errorMessage, $matches);
                 $chequeNumber = $matches[1] ?? 'unknown';
-                
+
                 $this->dispatch('show-toast', [
                     'type' => 'error',
                     'message' => "Cheque number '{$chequeNumber}' already exists in the system. Please use a different cheque number."
@@ -756,7 +761,7 @@ class AddCustomerReceipt extends Component
                 'error' => $e->getMessage(),
                 'payment_id' => $this->latestPayment->id
             ]);
-            
+
             $this->dispatch('show-toast', [
                 'type' => 'error',
                 'message' => 'Failed to generate receipt: ' . $e->getMessage()

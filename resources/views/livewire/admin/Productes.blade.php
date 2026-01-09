@@ -72,8 +72,8 @@
             border-top: none;
             font-weight: 600;
             color: #ffffff;
-            background: #000000;
-            background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);
+            background: #2a83df;
+            background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -503,6 +503,7 @@
                     </div>
 
                     <div class="d-flex gap-2 justify-content-md-end">
+                        @if (!$isStaff)
                         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importProductsModal">
                             <i class="bi bi-file-earmark-excel"></i>
                             <span class="d-none d-sm-inline">Import Excel</span>
@@ -511,6 +512,7 @@
                             <i class="bi bi-plus-lg"></i>
                             <span class="d-none d-sm-inline">Add Product</span>
                         </button>
+                        @endif
                     </div>
 
                 </div>
@@ -554,7 +556,9 @@
                                             <th>Supplier Price</th>
                                             <th>Selling Price</th>
                                             <th>Status</th>
+                                            @if (!$isStaff)
                                             <th class="text-end pe-5">Actions</th>
+                                            @endif
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -605,6 +609,7 @@
                                                 @endif
                                             </td>
 
+                                            @if (!$isStaff)
                                             <td class="text-end pe-4">
                                                 <div class="dropdown">
                                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
@@ -687,6 +692,7 @@
                                                     </ul>
                                                 </div>
                                             </td>
+                                            @endif
                                         </tr>
                                         @endforeach
                                         @else
@@ -715,13 +721,13 @@
         <!-- View Product Modal -->
         <div wire:ignore.self class="modal fade" id="viewProductModal" tabindex="-1"
             aria-labelledby="viewProductModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-dialog modal-dialog-centered {{ $isStaff ? 'modal-md' : 'modal-xl' }}">
                 <div class="modal-content border-0 shadow-lg">
                     <div class="modal-header border-0 bg-gradient-primary text-white position-relative"
                         style="background: linear-gradient(135deg, #000000 0%, #000000 100%); padding: 1.5rem;">
                         <h5 class="modal-title fw-bold d-flex align-items-center">
                             <i class="bi bi-box-seam me-2 fs-4"></i>
-                            <span>Product Details</span>
+                            <span>{{ $isStaff ? 'Allocated Product Details' : 'Product Details' }}</span>
                         </h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                             aria-label="Close"></button>
@@ -730,6 +736,119 @@
                     <div class="modal-body p-0">
                         @if($viewProduct)
                         <div class="row g-0">
+                            @if ($isStaff)
+                            <!-- Staff View: Simplified layout -->
+                            <div class="col-12">
+                                <div class="p-4">
+                                    <!-- Product Image and Status -->
+                                    <div class="text-center mb-4">
+                                        <img src="{{ $viewProduct->image ? asset( $viewProduct->image) : asset('images/product.jpg') }}"
+                                            alt="Product Image" class="img-fluid rounded-3 shadow-sm"
+                                            style="width: 100%; max-width: 250px; height: 250px; object-fit: cover; border: 3px solid #f0f0f0;">
+
+                                        @if($viewProduct->status == 'active')
+                                        <div class="mt-3">
+                                            <span class="badge bg-success shadow-sm px-3 py-2">
+                                                <i class="bi bi-check-circle me-1"></i>Active
+                                            </span>
+                                        </div>
+                                        @else
+                                        <div class="mt-3">
+                                            <span class="badge bg-danger shadow-sm px-3 py-2">
+                                                <i class="bi bi-x-circle me-1"></i>Inactive
+                                            </span>
+                                        </div>
+                                        @endif
+                                    </div>
+
+                                    <!-- Product Name and Code -->
+                                    <h4 class="fw-bold text-dark text-center mb-2">{{ $viewProduct->name }}</h4>
+                                    <p class="text-muted text-center mb-4">
+                                        <i class="bi bi-upc-scan me-1"></i>
+                                        <span class="font-monospace">{{ $viewProduct->code }}</span>
+                                    </p>
+
+                                    <!-- Staff Allocated Stock Information -->
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-6">
+                                            <div class="card border-0 shadow-sm bg-white h-100">
+                                                <div class="card-body p-3 text-center">
+                                                    <div class="text-success mb-2">
+                                                        <i class="bi bi-box-seam fs-4"></i>
+                                                    </div>
+                                                    <h5 class="fw-bold mb-0">
+                                                        @php
+                                                        $availableStock = ($viewProduct->quantity ?? 0) - ($viewProduct->sold_quantity ?? 0);
+                                                        @endphp
+                                                        {{ $availableStock > 0 ? $availableStock : 0 }}
+                                                    </h5>
+                                                    <small class="text-muted">Available Stock</small>
+                                                    <div class="mt-2">
+                                                        @if($availableStock > 0)
+                                                        <span class="badge bg-success bg-opacity-25 text-success">In Stock</span>
+                                                        @else
+                                                        <span class="badge bg-danger bg-opacity-25 text-danger">Out of Stock</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card border-0 shadow-sm bg-white h-100">
+                                                <div class="card-body p-3 text-center">
+                                                    <div class="text-info mb-2">
+                                                        <i class="bi bi-currency-dollar fs-4"></i>
+                                                    </div>
+                                                    <h5 class="fw-bold mb-0">
+                                                        Rs.{{ number_format($viewProduct->unit_price ?? 0, 2) }}
+                                                    </h5>
+                                                    <small class="text-muted">Unit Price</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Product Details -->
+                                    <div class="card border-0 shadow-sm mb-3">
+                                        <div class="card-body p-3">
+                                            <h6 class="fw-bold text-dark mb-3">
+                                                <i class="bi bi-info-circle-fill text-primary me-2"></i>Product Information
+                                            </h6>
+                                            <div class="row g-2">
+                                                <div class="col-md-6">
+                                                    <small class="text-muted d-block mb-1">Product Code</small>
+                                                    <span class="fw-semibold text-dark">{{ $viewProduct->code }}</span>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small class="text-muted d-block mb-1">Brand</small>
+                                                    <span class="fw-semibold text-dark">{{ $viewProduct->brand ?? '-' }}</span>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small class="text-muted d-block mb-1">Model</small>
+                                                    <span class="fw-semibold text-dark">{{ $viewProduct->model ?? '-' }}</span>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small class="text-muted d-block mb-1">Total Allocated</small>
+                                                    <span class="fw-semibold text-dark">{{ $viewProduct->quantity ?? 0 }} units</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @if($viewProduct->description)
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body p-3">
+                                            <h6 class="fw-bold text-dark mb-2">
+                                                <i class="bi bi-card-text text-info me-2"></i>Description
+                                            </h6>
+                                            <p class="mb-0 text-muted small">{{ $viewProduct->description }}</p>
+                                        </div>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+                            @else
+                            <!-- Admin View: Full product details with pricing -->
                             <div class="col-lg-4 bg-light border-end">
                                 <div class="p-4 text-center">
                                     <div class="product-image-container mb-4 position-relative">
@@ -935,6 +1054,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
                         @else
                         <div class="text-center py-5">
                             <i class="bi bi-exclamation-circle text-muted" style="font-size: 4rem;"></i>

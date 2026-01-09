@@ -70,6 +70,12 @@ class User extends Authenticatable
         return $this->hasMany(Attendance::class, 'user_id', 'id');
     }
 
+    // Relationship: User has one UserDetail
+    public function userDetail()
+    {
+        return $this->hasOne(UserDetail::class, 'user_id', 'id');
+    }
+
     // Relationship: User has many staff permissions
     public function staffPermissions()
     {
@@ -78,7 +84,7 @@ class User extends Authenticatable
 
     /**
      * Check if user has a specific permission
-     * If staff has no permissions assigned, grant full access by default
+     * If staff has no permissions assigned, show only dashboard as default
      */
     public function hasPermission($permissionKey)
     {
@@ -86,10 +92,10 @@ class User extends Authenticatable
             return true; // Admin has all permissions
         }
 
-        // If staff has no permissions assigned at all, grant full access
+        // If staff has no permissions assigned at all, only show dashboard
         $hasAnyPermissions = $this->staffPermissions()->exists();
         if (!$hasAnyPermissions) {
-            return true; // Default: full access when no permissions are set
+            return $permissionKey === 'menu_dashboard'; // Only dashboard available if no permissions set
         }
 
         // If permissions are assigned, check for specific permission

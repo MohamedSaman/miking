@@ -2,7 +2,7 @@
     <!-- Customer Payments Section -->
     <div class="mb-4">
         <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
-            <div class="card-header border-0 py-3 px-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div class="card-header border-0 py-3 px-4" style="background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%); color: white;">
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-credit-card" style="font-size: 1.3rem;"></i>
                     <h6 class="mb-0 fw-bold">Customer Payments</h6>
@@ -26,12 +26,12 @@
                             <tbody>
                                 @foreach($data['customer'] as $payment)
                                     <tr style="border-bottom: 1px solid #f0f0f0;">
-                                        <td class="ps-4 fw-semibold" style="color: #667eea;">
+                                        <td class="ps-4 fw-semibold" style="color: #2a83df;">
                                             {{ $payment->sale->invoice_number ?? '-' }}
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
-                                                <div class="rounded-circle" style="width: 32px; height: 32px; background: #e7f5ff; display: flex; align-items: center; justify-content: center; color: #667eea; font-weight: bold; font-size: 0.85rem;">
+                                                <div class="rounded-circle" style="width: 32px; height: 32px; background: #e7f5ff; display: flex; align-items: center; justify-content: center; color: #2a83df; font-weight: bold; font-size: 0.85rem;">
                                                     {{ substr($payment->sale->customer->name ?? 'C', 0, 1) }}
                                                 </div>
                                                 <div>
@@ -44,7 +44,7 @@
                                             <strong style="color: #28a745; font-size: 1rem;">Rs.{{ number_format($payment->amount, 0) }}</strong>
                                         </td>
                                         <td>
-                                            <span class="badge" style="background-color: #e7f5ff; color: #667eea; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: 500;">
+                                            <span class="badge" style="background-color: #e7f5ff; color: #2a83df; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: 500;">
                                                 {{ ucfirst($payment->payment_method) }}
                                             </span>
                                         </td>

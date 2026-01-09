@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class StaffSale extends Model
 {
     use HasFactory;
-    
+
     protected $fillable = [
-        'staff_id', 
+        'staff_id',
         'admin_id',
         'total_quantity',
         'total_value',
@@ -18,19 +18,19 @@ class StaffSale extends Model
         'sold_value',
         'status',
     ];
-    
+
     public function staff()
     {
         return $this->belongsTo(User::class, 'staff_id');
     }
-    
+
     public function admin()
     {
         return $this->belongsTo(User::class, 'admin_id');
     }
-    
+
     public function products()
     {
-        return $this->hasMany(StaffProduct::class);
+        return $this->hasMany(StaffProduct::class, 'staff_id', 'staff_id');
     }
 }

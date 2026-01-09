@@ -25,6 +25,8 @@ class StaffSaleDetails extends Component
     public $staffDetails;
     public $productDetails;
     public $summaryStats;
+    public $selectedSaleDetails = [];
+    public $saleItems = [];
 
     public function viewSaleDetails($userId)
     {
@@ -63,8 +65,38 @@ class StaffSaleDetails extends Component
             )
             ->get();
 
-        //    $this->js("$('#salesDetails').modal('show');");
-        $this->dispatch('open-sales-modal');
+        // Get sale details for this staff member
+        $this->selectedSaleDetails = DB::table('sales')
+            ->where('user_id', $userId)
+            ->where('sale_type', 'staff')
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get()
+            ->toArray();
+
+        // Get sale items for display
+        $this->saleItems = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->where('sales.user_id', $userId)
+            ->where('sales.sale_type', 'staff')
+            ->orderByDesc('sales.created_at')
+            ->limit(20)
+            ->select(
+                'sale_items.*',
+                'sales.invoice_number',
+                'sales.created_at as sale_date',
+                'sales.payment_status'
+            )
+            ->get()
+            ->toArray();
+
+        // Open the modal
+        $this->isViewModalOpen = true;
+    }
+
+    public function closeModal()
+    {
+        $this->isViewModalOpen = false;
     }
 
     public function getSummaryStats($staffId)
@@ -118,12 +150,11 @@ class StaffSaleDetails extends Component
             ->get();
 
         // Return a view optimized for printing
-        return view('admin.print.staff-details', compact('staffDetails', 'summaryStats', 'productDetails'))->layout($this->layout);
+        return view('admin.print.staff-details', compact('staffDetails', 'summaryStats', 'productDetails'));
     }
 
     public function render()
     {
-
         // Get summary values for all staff using StaffProduct model
         $staffSales = StaffProduct::join('users', 'staff_products.staff_id', '=', 'users.id')
             ->select(
@@ -143,6 +174,6 @@ class StaffSaleDetails extends Component
 
         return view('livewire.admin.staff-sale-details', [
             'staffSales' => $staffSales
-        ])->layout($this->layout);
+        ]);
     }
 }

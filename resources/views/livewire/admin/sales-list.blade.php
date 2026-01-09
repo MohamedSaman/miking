@@ -143,6 +143,7 @@
                         <tr>
                             <th class="ps-4">Invoice</th>
                             <th>Customer</th>
+                            <th>User</th>
                             <th class="text-center">Date</th>
                             <th class="text-center">Amount</th>
                             <th class="text-center">Payment Status</th>
@@ -163,6 +164,16 @@
                                 <small class="text-muted">{{ $sale->customer->phone }}</small>
                                 @else
                                 <span class="text-muted">Walk-in Customer</span>
+                                @endif
+                            </td>
+                            <td wire:click="viewSale({{ $sale->id }})">
+                                @if($sale->user)
+                                <div class="fw-medium">{{ $sale->user->name }}</div>
+                                <small class="badge {{ $sale->user->role === 'admin' ? 'bg-danger' : 'bg-warning' }}">
+                                    {{ ucfirst($sale->user->role) }}
+                                </small>
+                                @else
+                                <span class="text-muted">Unknown</span>
                                 @endif
                             </td>
                             <td class="text-center" wire:click="viewSale({{ $sale->id }})">{{ $sale->created_at->format('M d, Y') }}</td>
@@ -580,8 +591,8 @@
             font-weight: 600;
             border-top: none;
             color: #ffffff;
-            background: #000000;
-            background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);
+            background: #2a83df;
+            background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;

@@ -54,6 +54,11 @@ class QuotationList extends Component
         // Build base query and update only a lightweight property (count)
         $query = Quotation::with('customer');
 
+        // Filter by user for staff
+        if ($this->isStaff()) {
+            $query->where('created_by', Auth::id());
+        }
+
         if ($this->search) {
             $query->where(function ($q) {
                 $q->where('quotation_number', 'like', '%' . $this->search . '%')
@@ -464,6 +469,7 @@ class QuotationList extends Component
                         'email' => $this->selectedQuotation->customer_email,
                         'address' => $this->selectedQuotation->customer_address,
                         'type' => $this->selectedQuotation->customer_type,
+                        'user_id' => Auth::id(),
                     ]);
                 }
 
@@ -574,7 +580,12 @@ class QuotationList extends Component
     public function render()
     {
         // Build the paginated query here instead of storing paginator in public property
-        $query = Quotation::with('customer');
+        $query = Quotation::with(['customer', 'user']);
+
+        // Filter by user for staff
+        if ($this->isStaff()) {
+            $query->where('created_by', Auth::id());
+        }
 
         if ($this->search) {
             $query->where(function ($q) {

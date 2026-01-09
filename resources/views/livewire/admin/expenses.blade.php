@@ -564,11 +564,11 @@
     }
 
     .summary-card.month {
-        border-left-color: #4895ef;
+        border-left-color: #1a5fb8;
     }
 
     .summary-card.total {
-        border-left-color: #4361ee;
+        border-left-color: #2a83df;
     }
 
     .icon-container {

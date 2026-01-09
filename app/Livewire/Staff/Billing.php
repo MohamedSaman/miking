@@ -2,630 +2,835 @@
 
 namespace App\Livewire\Staff;
 
-use Exception;
-use App\Models\Sale;
-use App\Models\Payment;
 use Livewire\Component;
-use App\Models\Customer;
-use App\Models\SaleItem;
-use App\Models\ProductPrice;
-use App\Models\ProductStock;
-use App\Models\ProductDetail;
-use App\Models\StaffProduct;
-use App\Services\FIFOStockService;
-use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Title;
 use Livewire\WithFileUploads;
-use Illuminate\Support\Facades\Storage;
+use App\Models\Customer;
+use App\Models\ProductDetail;
+use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\Payment;
+use App\Models\Cheque;
+use App\Models\StaffProduct;
+use App\Models\StaffSale;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 #[Layout('components.layouts.staff')]
-#[Title('Billing Page')]
+#[Title('Staff POS Billing')]
 class Billing extends Component
 {
     use WithFileUploads;
 
+    // Basic Properties
     public $search = '';
     public $searchResults = [];
+    public $customerId = '';
+
+    // Cart Items
     public $cart = [];
-    public $quantities = [];
-    public $discounts = [];
-    public $ProductDetails = null;
-    public $subtotal = 0;
-    public $totalDiscount = 0;
-    public $grandTotal = 0;
 
+    // Customer Properties
     public $customers = [];
-    public $customerId = null;
+    public $selectedCustomer = null;
+
+    // Customer Form
+    public $customerName = '';
+    public $customerPhone = '';
+    public $customerEmail = '';
+    public $customerAddress = '';
     public $customerType = 'retail';
+    public $businessName = '';
 
-    public $newCustomerName = '';
-    public $newCustomerPhone = '';
-    public $newCustomerEmail = '';
-    public $newCustomerType = 'retail';
-    public $newCustomerAddress = '';
-    public $newCustomerNotes = '';
+    // Sale Properties
+    public $notes = '';
 
-    public $saleNotes = '';
-    public $paymentType = 'full';
-    public $paymentMethod = '';
-    public $paymentReceiptImage;
-    public $paymentReceiptImagePreview = null;
-    public $bankName = '';
+    // Payment Properties (same as admin StoreBilling)
+    public $paymentMethod = 'cash';
+    public $paidAmount = 0;
 
-    public $initialPaymentAmount = 0;
-    public $initialPaymentMethod = '';
-    public $initialPaymentReceiptImage;
-    public $initialPaymentReceiptImagePreview = null;
-    public $initialBankName = '';
+    // Cash Payment
+    public $cashAmount = 0;
 
-    public $balanceAmount = 0;
-    public $balancePaymentMethod = '';
-    public $balanceDueDate = '';
-    public $balancePaymentReceiptImage;
-    public $balancePaymentReceiptImagePreview = null;
-    public $balanceBankName = '';
+    // Cheque Payment
+    public $cheques = [];
+    public $tempChequeNumber = '';
+    public $tempBankName = '';
+    public $tempChequeDate = '';
+    public $tempChequeAmount = 0;
 
+    // Bank Transfer Payment
+    public $bankTransferAmount = 0;
+    public $bankTransferBankName = '';
+    public $bankTransferReferenceNumber = '';
+
+    // Discount Properties
+    public $additionalDiscount = 0;
+    public $additionalDiscountType = 'fixed';
+
+    // Modals
+    public $showSaleModal = false;
+    public $showCustomerModal = false;
+    public $showPaymentConfirmModal = false;
     public $lastSaleId = null;
-    public $showReceipt = false;
-
-    // Add these properties to your existing properties list
-    public $duePaymentMethod = '';
-    public $duePaymentAttachment;
-    public $duePaymentAttachmentPreview = null;
-
-    protected $listeners = ['quantityUpdated' => 'updateTotals'];
+    public $createdSale = null;
+    public $pendingDueAmount = 0;
 
     public function mount()
     {
+        // Staff can only access this if they have allocated products
+        if (!StaffProduct::where('staff_id', Auth::id())->exists()) {
+            session()->flash('warning', 'No products allocated to you. Please contact admin.');
+        }
+
         $this->loadCustomers();
-        $this->updateTotals();
-        $this->balanceDueDate = date('Y-m-d', strtotime('+7 days'));
+        $this->tempChequeDate = now()->format('Y-m-d');
     }
 
+    // Load customers - only customers created by this staff member
     public function loadCustomers()
     {
-        $this->customers = Customer::orderBy('name')->get();
+        $staffId = Auth::id();
+
+        // Get customers created by this staff member only
+        $this->customers = Customer::where('user_id', $staffId)
+            ->orderBy('name')
+            ->get();
     }
 
-    // Show all products from product table with stock information - Modified for staff billing
+    // Computed Properties for Totals
+    public function getSubtotalProperty()
+    {
+        return collect($this->cart)->sum('total');
+    }
+
+    public function getTotalDiscountProperty()
+    {
+        return collect($this->cart)->sum(function ($item) {
+            return ($item['discount'] * $item['quantity']);
+        });
+    }
+
+    public function getSubtotalAfterItemDiscountsProperty()
+    {
+        return $this->subtotal;
+    }
+
+    public function getAdditionalDiscountAmountProperty()
+    {
+        if (empty($this->additionalDiscount) || $this->additionalDiscount <= 0) {
+            return 0;
+        }
+
+        if ($this->additionalDiscountType === 'percentage') {
+            return ($this->subtotalAfterItemDiscounts * $this->additionalDiscount) / 100;
+        }
+
+        return min($this->additionalDiscount, $this->subtotalAfterItemDiscounts);
+    }
+
+    public function getGrandTotalProperty()
+    {
+        return $this->subtotalAfterItemDiscounts - $this->additionalDiscountAmount;
+    }
+
+    public function getTotalPaidAmountProperty()
+    {
+        $total = 0;
+
+        if ($this->paymentMethod === 'cash') {
+            $total = $this->cashAmount;
+        } elseif ($this->paymentMethod === 'cheque') {
+            $total = collect($this->cheques)->sum('amount');
+        } elseif ($this->paymentMethod === 'bank_transfer') {
+            $total = $this->bankTransferAmount;
+        }
+
+        return $total;
+    }
+
+    public function getDueAmountProperty()
+    {
+        if ($this->paymentMethod === 'credit') {
+            return $this->grandTotal;
+        }
+        return max(0, $this->grandTotal - (int)$this->totalPaidAmount);
+    }
+
+    public function getPaymentStatusProperty()
+    {
+        if ($this->paymentMethod === 'credit' || (int)$this->totalPaidAmount <= 0) {
+            return 'pending';
+        } elseif ((int)$this->totalPaidAmount >= $this->grandTotal) {
+            return 'paid';
+        } else {
+            return 'partial';
+        }
+    }
+
+    public function getDatabasePaymentTypeProperty()
+    {
+        if ($this->paymentMethod === 'credit') {
+            return 'partial';
+        }
+        if ((int)$this->totalPaidAmount >= $this->grandTotal) {
+            return 'full';
+        } else {
+            return 'partial';
+        }
+    }
+
+    public function updatedCustomerId($value)
+    {
+        if ($value) {
+            $customer = Customer::find($value);
+            if ($customer) {
+                $this->selectedCustomer = $customer;
+            }
+        } else {
+            $this->setDefaultCustomer();
+        }
+    }
+
+    public function updatedPaymentMethod($value)
+    {
+        $this->cashAmount = 0;
+        $this->cheques = [];
+        $this->bankTransferAmount = 0;
+        $this->bankTransferBankName = '';
+        $this->bankTransferReferenceNumber = '';
+
+        if ($value === 'cash') {
+            $this->cashAmount = $this->grandTotal;
+        } elseif ($value === 'bank_transfer') {
+            $this->bankTransferAmount = $this->grandTotal;
+        }
+    }
+
+    public function updated($propertyName)
+    {
+        if (
+            str_contains($propertyName, 'cart') ||
+            str_contains($propertyName, 'additionalDiscount') ||
+            str_contains($propertyName, 'additionalDiscountType')
+        ) {
+            if ($this->paymentMethod === 'cash') {
+                $this->cashAmount = $this->grandTotal;
+            } elseif ($this->paymentMethod === 'bank_transfer') {
+                $this->bankTransferAmount = $this->grandTotal;
+            }
+        }
+    }
+
+    // Add Cheque
+    public function addCheque()
+    {
+        $this->validate([
+            'tempChequeNumber' => 'required|string|max:50',
+            'tempBankName' => 'required|string|max:100',
+            'tempChequeDate' => 'required|date',
+            'tempChequeAmount' => 'required|numeric|min:0.01',
+        ]);
+
+        $existingCheque = Cheque::where('cheque_number', $this->tempChequeNumber)->first();
+        if ($existingCheque) {
+            $this->js("Swal.fire('Error!', 'Cheque number already exists.', 'error');");
+            return;
+        }
+
+        $this->cheques[] = [
+            'number' => $this->tempChequeNumber,
+            'bank_name' => $this->tempBankName,
+            'date' => $this->tempChequeDate,
+            'amount' => $this->tempChequeAmount,
+        ];
+
+        $this->tempChequeNumber = '';
+        $this->tempBankName = '';
+        $this->tempChequeDate = now()->format('Y-m-d');
+        $this->tempChequeAmount = 0;
+
+        $this->js("Swal.fire('Success!', 'Cheque added successfully!', 'success')");
+    }
+
+    public function removeCheque($index)
+    {
+        unset($this->cheques[$index]);
+        $this->cheques = array_values($this->cheques);
+        $this->js("Swal.fire('success', 'Cheque removed!', 'success')");
+    }
+
+    public function resetCustomerFields()
+    {
+        $this->customerName = '';
+        $this->customerPhone = '';
+        $this->customerEmail = '';
+        $this->customerAddress = '';
+        $this->customerType = 'retail';
+        $this->businessName = '';
+    }
+
+    public function openCustomerModal()
+    {
+        $this->resetCustomerFields();
+        $this->showCustomerModal = true;
+    }
+
+    public function closeCustomerModal()
+    {
+        $this->showCustomerModal = false;
+        $this->resetCustomerFields();
+    }
+
+    // Create new customer - linked to this staff member
+    public function createCustomer()
+    {
+        $this->validate([
+            'customerName' => 'required|string|max:255',
+            'customerPhone' => 'nullable|string|max:10|unique:customers,phone',
+            'customerEmail' => 'nullable|email|unique:customers,email',
+            'customerAddress' => 'required|string',
+            'customerType' => 'required|in:retail,wholesale',
+        ]);
+
+        try {
+            $customer = Customer::create([
+                'name' => $this->customerName,
+                'phone' => $this->customerPhone ?: null,
+                'email' => $this->customerEmail,
+                'address' => $this->customerAddress,
+                'type' => $this->customerType,
+                'business_name' => $this->businessName,
+                'user_id' => Auth::id(), // Link customer to staff who created them
+            ]);
+
+            $this->loadCustomers();
+            $this->customerId = $customer->id;
+            $this->selectedCustomer = $customer;
+            $this->closeCustomerModal();
+
+            $this->js("Swal.fire('success', 'Customer created successfully!', 'success')");
+        } catch (\Exception $e) {
+            $this->js("Swal.fire('error', 'Failed to create customer', 'error')");
+        }
+    }
+
+    // Search for staff allocated products only
     public function updatedSearch()
     {
         if (strlen($this->search) >= 2) {
-            // Search all products from product_details table and join with stock information
-            $this->searchResults = ProductDetail::leftJoin('product_stocks', 'product_stocks.product_id', '=', 'product_details.id')
-                ->leftJoin('product_prices', 'product_prices.product_id', '=', 'product_details.id')
-                ->leftJoin('brand_lists', 'brand_lists.id', '=', 'product_details.brand_id')
-                ->leftJoin('category_lists', 'category_lists.id', '=', 'product_details.category_id')
-                ->select(
-                    'product_details.*',
-                    'product_prices.selling_price as selling_price',
-                    'product_prices.discount_price as discount_price',
-                    DB::raw('COALESCE(product_stocks.available_stock, 0) as available_stock'),
-                    'brand_lists.brand_name as brand_name',
-                    'category_lists.name as category_name'
-                )
-                ->where(function ($query) {
-                    $query->where('product_details.code', 'like', '%' . $this->search . '%')
-                        ->orWhere('product_details.model', 'like', '%' . $this->search . '%')
-                        ->orWhere('product_details.barcode', 'like', '%' . $this->search . '%')
-                        ->orWhere('brand_lists.brand_name', 'like', '%' . $this->search . '%')
-                        ->orWhere('category_lists.name', 'like', '%' . $this->search . '%')
-                        ->orWhere('product_details.name', 'like', '%' . $this->search . '%');
-                })
-                ->orderBy('product_details.name')
-                ->take(50)
+            $staffId = Auth::id();
+
+            // Get staff products with their product details
+            $staffProducts = StaffProduct::where('staff_id', $staffId)
+                ->with(['product'])
                 ->get();
+
+            // Filter based on search term
+            $this->searchResults = $staffProducts->filter(function ($staffProduct) {
+                if (!$staffProduct->product) {
+                    return false;
+                }
+
+                $searchTerm = strtolower($this->search);
+                $name = strtolower($staffProduct->product->name ?? '');
+                $code = strtolower($staffProduct->product->code ?? '');
+                $model = strtolower($staffProduct->product->model ?? '');
+
+                return str_contains($name, $searchTerm) ||
+                    str_contains($code, $searchTerm) ||
+                    str_contains($model, $searchTerm);
+            })
+                ->take(10)
+                ->map(function ($staffProduct) {
+                    $availableStock = ($staffProduct->quantity ?? 0) - ($staffProduct->sold_quantity ?? 0);
+
+                    return [
+                        'id' => $staffProduct->product->id,
+                        'name' => $staffProduct->product->name,
+                        'code' => $staffProduct->product->code,
+                        'model' => $staffProduct->product->model ?? '',
+                        'price' => $staffProduct->unit_price,
+                        'stock' => max(0, $availableStock),
+                        'image' => $staffProduct->product->image ?? ''
+                    ];
+                })
+                ->values()
+                ->toArray();
         } else {
             $this->searchResults = [];
         }
     }
-    public function addToCart($ProductId)
+
+    public function addToCart($product)
     {
-        // Get product details with stock and pricing from main inventory
-        $Product = ProductDetail::leftJoin('product_stocks', 'product_stocks.product_id', '=', 'product_details.id')
-            ->leftJoin('product_prices', 'product_prices.product_id', '=', 'product_details.id')
-            ->where('product_details.id', $ProductId)
-            ->select(
-                'product_details.id',
-                'product_details.name',
-                'product_details.code',
-                'product_details.model',
-                'product_details.brand',
-                'product_details.image',
-                DB::raw('COALESCE(product_stocks.available_stock, 0) as available_stock'),
-                DB::raw('COALESCE(product_prices.selling_price, 0) as selling_price'),
-                DB::raw('COALESCE(product_prices.discount_price, 0) as discount_price')
-            )
-            ->first();
-
-        if (!$Product) {
-            $this->dispatch('showToast', ['type' => 'danger', 'message' => 'Product not found.']);
+        if (($product['stock'] ?? 0) <= 0) {
+            $this->js("Swal.fire('error', 'Not enough stock available!', 'error')");
             return;
         }
 
-        if ($Product->available_stock <= 0) {
-            $this->dispatch('showToast', ['type' => 'danger', 'message' => 'This product is out of stock.']);
-            return;
-        }
+        $existing = collect($this->cart)->firstWhere('id', $product['id']);
 
-        $existingItem = collect($this->cart)->firstWhere('id', $ProductId);
-
-        if ($existingItem) {
-            if (($this->quantities[$ProductId] + 1) > $Product->available_stock) {
-                $this->dispatch('showToast', ['type' => 'warning', 'message' => "Maximum available quantity ({$Product->available_stock}) reached."]);
+        if ($existing) {
+            if (($existing['quantity'] + 1) > $product['stock']) {
+                $this->js("Swal.fire('error', 'Not enough stock available!', 'error')");
                 return;
             }
-            $this->quantities[$ProductId]++;
+
+            $this->cart = collect($this->cart)->map(function ($item) use ($product) {
+                if ($item['id'] == $product['id']) {
+                    $item['quantity'] += 1;
+                    $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
+                    if (!isset($item['key'])) {
+                        $item['key'] = uniqid('cart_');
+                    }
+                }
+                return $item;
+            })->toArray();
         } else {
-            // Set default discount to 0 instead of using product's discount price
-            $this->cart[$ProductId] = [
-                'id' => $Product->id,
-                'code' => $Product->code,
-                'name' => $Product->name,
-                'model' => $Product->model,
-                'brand' => $Product->brand,
-                'image' => $Product->image,
-                'price' => $Product->selling_price ?? 0,
-                'discountPrice' => 0, // Set default discount to 0
-                'inStock' => $Product->available_stock,
+            $newItem = [
+                'key' => uniqid('cart_'),
+                'id' => $product['id'],
+                'name' => $product['name'],
+                'code' => $product['code'],
+                'model' => $product['model'],
+                'price' => $product['price'],
+                'quantity' => 1,
+                'discount' => 0,
+                'total' => $product['price'],
+                'stock' => $product['stock']
             ];
 
-            $this->quantities[$ProductId] = 1;
-            $this->discounts[$ProductId] = 0; // Initialize discount as 0
+            array_unshift($this->cart, $newItem);
         }
 
-        // Clear search and update totals
         $this->search = '';
         $this->searchResults = [];
-        $this->updateTotals();
-
-        // Reset the search input field in the UI
-        $this->dispatch('resetSearchInput');
-
-        $this->dispatch('showToast', ['type' => 'success', 'message' => 'Product added to cart successfully.']);
     }
-    public function validateQuantity($ProductId)
+
+    public function updateQuantity($index, $quantity)
     {
-        if (!isset($this->cart[$ProductId]) || !isset($this->quantities[$ProductId])) {
+        if ($quantity < 1) $quantity = 1;
+
+        $productStock = $this->cart[$index]['stock'];
+        if ($quantity > $productStock) {
+            $this->js("Swal.fire('error', 'Not enough stock! Maximum: {$productStock}', 'error')");
             return;
         }
 
-        $maxAvailable = $this->cart[$ProductId]['inStock'];
-        $currentQuantity = (int)$this->quantities[$ProductId];
-
-        // Enforce the minimum and maximum limits
-        if ($currentQuantity <= 0) {
-            $this->quantities[$ProductId] = 1;
-            $this->dispatch('showToast', [
-                'type' => 'warning',
-                'message' => 'Minimum quantity is 1'
-            ]);
-        } elseif ($currentQuantity > $maxAvailable) {
-            // Cap the quantity to available stock
-            $this->quantities[$ProductId] = $maxAvailable;
-            $this->dispatch('showToast', [
-                'type' => 'warning',
-                'message' => "Maximum available quantity is {$maxAvailable}"
-            ]);
-        }
-
-        $this->updateTotals();
+        $this->cart[$index]['quantity'] = $quantity;
+        $this->cart[$index]['total'] = ($this->cart[$index]['price'] - $this->cart[$index]['discount']) * $quantity;
     }
 
-    /**
-     * Update quantity with validation
-     *
-     * @param int $ProductId Product ID
-     * @param int $quantity Requested quantity
-     */
-    public function updateQuantity($ProductId, $quantity)
+    public function incrementQuantity($index)
     {
-        if (!isset($this->cart[$ProductId])) {
+        $currentQuantity = $this->cart[$index]['quantity'];
+        $productStock = $this->cart[$index]['stock'];
+
+        if (($currentQuantity + 1) > $productStock) {
+            $this->js("Swal.fire('error', 'Not enough stock! Maximum: {$productStock}', 'error')");
             return;
         }
 
-        $maxAvailable = $this->cart[$ProductId]['inStock'];
+        $this->cart[$index]['quantity'] += 1;
+        $this->cart[$index]['total'] = ($this->cart[$index]['price'] - $this->cart[$index]['discount']) * $this->cart[$index]['quantity'];
+    }
 
-        // Apply limits and validation
-        if ($quantity <= 0) {
-            $quantity = 1;
-        } elseif ($quantity > $maxAvailable) {
-            $quantity = $maxAvailable;
-            $this->dispatch('showToast', [
-                'type' => 'warning',
-                'message' => "Maximum available quantity is {$maxAvailable}"
-            ]);
+    public function decrementQuantity($index)
+    {
+        if ($this->cart[$index]['quantity'] > 1) {
+            $this->cart[$index]['quantity'] -= 1;
+            $this->cart[$index]['total'] = ($this->cart[$index]['price'] - $this->cart[$index]['discount']) * $this->cart[$index]['quantity'];
+        }
+    }
+
+    public function updatePrice($index, $price)
+    {
+        if ($price < 0) $price = 0;
+
+        $this->cart[$index]['price'] = $price;
+        $this->cart[$index]['total'] = ($price - $this->cart[$index]['discount']) * $this->cart[$index]['quantity'];
+    }
+
+    public function updateDiscount($index, $discount)
+    {
+        if ($discount < 0) $discount = 0;
+        if ($discount > $this->cart[$index]['price']) {
+            $discount = $this->cart[$index]['price'];
         }
 
-        // Update the quantity with the validated value
-        $this->quantities[$ProductId] = $quantity;
-        $this->updateTotals();
+        $this->cart[$index]['discount'] = $discount;
+        $this->cart[$index]['total'] = ($this->cart[$index]['price'] - $discount) * $this->cart[$index]['quantity'];
     }
 
-
-
-
-    public function updateDiscount($ProductId, $discount)
+    public function removeFromCart($index)
     {
-        $this->discounts[$ProductId] = max(0, min($discount, $this->cart[$ProductId]['price']));
-        $this->updateTotals();
-    }
-
-    public function removeFromCart($ProductId)
-    {
-
-        unset($this->cart[$ProductId]);
-        unset($this->quantities[$ProductId]);
-        unset($this->discounts[$ProductId]);
-        $this->updateTotals();
-    }
-
-    public function showDetail($ProductId)
-    {
-        $this->ProductDetails = ProductDetail::leftJoin('product_stocks', 'product_stocks.product_id', '=', 'product_details.id')
-            ->leftJoin('product_prices', 'product_prices.product_id', '=', 'product_details.id')
-            ->select(
-                'product_details.*',
-                'product_prices.selling_price as selling_price',
-                'product_prices.discount_price as discount_price',
-                DB::raw('COALESCE(product_stocks.available_stock, 0) as available_stock'),
-                'product_suppliers.*',
-                'product_suppliers.name as supplier_name'
-            )
-            ->where('product_details.id', $ProductId)
-            ->first();
-
-        $this->js('$("#viewDetailModal").modal("show")');
-    }
-
-    public function updateTotals()
-    {
-        $this->subtotal = 0;
-        $this->totalDiscount = 0;
-
-        foreach ($this->cart as $id => $item) {
-            $price = $item['price'] ?: $item['price'];
-            $this->subtotal += $price * $this->quantities[$id];
-            $this->totalDiscount += $this->discounts[$id] * $this->quantities[$id];
-        }
-
-        $this->grandTotal = $this->subtotal - $this->totalDiscount;
+        unset($this->cart[$index]);
+        $this->cart = array_values($this->cart);
+        $this->js("Swal.fire('success', 'Product removed!', 'success')");
     }
 
     public function clearCart()
     {
         $this->cart = [];
-        $this->quantities = [];
-        $this->discounts = [];
-        $this->updateTotals();
+        $this->additionalDiscount = 0;
+        $this->additionalDiscountType = 'fixed';
+        $this->resetPaymentFields();
+        $this->js("Swal.fire('success', 'Cart cleared!', 'success')");
     }
 
-    public function saveCustomer()
+    public function resetPaymentFields()
     {
-        $this->validate([
-            'newCustomerName' => 'required|min:3',
-            'newCustomerPhone' => 'required',
-        ]);
-
-        $customer = Customer::create([
-            'name' => $this->newCustomerName,
-            'phone' => $this->newCustomerPhone,
-            'email' => $this->newCustomerEmail,
-            'type' => $this->newCustomerType,
-            'address' => $this->newCustomerAddress,
-            'notes' => $this->newCustomerNotes,
-        ]);
-
-        $this->loadCustomers();
-
-        $this->newCustomerName = '';
-        $this->newCustomerPhone = '';
-        $this->newCustomerEmail = '';
-        $this->newCustomerAddress = '';
-        $this->newCustomerNotes = '';
-
-        $this->js('$("#addCustomerModal").modal("hide")');
-        $this->js('swal.fire("Success", "Customer added successfully!", "success")');
+        $this->cashAmount = 0;
+        $this->cheques = [];
+        $this->bankTransferAmount = 0;
+        $this->bankTransferBankName = '';
+        $this->bankTransferReferenceNumber = '';
+        $this->paymentMethod = 'cash';
     }
 
-    public function calculateBalanceAmount()
+    public function updatedAdditionalDiscount($value)
     {
-        if ($this->paymentType == 'partial') {
-            if ($this->initialPaymentAmount > $this->grandTotal) {
-                $this->initialPaymentAmount = $this->grandTotal;
-            }
-
-            $this->balanceAmount = $this->grandTotal - $this->initialPaymentAmount;
-        } else {
-            $this->initialPaymentAmount = 0;
-            $this->balanceAmount = 0;
-        }
-    }
-
-    public function updatedPaymentType($value)
-    {
-        if ($value == 'partial') {
-            // Default to 50% initial payment when switching to partial
-            $this->initialPaymentAmount = round($this->grandTotal / 2, 2);
-            $this->calculateBalanceAmount();
-        } else {
-            // Reset partial payment fields when switching back to full
-            $this->initialPaymentAmount = 0;
-            $this->initialPaymentMethod = '';
-            $this->initialPaymentReceiptImage = null;
-            $this->initialPaymentReceiptImagePreview = null;
-            $this->initialBankName = '';
-
-            $this->balanceAmount = 0;
-            $this->balancePaymentMethod = '';
-            $this->balancePaymentReceiptImage = null;
-            $this->balancePaymentReceiptImagePreview = null;
-            $this->balanceBankName = '';
-        }
-    }
-
-    public function updatedPaymentReceiptImage()
-    {
-        $this->validate([
-            'paymentReceiptImage' => 'file|mimes:jpg,jpeg,png,gif,pdf|max:2048',
-        ]);
-
-        if ($this->paymentReceiptImage) {
-            try {
-                $extension = strtolower($this->paymentReceiptImage->getClientOriginalExtension());
-                if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                    $this->paymentReceiptImagePreview = $this->paymentReceiptImage->temporaryUrl();
-                } else {
-                    $this->paymentReceiptImagePreview = 'pdf';
-                }
-            } catch (Exception $e) {
-                // If temporary URL generation fails, mark the file type but don't set URL
-                $this->paymentReceiptImagePreview = $extension == 'pdf' ? 'pdf' : 'image';
-            }
-        }
-    }
-
-    public function updatedInitialPaymentReceiptImage()
-    {
-        $this->validate([
-            'initialPaymentReceiptImage' => 'file|mimes:jpg,jpeg,png,gif,pdf|max:2048',
-        ]);
-
-        if ($this->initialPaymentReceiptImage) {
-            $extension = $this->initialPaymentReceiptImage->getClientOriginalExtension();
-            if (in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif'])) {
-                $this->initialPaymentReceiptImagePreview = $this->initialPaymentReceiptImage->temporaryUrl();
-            } else {
-                // For PDF we'll just set a flag that it's a PDF
-                $this->initialPaymentReceiptImagePreview = 'pdf';
-            }
-        }
-    }
-
-    public function updatedBalancePaymentReceiptImage()
-    {
-        $this->validate([
-            'balancePaymentReceiptImage' => 'file|mimes:jpg,jpeg,png,gif,pdf|max:2048',
-        ]);
-
-        if ($this->balancePaymentReceiptImage) {
-            $extension = $this->balancePaymentReceiptImage->getClientOriginalExtension();
-            if (in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif'])) {
-                $this->balancePaymentReceiptImagePreview = $this->balancePaymentReceiptImage->temporaryUrl();
-            } else {
-                // For PDF we'll just set a flag that it's a PDF
-                $this->balancePaymentReceiptImagePreview = 'pdf';
-            }
-        }
-    }
-
-    // Add this method with your other updater methods
-    public function updatedDuePaymentAttachment()
-    {
-        $this->validate([
-            'duePaymentAttachment' => 'file|mimes:jpg,jpeg,png,gif,pdf|max:2048',
-        ]);
-
-        if ($this->duePaymentAttachment) {
-            $extension = $this->duePaymentAttachment->getClientOriginalExtension();
-            if (in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif'])) {
-                $this->duePaymentAttachmentPreview = $this->duePaymentAttachment->temporaryUrl();
-            } else {
-                // For PDF we'll just set a flag that it's a PDF
-                $this->duePaymentAttachmentPreview = 'pdf';
-            }
-        }
-    }
-
-    protected $validationAttributes = [
-        'paymentMethod' => 'payment method',
-        'paymentReceiptImage' => 'payment receipt',
-        'bankName' => 'bank name',
-        'initialPaymentMethod' => 'initial payment method',
-        'initialPaymentReceiptImage' => 'initial payment receipt',
-        'initialBankName' => 'initial bank name',
-        'balancePaymentMethod' => 'balance payment method',
-        'balancePaymentReceiptImage' => 'balance payment receipt',
-        'balanceBankName' => 'balance bank name',
-        'balanceDueDate' => 'balance due date'
-    ];
-
-    public function completeSale()
-    {
-        if (empty($this->cart)) {
-            $this->js('swal.fire("Error", "Please add items to the cart.", "error")');
+        if ($value === '') {
+            $this->additionalDiscount = 0;
             return;
         }
 
-        $this->validate([
-            'customerId' => 'required',
-        ]);
+        if ($value < 0) {
+            $this->additionalDiscount = 0;
+            return;
+        }
 
+        if ($this->additionalDiscountType === 'percentage' && $value > 100) {
+            $this->additionalDiscount = 100;
+            return;
+        }
 
+        if ($this->additionalDiscountType === 'fixed' && $value > $this->subtotalAfterItemDiscounts) {
+            $this->additionalDiscount = $this->subtotalAfterItemDiscounts;
+            return;
+        }
+    }
+
+    public function toggleDiscountType()
+    {
+        $this->additionalDiscountType = $this->additionalDiscountType === 'percentage' ? 'fixed' : 'percentage';
+        $this->additionalDiscount = 0;
+    }
+
+    public function removeAdditionalDiscount()
+    {
+        $this->additionalDiscount = 0;
+        $this->js("Swal.fire('success', 'Discount removed!', 'success')");
+    }
+
+    // Validate Payment Before Creating Sale
+    public function validateAndCreateSale()
+    {
+        if (empty($this->cart)) {
+            $this->js("Swal.fire('error', 'Please add at least one product to the sale.', 'error')");
+            return;
+        }
+
+        if (!$this->selectedCustomer && !$this->customerId) {
+            $this->js("Swal.fire('error', 'Please select a customer.', 'error')");
+            return;
+        }
+
+        // Validate payment method specific fields
+        if ($this->paymentMethod === 'cash') {
+            if ($this->cashAmount < 0) {
+                $this->js("Swal.fire('error', 'Please enter cash amount.', 'error')");
+                return;
+            }
+        } elseif ($this->paymentMethod === 'cheque') {
+            if (empty($this->cheques)) {
+                $this->js("Swal.fire('error', 'Please add at least one cheque.', 'error')");
+                return;
+            }
+
+            $totalChequeAmount = collect($this->cheques)->sum('amount');
+            if ($totalChequeAmount > $this->grandTotal) {
+                $this->js("Swal.fire('error', 'Cheque amount cannot exceed grand total.', 'error')");
+                return;
+            }
+        } elseif ($this->paymentMethod === 'bank_transfer') {
+            if ($this->bankTransferAmount <= 0) {
+                $this->js("Swal.fire('error', 'Please enter bank transfer amount.', 'error')");
+                return;
+            }
+        }
+
+        // Check if payment amount matches grand total (except for credit)
+        if ($this->paymentMethod !== 'credit') {
+            if ((int)$this->totalPaidAmount < $this->grandTotal) {
+                $this->pendingDueAmount = $this->grandTotal - (int)$this->totalPaidAmount;
+                $this->showPaymentConfirmModal = true;
+                return;
+            }
+        }
+
+        $this->createSale();
+    }
+
+    public function confirmSaleWithDue()
+    {
+        $this->showPaymentConfirmModal = false;
+        $this->createSale();
+    }
+
+    public function cancelSaleConfirmation()
+    {
+        $this->showPaymentConfirmModal = false;
+        $this->pendingDueAmount = 0;
+    }
+
+    // Create Sale - saves to both staff_sales and sales tables
+    // Payment requires admin approval
+    public function createSale()
+    {
         try {
             DB::beginTransaction();
 
-            $invoiceNumber = Sale::generateInvoiceNumber();
+            $customer = $this->selectedCustomer ?? Customer::find($this->customerId);
 
-            // For staff sales: always set status as 'pending' and payment_status as 'pending'
-            $paymentStatus = 'pending';
-            $status = 'pending';
+            if (!$customer) {
+                $this->js("Swal.fire('error', 'Customer not found.', 'error')");
+                return;
+            }
 
-            $customer = Customer::find($this->customerId);
+            $staffId = Auth::id();
 
+            // Update staff product sold_quantity
+            foreach ($this->cart as $item) {
+                $staffProduct = StaffProduct::where('staff_id', $staffId)
+                    ->where('product_id', $item['id'])
+                    ->first();
+
+                if ($staffProduct) {
+                    $staffProduct->increment('sold_quantity', $item['quantity']);
+                }
+            }
+
+            // Create sale in sales table with 'staff' type and 'pending' status for payment
             $sale = Sale::create([
-                'invoice_number' => $invoiceNumber,
-                'customer_id' => $this->customerId,
-                'user_id' => auth()->id(),
+                'sale_id' => Sale::generateSaleId(),
+                'invoice_number' => Sale::generateInvoiceNumber(),
+                'customer_id' => $customer->id,
                 'customer_type' => $customer->type,
                 'subtotal' => $this->subtotal,
-                'discount_amount' => $this->totalDiscount,
+                'discount_amount' => $this->totalDiscount + $this->additionalDiscountAmount,
                 'total_amount' => $this->grandTotal,
-                'payment_type' => 'full', // Always set as full for staff sales
-                'payment_status' => $paymentStatus,
-                'status' => $status,
-                'notes' => $this->saleNotes,
-                'due_amount' => 0, // Set due amount as total amount since payment is pending
+                'payment_type' => $this->databasePaymentType,
+                'payment_status' => 'pending', // Payment requires admin approval
+                'due_amount' => $this->dueAmount,
+                'notes' => $this->notes,
+                'user_id' => $staffId,
+                'status' => 'confirm',
+                'sale_type' => 'staff'
             ]);
 
-            foreach ($this->cart as $productId => $item) {
+            // Create sale items
+            foreach ($this->cart as $item) {
                 SaleItem::create([
                     'sale_id' => $sale->id,
-                    'product_id' => $productId,
+                    'product_id' => $item['id'],
                     'product_code' => $item['code'],
                     'product_name' => $item['name'],
-
-                    'quantity' => $this->quantities[$productId],
+                    'product_model' => $item['model'],
+                    'quantity' => $item['quantity'],
                     'unit_price' => $item['price'],
-                    'discount' => $this->discounts[$productId],
-                    'total' => ($item['price'] - $this->discounts[$productId]) * $this->quantities[$productId],
+                    'discount_per_unit' => $item['discount'],
+                    'total_discount' => $item['discount'] * $item['quantity'],
+                    'total' => $item['total']
+                ]);
+            }
+
+            // Create Payment Record with pending status
+            if ($this->paymentMethod !== 'credit' && (int)$this->totalPaidAmount > 0) {
+                $payment = Payment::create([
+                    'customer_id' => $customer->id,
+                    'sale_id' => $sale->id,
+                    'amount' => (int)$this->totalPaidAmount,
+                    'payment_method' => $this->paymentMethod,
+                    'payment_date' => now(),
+                    'is_completed' => false, // Not completed until admin approves
+                    'status' => 'pending', // Requires admin approval
+                    'created_by' => $staffId, // Track which staff made the payment
+                ]);
+
+                // Handle payment method specific data
+                if ($this->paymentMethod === 'cash') {
+                    $payment->update([
+                        'payment_reference' => 'STAFF-CASH-' . now()->format('YmdHis'),
+                    ]);
+                } elseif ($this->paymentMethod === 'cheque') {
+                    foreach ($this->cheques as $cheque) {
+                        Cheque::create([
+                            'cheque_number' => $cheque['number'],
+                            'cheque_date' => $cheque['date'],
+                            'bank_name' => $cheque['bank_name'],
+                            'cheque_amount' => $cheque['amount'],
+                            'status' => 'pending', // Cheque also needs approval
+                            'customer_id' => $customer->id,
+                            'payment_id' => $payment->id,
+                        ]);
+                    }
+
+                    $payment->update([
+                        'payment_reference' => 'STAFF-CHQ-' . collect($this->cheques)->pluck('number')->implode(','),
+                        'bank_name' => collect($this->cheques)->pluck('bank_name')->unique()->implode(', '),
+                    ]);
+                } elseif ($this->paymentMethod === 'bank_transfer') {
+                    $payment->update([
+                        'payment_reference' => $this->bankTransferReferenceNumber ?: 'STAFF-BANK-' . now()->format('YmdHis'),
+                        'bank_name' => $this->bankTransferBankName,
+                        'transfer_date' => now(),
+                        'transfer_reference' => $this->bankTransferReferenceNumber,
+                    ]);
+                }
+            }
+
+            // Create or Update staff_sales table with sold values
+            $cartTotalQuantity = collect($this->cart)->sum('quantity');
+            $cartTotalValue = $this->grandTotal;
+
+            $staffSale = StaffSale::where('staff_id', $staffId)->first();
+
+            if ($staffSale) {
+                // Update existing staff_sales record
+                $staffSale->increment('sold_quantity', $cartTotalQuantity);
+                $staffSale->increment('sold_value', $cartTotalValue);
+
+                // Update status based on completion
+                $totalQuantity = $staffSale->total_quantity;
+                $soldQuantity = $staffSale->sold_quantity;
+
+                if ($soldQuantity >= $totalQuantity) {
+                    $staffSale->update(['status' => 'completed']);
+                } elseif ($soldQuantity > 0) {
+                    $staffSale->update(['status' => 'partial']);
+                }
+            } else {
+                // Create new staff_sales record if it doesn't exist
+                $staffSale = StaffSale::create([
+                    'staff_id' => $staffId,
+                    'admin_id' => null, // No admin assigned yet
+                    'total_quantity' => 0, // Will be set by admin during allocation
+                    'total_value' => 0, // Will be set by admin during allocation
+                    'sold_quantity' => $cartTotalQuantity,
+                    'sold_value' => $cartTotalValue,
+                    'status' => 'partial',
                 ]);
             }
 
             DB::commit();
 
             $this->lastSaleId = $sale->id;
+            $this->createdSale = Sale::with(['customer', 'items', 'payments'])->find($sale->id);
+            $this->showSaleModal = true;
 
-            $this->js('swal.fire("Success", "Sale submitted successfully! Invoice #' . $invoiceNumber . ' is pending admin approval.", "success")');
+            // Clear cart and reset
+            $this->cart = [];
+            $this->additionalDiscount = 0;
+            $this->additionalDiscountType = 'fixed';
+            $this->resetPaymentFields();
+            $this->notes = '';
+            $this->setDefaultCustomer();
 
-            // Reset customer selection
-            $this->customerId = null;
-
-            // Clear cart and payment info
-            $this->clearCart();
-            $this->resetPaymentInfo();
-        } catch (Exception $e) {
+            $this->js("Swal.fire('success', 'Sale created successfully! Payment status: pending admin approval.', 'success')");
+        } catch (\Exception $e) {
             DB::rollBack();
-            $this->js('swal.fire("Error", "An error occurred while completing the sale: ' . $e->getMessage() . '", "error")');
-            Log::error('Sale completion error: ' . $e->getMessage());
+            Log::error('Staff billing error: ' . $e->getMessage());
+            $this->js("Swal.fire('error', 'Failed to create sale: " . $e->getMessage() . "', 'error')");
         }
     }
 
-    public function resetPaymentInfo()
+    public function downloadInvoice()
     {
-        $this->paymentType = 'full';
-        $this->paymentMethod = '';
-        $this->paymentReceiptImage = null;
-        $this->paymentReceiptImagePreview = null;
-        $this->bankName = '';
+        if (!$this->lastSaleId) {
+            $this->js("Swal.fire('error', 'No sale found to download.', 'error')");
+            return;
+        }
 
-        $this->initialPaymentAmount = 0;
-        $this->initialPaymentMethod = '';
-        $this->initialPaymentReceiptImage = null;
-        $this->initialPaymentReceiptImagePreview = null;
-        $this->initialBankName = '';
+        $sale = Sale::with(['customer', 'items'])->find($this->lastSaleId);
 
-        $this->balanceAmount = 0;
-        $this->balancePaymentMethod = '';
-        $this->balanceDueDate = date('Y-m-d', strtotime('+7 days'));
-        $this->balancePaymentReceiptImage = null;
-        $this->balancePaymentReceiptImagePreview = null;
-        $this->balanceBankName = '';
+        if (!$sale) {
+            $this->js("Swal.fire('error', 'Sale not found.', 'error')");
+            return;
+        }
 
-        // Add these lines to the resetPaymentInfo method
-        $this->duePaymentMethod = '';
-        $this->duePaymentAttachment = null;
-        $this->duePaymentAttachmentPreview = null;
+        $pdf = PDF::loadView('admin.sales.invoice', compact('sale'));
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOption('dpi', 150);
+        $pdf->setOption('defaultFont', 'sans-serif');
 
-        $this->saleNotes = '';
+        return response()->streamDownload(
+            function () use ($pdf) {
+                echo $pdf->output();
+            },
+            'invoice-' . $sale->invoice_number . '.pdf'
+        );
     }
 
-    public function viewReceipt($saleId = null)
+    public function closeModal()
     {
-        if ($saleId) {
-            $this->lastSaleId = $saleId;
-        }
-
-        if ($this->lastSaleId) {
-            $this->showReceipt = true;
-            $this->js('$("#receiptModal").modal("show")');
-        }
+        $this->showSaleModal = false;
+        $this->lastSaleId = null;
     }
 
-    public function printReceipt()
+    public function createNewSale()
     {
-        $this->dispatch('printReceipt');
-    }
+        // Reset all properties except customers
+        $this->search = '';
+        $this->searchResults = [];
+        $this->customerId = '';
+        $this->cart = [];
+        $this->customerName = '';
+        $this->customerPhone = '';
+        $this->customerEmail = '';
+        $this->customerAddress = '';
+        $this->customerType = 'retail';
+        $this->businessName = '';
+        $this->notes = '';
+        $this->paymentMethod = 'cash';
+        $this->paidAmount = 0;
+        $this->cashAmount = 0;
+        $this->cheques = [];
+        $this->tempChequeNumber = '';
+        $this->tempBankName = '';
+        $this->tempChequeDate = now()->format('Y-m-d');
+        $this->tempChequeAmount = 0;
+        $this->bankTransferAmount = 0;
+        $this->bankTransferBankName = '';
+        $this->bankTransferReferenceNumber = '';
+        $this->additionalDiscount = 0;
+        $this->additionalDiscountType = 'fixed';
+        $this->showSaleModal = false;
+        $this->showCustomerModal = false;
+        $this->showPaymentConfirmModal = false;
+        $this->lastSaleId = null;
+        $this->createdSale = null;
+        $this->pendingDueAmount = 0;
 
-    public function downloadReceipt()
-    {
-        return redirect()->route('receipts.download', $this->lastSaleId);
-    }
-
-    /**
-     * Get file type icon or preview based on file object and preview URL
-     *
-     * @param mixed $file The uploaded file object
-     * @param string|null $previewUrl The temporary preview URL
-     * @return array File information with type, icon, and URL
-     */
-    public function getFilePreviewInfo($file, $previewUrl = null)
-    {
-        if (!$file) {
-            return null;
-        }
-
-        $fileInfo = [
-            'name' => $file->getClientOriginalName(),
-            'type' => 'unknown',
-            'icon' => 'bi-file',
-            'url' => null
-        ];
-
-        // Determine file type
-        $extension = strtolower($file->getClientOriginalExtension());
-
-        // Handle images
-        if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-            $fileInfo['type'] = 'image';
-            $fileInfo['icon'] = 'bi-file-image';
-
-            // Only set URL if we have a valid preview
-            try {
-                $fileInfo['url'] = $previewUrl && $previewUrl !== 'pdf' ? $previewUrl : null;
-            } catch (\Exception $e) {
-                $fileInfo['url'] = null;
-            }
-        }
-        // Handle PDFs
-        elseif ($extension === 'pdf') {
-            $fileInfo['type'] = 'pdf';
-            $fileInfo['icon'] = 'bi-file-earmark-pdf';
-        }
-
-        return $fileInfo;
+        $this->loadCustomers();
+        $this->setDefaultCustomer();
     }
 
     public function render()
     {
-        return view(
-            'livewire.staff.billing',
-            [
-                'receipt' => $this->showReceipt && $this->lastSaleId ? Sale::with(['customer', 'items', 'payments'])->find($this->lastSaleId) : null,
-            ]
-        );
+        return view('livewire.staff.billing', [
+            'subtotal' => $this->subtotal,
+            'totalDiscount' => $this->totalDiscount,
+            'subtotalAfterItemDiscounts' => $this->subtotalAfterItemDiscounts,
+            'additionalDiscountAmount' => $this->additionalDiscountAmount,
+            'grandTotal' => $this->grandTotal,
+            'totalPaidAmount' => $this->totalPaidAmount,
+            'dueAmount' => $this->dueAmount,
+            'paymentStatus' => $this->paymentStatus,
+        ]);
     }
 }

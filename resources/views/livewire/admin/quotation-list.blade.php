@@ -77,8 +77,11 @@
                                     <th class="ps-4">No</th>
                                     <th>Quotation No</th>
                                     <th>Customer</th>
+                                    <th>User</th>
                                     <th>Date</th>
-                                    <th>Amount</th>
+                                    <th>Subtotal (Rs.)</th>
+                                    <th>Discount (Rs.)</th>
+                                    <th>Total (Rs.)</th>
                                     <th>Status</th>
                                     <th class="text-end pe-5">Actions</th>
                                 </tr>
@@ -87,7 +90,7 @@
                                 @if($quotations->count() > 0)
                                 @foreach($quotations as $quotation)
                                 <tr>
-                                    <td class="ps-4" wire:click="viewQuotation({{ $quotation->id }})">
+                                    <td wire:click="viewQuotation({{ $quotation->id }})">
                                         <span class="fw-medium text-dark">{{ $loop->iteration }}</span>
                                     </td>
                                     <td class="fw-bold text-primary" wire:click="viewQuotation({{ $quotation->id }})">{{ $quotation->quotation_number }}</td>
@@ -96,7 +99,29 @@
                                         <div class="text-muted small">{{ $quotation->customer_phone }}</div>
                                     </td>
                                     <td wire:click="viewQuotation({{ $quotation->id }})">
+                                        @if($quotation->user)
+                                        <span class="fw-medium text-dark">{{ $quotation->user->name }}</span>
+                                        <div class="badge {{ $quotation->user->role === 'admin' ? 'bg-danger' : 'bg-warning' }} ms-2">
+                                            {{ ucfirst($quotation->user->role) }}
+                                        </div>
+                                        @else
+                                        <span class="text-muted">Unknown</span>
+                                        @endif
+                                    </td>
+                                    <td wire:click="viewQuotation({{ $quotation->id }})">
                                         <span class="fw-medium text-dark">{{ $quotation->quotation_date->format('d/m/Y') }}</span>
+                                    </td>
+                                    <td wire:click="viewQuotation({{ $quotation->id }})">
+                                        <span class="fw-medium text-dark">Rs. {{ number_format($quotation->subtotal, 2) }}</span>
+                                    </td>
+                                    <td wire:click="viewQuotation({{ $quotation->id }})">
+                                        <?php 
+                                            $totalDiscount = $quotation->discount_amount + ($quotation->additional_discount ?? 0);
+                                        ?>
+                                        <span class="fw-medium text-danger">Rs. {{ number_format($totalDiscount, 2) }}</span>
+                                        @if($quotation->additional_discount > 0)
+                                        <div class="text-muted small">+ Additional: Rs. {{ number_format($quotation->additional_discount, 2) }}</div>
+                                        @endif
                                     </td>
                                     <td wire:click="viewQuotation({{ $quotation->id }})">
                                         <span class="fw-bold text-success">Rs. {{ number_format($quotation->total_amount, 2) }}</span>
@@ -713,7 +738,7 @@
     }
 
     .quotation-header {
-        background: linear-gradient(135deg, #000000 0%, #000000 100%);
+        background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);
     }
 
     .company-info h6,
@@ -740,8 +765,8 @@
             border-top: none;
             font-weight: 600;
             color: #ffffff;
-            background: #000000;
-            background: linear-gradient(0deg,rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);
+            background: #2a83df;
+            background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;

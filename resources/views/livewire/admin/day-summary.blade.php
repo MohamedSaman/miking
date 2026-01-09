@@ -12,7 +12,7 @@
                             <small class="text-muted">View all closed POS sessions</small>
                         </div>
                         <div>
-                            <button class="btn btn-sm rounded-0" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); color:white;" wire:click="resetFilters">
+                            <button class="btn btn-sm rounded-0"  wire:click="resetFilters">
                                 <i class="bi bi-arrow-clockwise me-1"></i>Reset Filters
                             </button>
                             <a href="{{ route('admin.deposits') }}" class="btn btn-success btn-sm rounded-0 ms-2">
@@ -84,7 +84,7 @@
                     @if($sessions->count() > 0)
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
-                            <thead style="background-color:#f8f9fa;">
+                            <thead style="background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);">
                                 <tr>
                                     <th class="border-0 py-3">#</th>
                                     <th class="border-0 py-3">Session Date</th>

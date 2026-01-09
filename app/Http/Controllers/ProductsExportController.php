@@ -19,7 +19,7 @@ class ProductsExportController extends Controller
                 'product_details.name as product_name',
                 'product_details.model',
                 'brand_lists.name as brand_name',
-                'category_lists.name as category_name',
+                'category_lists.category_name as category_name',
                 'Product_details.color',
                 'Product_details.made_by',
                 'Product_details.category',

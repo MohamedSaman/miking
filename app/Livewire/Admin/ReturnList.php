@@ -9,6 +9,7 @@ use Livewire\Attributes\Title;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Livewire\Concerns\WithDynamicLayout;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\Auth;
 
 #[Title("Product Return")]
 class ReturnList extends Component
@@ -33,6 +34,13 @@ class ReturnList extends Component
     protected function loadReturns()
     {
         $query = ReturnsProduct::with(['sale', 'product']);
+
+        // Filter by user for staff - only show returns for their own sales
+        if ($this->isStaff()) {
+            $query->whereHas('sale', function ($q) {
+                $q->where('user_id', Auth::id());
+            });
+        }
 
         if (!empty($this->returnSearch)) {
             $search = '%' . $this->returnSearch . '%';
@@ -154,6 +162,13 @@ class ReturnList extends Component
     public function render()
     {
         $query = ReturnsProduct::with(['sale', 'product'])->orderByDesc('created_at');
+
+        // Filter by user for staff
+        if ($this->isStaff()) {
+            $query->whereHas('sale', function ($q) {
+                $q->where('user_id', Auth::id());
+            });
+        }
 
         if (!empty($this->returnSearch)) {
             $search = '%' . $this->returnSearch . '%';

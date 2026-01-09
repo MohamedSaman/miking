@@ -12,7 +12,7 @@
                             <small class="text-muted">Manage cash deposits and view history</small>
                         </div>
                         <div>
-                            <button class="btn btn-sm rounded-0" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); color:white;" wire:click="resetFilters">
+                            <button class="btn btn-sm rounded-0"  wire:click="resetFilters">
                                 <i class="bi bi-arrow-clockwise me-1"></i>Reset Filters
                             </button>
                             <button class="btn btn-success btn-sm rounded-0 ms-2" wire:click="openAddModal">
@@ -111,7 +111,7 @@
                     @if($deposits->count() > 0)
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
-                            <thead style="background-color:#f8f9fa;">
+                            <thead style="background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);">
                                 <tr>
                                     <th class="border-0 py-3">#</th>
                                     <th class="border-0 py-3">Date</th>
@@ -179,7 +179,7 @@
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-0">
-                <div class="modal-header" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); color:white;">
+                <div class="modal-header" >
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-plus-circle me-2"></i>Add New Deposit
                     </h5>
@@ -250,7 +250,7 @@
                     </div>
                     <div class="modal-footer border-0">
                         <button type="button" class="btn btn-light rounded-0" wire:click="closeAddModal">Cancel</button>
-                        <button type="submit" class="btn rounded-0" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); color:white;">
+                        <button type="submit" class="btn rounded-0" >
                             <i class="bi bi-check2-circle me-1"></i>Add Deposit
                         </button>
                     </div>
@@ -265,7 +265,7 @@
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-0">
-                <div class="modal-header" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%); color:white;">
+                <div class="modal-header" >
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-eye me-2"></i>Deposit Details
                     </h5>

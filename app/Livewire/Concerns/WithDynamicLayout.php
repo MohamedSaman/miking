@@ -37,6 +37,47 @@ trait WithDynamicLayout
     }
 
     /**
+     * Check if the current user is a staff member.
+     *
+     * @return bool
+     */
+    public function isStaff(): bool
+    {
+        return Auth::check() && Auth::user()->role === 'staff';
+    }
+
+    /**
+     * Check if the current user is an admin.
+     *
+     * @return bool
+     */
+    public function isAdmin(): bool
+    {
+        return Auth::check() && Auth::user()->role === 'admin';
+    }
+
+    /**
+     * Get the current user's ID.
+     *
+     * @return int|null
+     */
+    public function getCurrentUserId(): ?int
+    {
+        return Auth::id();
+    }
+
+    /**
+     * Get the sale type based on current user's role.
+     * Returns 'staff' for staff users, 'admin' for admin users.
+     *
+     * @return string
+     */
+    public function getSaleType(): string
+    {
+        return $this->isStaff() ? 'staff' : 'admin';
+    }
+
+    /**
      * Boot the trait and set the layout dynamically.
      */
     public function bootWithDynamicLayout()

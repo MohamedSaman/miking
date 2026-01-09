@@ -138,7 +138,7 @@
         }
 
         .progress-bar {
-            background-color: #007bff;
+            background-color: #2a83df;
             height: 4px;
         }
 
@@ -467,8 +467,8 @@
                     labels: categoryLabels,
                     datasets: [{
                         label: 'Sales by Category',
-                        backgroundColor: '#007bff',
-                        borderColor: '#007bff',
+                        backgroundColor: '#2a83df',
+                        borderColor: '#2a83df',
                         borderWidth: 1,
                         data: categoryTotals
                     }]

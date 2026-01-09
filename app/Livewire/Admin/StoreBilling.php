@@ -494,6 +494,7 @@ class StoreBilling extends Component
                 'address' => $this->customerAddress,
                 'type' => $this->customerType,
                 'business_name' => $this->businessName,
+                'user_id' => Auth::id(),
             ]);
 
             $this->loadCustomers();

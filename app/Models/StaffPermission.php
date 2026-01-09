@@ -34,66 +34,66 @@ class StaffPermission extends Model
     {
         return [
             // Dashboard
-            'menu_dashboard' => 'Dashboard/Overview Menu',
-            
-            // Products Menu
-            'menu_products' => 'Products Menu',
-            'menu_products_list' => 'List Products',
-            'menu_products_brand' => 'Product Brands',
-            'menu_products_category' => 'Product Categories',
-            
+            'menu_dashboard' => 'Dashboard/Overview',
+
+            // POS
+            'menu_pos' => 'POS (Point of Sale)',
+
+            // Stock Management
+            'menu_stock' => 'Stock Overview',
+
             // Sales Menu
             'menu_sales' => 'Sales Menu',
             'menu_sales_add' => 'Add Sales',
             'menu_sales_list' => 'List Sales',
-            'menu_sales_pos' => 'POS Sales',
-            
+
             // Quotation Menu
             'menu_quotation' => 'Quotation Menu',
             'menu_quotation_add' => 'Add Quotation',
-            'menu_quotation_list' => 'List Quotation',
-            
+            'menu_quotation_list' => 'List Quotations',
+
+            // Payment Management Menu
+            'menu_payment' => 'Payment Management Menu',
+            'menu_payment_add' => 'Add Payment (Due Payments)',
+            'menu_payment_list' => 'Payment List',
+
+            // Products Menu (if staff needs to view products)
+            'menu_products' => 'Products Menu',
+            'menu_products_list' => 'List Products',
+            'menu_products_brand' => 'Product Brands',
+            'menu_products_category' => 'Product Categories',
+
             // Purchase Menu
             'menu_purchase' => 'Purchase Menu',
-            'menu_purchase_order' => 'Purchase Order',
+            'menu_purchase_order' => 'Purchase Order List',
             'menu_purchase_grn' => 'GRN (Goods Received Note)',
-            
+
             // Return Menu
             'menu_return' => 'Return Menu',
             'menu_return_customer_add' => 'Add Customer Return',
-            'menu_return_customer_list' => 'List Customer Return',
+            'menu_return_customer_list' => 'List Customer Returns',
             'menu_return_supplier_add' => 'Add Supplier Return',
-            'menu_return_supplier_list' => 'List Supplier Return',
-            
+            'menu_return_supplier_list' => 'List Supplier Returns',
+
             // Cheque/Banks Menu
             'menu_banks' => 'Cheque/Banks Menu',
             'menu_banks_deposit' => 'Deposit By Cash',
             'menu_banks_cheque_list' => 'Cheque List',
             'menu_banks_return_cheque' => 'Return Cheque',
-            
+
             // Expenses Menu
             'menu_expenses' => 'Expenses Menu',
             'menu_expenses_list' => 'List Expenses',
-            
-            // Payment Management Menu
-            'menu_payment' => 'Payment Management Menu',
-            'menu_payment_customer_receipt_add' => 'Add Customer Receipt',
-            'menu_payment_customer_receipt_list' => 'List Customer Receipt',
-            'menu_payment_supplier_add' => 'Add Supplier Payment',
-            'menu_payment_supplier_list' => 'List Supplier Payment',
-            
+
             // People Menu
             'menu_people' => 'People Menu',
-            'menu_people_suppliers' => 'List Suppliers',
-            'menu_people_customers' => 'List Customers',
+            'menu_people_suppliers' => 'Manage Suppliers',
+            'menu_people_customers' => 'Manage Customers',
             'menu_people_staff' => 'List Staff',
-            
-            // POS
-            'menu_pos' => 'POS (Point of Sale)',
-            
+
             // Reports
             'menu_reports' => 'Reports',
-            
+
             // Analytics
             'menu_analytics' => 'Analytics',
         ];
@@ -108,22 +108,32 @@ class StaffPermission extends Model
             'Dashboard' => [
                 'menu_dashboard',
             ],
-            'Products Management' => [
-                'menu_products',
-                'menu_products_list',
-                'menu_products_brand',
-                'menu_products_category',
+            'Point of Sale' => [
+                'menu_pos',
+            ],
+            'Stock Management' => [
+                'menu_stock',
             ],
             'Sales Management' => [
                 'menu_sales',
                 'menu_sales_add',
                 'menu_sales_list',
-                'menu_sales_pos',
             ],
             'Quotation Management' => [
                 'menu_quotation',
                 'menu_quotation_add',
                 'menu_quotation_list',
+            ],
+            'Payment Management' => [
+                'menu_payment',
+                'menu_payment_add',
+                'menu_payment_list',
+            ],
+            'Products Management' => [
+                'menu_products',
+                'menu_products_list',
+                'menu_products_brand',
+                'menu_products_category',
             ],
             'Purchase Management' => [
                 'menu_purchase',
@@ -147,21 +157,11 @@ class StaffPermission extends Model
                 'menu_expenses',
                 'menu_expenses_list',
             ],
-            'Payment Management' => [
-                'menu_payment',
-                'menu_payment_customer_receipt_add',
-                'menu_payment_customer_receipt_list',
-                'menu_payment_supplier_add',
-                'menu_payment_supplier_list',
-            ],
             'People Management' => [
                 'menu_people',
                 'menu_people_suppliers',
                 'menu_people_customers',
                 'menu_people_staff',
-            ],
-            'Point of Sale' => [
-                'menu_pos',
             ],
             'Reports & Analytics' => [
                 'menu_reports',

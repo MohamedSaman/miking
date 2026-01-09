@@ -188,6 +188,7 @@ class SalesSystem extends Component
                 'address' => $this->customerAddress,
                 'type' => $this->customerType,
                 'business_name' => $this->businessName,
+                'user_id' => Auth::id(),
             ]);
 
             $this->loadCustomers();
@@ -205,24 +206,60 @@ class SalesSystem extends Component
     public function updatedSearch()
     {
         if (strlen($this->search) >= 2) {
-            $this->searchResults = ProductDetail::with(['stock', 'price'])
-                ->where('name', 'like', '%' . $this->search . '%')
-                ->orWhere('code', 'like', '%' . $this->search . '%')
-                ->orWhere('model', 'like', '%' . $this->search . '%')
-                ->take(10)
-                ->get()
-                ->map(function ($product) {
-                    return [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'code' => $product->code,
-                        'model' => $product->model,
-                        'price' => $product->price->selling_price ?? 0,
-                        'stock' => $product->stock->available_stock ?? 0,
-                        'sold' => $product->stock->sold_count ?? 0,
-                        'image' => $product->image
-                    ];
-                });
+            if ($this->isStaff()) {
+                // For staff: only show their allocated products
+                $this->searchResults = \App\Models\StaffProduct::where('staff_id', auth()->id())
+                    ->join('product_details', 'staff_products.product_id', '=', 'product_details.id')
+                    ->where(function ($query) {
+                        $query->where('product_details.name', 'like', '%' . $this->search . '%')
+                            ->orWhere('product_details.code', 'like', '%' . $this->search . '%')
+                            ->orWhere('product_details.model', 'like', '%' . $this->search . '%');
+                    })
+                    ->select(
+                        'product_details.id',
+                        'product_details.name',
+                        'product_details.code',
+                        'product_details.model',
+                        'product_details.image',
+                        'staff_products.unit_price as price',
+                        'staff_products.quantity',
+                        'staff_products.sold_quantity'
+                    )
+                    ->take(10)
+                    ->get()
+                    ->map(function ($product) {
+                        return [
+                            'id' => $product->id,
+                            'name' => $product->name,
+                            'code' => $product->code,
+                            'model' => $product->model,
+                            'price' => $product->price,
+                            'stock' => ($product->quantity - $product->sold_quantity),
+                            'sold' => $product->sold_quantity,
+                            'image' => $product->image
+                        ];
+                    });
+            } else {
+                // For admin: show all products
+                $this->searchResults = ProductDetail::with(['stock', 'price'])
+                    ->where('name', 'like', '%' . $this->search . '%')
+                    ->orWhere('code', 'like', '%' . $this->search . '%')
+                    ->orWhere('model', 'like', '%' . $this->search . '%')
+                    ->take(10)
+                    ->get()
+                    ->map(function ($product) {
+                        return [
+                            'id' => $product->id,
+                            'name' => $product->name,
+                            'code' => $product->code,
+                            'model' => $product->model,
+                            'price' => $product->price->selling_price ?? 0,
+                            'stock' => $product->stock->available_stock ?? 0,
+                            'sold' => $product->stock->sold_count ?? 0,
+                            'image' => $product->image
+                        ];
+                    });
+            }
         } else {
             $this->searchResults = [];
         }
@@ -441,7 +478,7 @@ class SalesSystem extends Component
                 'notes' => $this->notes,
                 'user_id' => Auth::id(),
                 'status' => 'confirm',
-                'sale_type' => 'admin'
+                'sale_type' => $this->getSaleType()
             ]);
 
             // Create sale items and update stock using FIFO
@@ -502,7 +539,7 @@ class SalesSystem extends Component
             $this->createdSale = Sale::with(['customer', 'items'])->find($sale->id);
             $this->showSaleModal = true;
 
-            session()->flash('success', 'Sale created successfully! Payment status: Pending');
+            $this->js("Swal.fire('success', 'Sale created successfully! Payment status: Pending', 'success')");
         } catch (\Exception $e) {
             DB::rollBack();
             $this->js("Swal.fire('error', 'Failed to create sale: ' , 'error')");

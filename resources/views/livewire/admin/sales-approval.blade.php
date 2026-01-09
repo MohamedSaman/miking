@@ -744,7 +744,7 @@
     }
 
     .summary-card.pending {
-        border-left-color: #ffc107;
+        border-left-color: #2a83df;
     }
 
     .summary-card.approved {
@@ -756,7 +756,7 @@
     }
 
     .summary-card.today {
-        border-left-color: #0dcaf0;
+        border-left-color: #1a5fb8;
     }
 
     .icon-container {

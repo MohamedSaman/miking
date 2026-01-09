@@ -24,7 +24,7 @@
     <div class="row mb-0">
         <!-- Cash in Hand Card - Blue -->
         <div class="col-xl-3 col-md-6 mb-2">
-            <div class="card gradient-card" style="background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);">
+            <div class="card gradient-card" style="background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);">
                 <div class="card-body text-white">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h6 class="text-white-50 mb-0" style="font-size: 0.85rem; font-weight: 500; letter-spacing: 1px;">💰 OPENING CASH</h6>
@@ -133,7 +133,7 @@
                                                         <div class="card-body p-0 overflow-auto">
                                                             <div class="table-responsive">
                                                                 <table class="table table-hover mb-0">
-                                                                    <thead style="background: #f8f9fa;">
+                                                                    <thead style="background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);">
                                                                         <tr>
                                                                             <th class="ps-4">INV.NO</th>
                                                                             <th>PAY.REF</th>
@@ -441,11 +441,11 @@
                                 }
 
                                 .summary-card.total {
-                                    border-left-color: #4361ee;
+                                    border-left-color: #2a83df;
                                 }
 
                                 .summary-card.cash {
-                                    border-left-color: #ffc107;
+                                    border-left-color: #1a5fb8;
                                 }
 
                                 .icon-container {

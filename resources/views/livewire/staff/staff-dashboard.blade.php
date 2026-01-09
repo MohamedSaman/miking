@@ -813,7 +813,7 @@
                                             style="width: 100%; height: 100%; object-fit: cover;">
                                     </div>
                                     <div class="flex-grow-1 min-width-0 me-2">
-                                        <h6 class="mb-0 text-truncate fs-6">{{ $item->brand }} {{ $item->name }}
+                                        <h6 class="mb-0 text-truncate fs-6">{{ $item->brand_name ?? 'N/A' }} {{ $item->name }}
                                             {{ $item->model }}</h6>
                                         <p class="text-muted small mb-0">SKU: {{ $item->code }}</p>
                                     </div>

@@ -12,11 +12,16 @@ class StaffProduct extends Model
 
     // Fillable fields for mass assignment
     protected $fillable = [
-        'product_id',     // foreign key to product_details
+        'product_id',
         'staff_id',
         'quantity',
-        'price',
-        // add other fields here
+        'unit_price',
+        'discount_per_unit',
+        'total_discount',
+        'total_value',
+        'sold_quantity',
+        'sold_value',
+        'status',
     ];
 
     /**
@@ -47,5 +52,5 @@ class StaffProduct extends Model
     public function getTotalPriceAttribute()
     {
         return $this->quantity * $this->price;
-    }   
+    }
 }

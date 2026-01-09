@@ -10,7 +10,7 @@ class ProductPrice extends Model
 {
     use HasFactory;
 
-    protected $fillable = [ 'product_id', 'supplier_price', 'selling_price', 'discount_price'];
+    protected $fillable = ['product_id', 'supplier_price', 'selling_price', 'retail_price', 'wholesale_price', 'discount_price'];
 
     /**
      * Get the Product that owns this price information
@@ -19,7 +19,7 @@ class ProductPrice extends Model
     {
         return $this->belongsTo(ProductDetail::class, 'product_id');
     }
-    
+
     /**
      * Calculate the profit margin percentage
      */
@@ -32,8 +32,7 @@ class ProductPrice extends Model
         return 0;
     }
     public function detail()
-{
-    return $this->hasOne(ProductDetail::class, 'code');
-}
-
+    {
+        return $this->hasOne(ProductDetail::class, 'code');
+    }
 }

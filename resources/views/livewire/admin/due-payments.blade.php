@@ -546,7 +546,7 @@
     }
 
     .summary-card.pending {
-        border-left-color: #4cc9f0;
+        border-left-color: #2a83df;
     }
 
     .summary-card.pending-amount {

@@ -228,8 +228,8 @@
 
         <style>
             .form-select:focus {
-                border-color: #667eea !important;
-                box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25) !important;
+                border-color: #2a83df !important;
+                box-shadow: 0 0 0 0.25rem rgba(42, 131, 223, 0.25) !important;
             }
             
             .form-select {
@@ -237,9 +237,9 @@
             }
             
             .form-select:hover {
-                border-color: #667eea !important;
+                border-color: #2a83df !important;
                 transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2) !important;
+                box-shadow: 0 4px 12px rgba(42, 131, 223, 0.2) !important;
             }
         </style>
 

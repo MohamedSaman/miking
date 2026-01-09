@@ -10,6 +10,7 @@ use App\Models\Sale;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use App\Livewire\Concerns\WithDynamicLayout;
+use Illuminate\Support\Facades\Auth;
 
 #[Title('List Customer Receipt')]
 class ListCustomerReceipt extends Component
@@ -25,7 +26,7 @@ class ListCustomerReceipt extends Component
     public function getCustomersProperty()
     {
         // Get customers with total paid and receipt count (sum from payments table)
-        return Customer::select(
+        $query = Customer::select(
             'customers.id',
             'customers.name',
             'customers.email',
@@ -35,15 +36,23 @@ class ListCustomerReceipt extends Component
         )
             ->selectRaw('COALESCE(SUM(payments.amount),0) as total_paid')
             ->selectRaw('COUNT(payments.id) as receipts_count')
-            ->leftJoin('payments', 'payments.customer_id', '=', 'customers.id')
-            ->groupBy(
-                'customers.id',
-                'customers.name',
-                'customers.email',
-                'customers.address',
-                'customers.created_at',
-                'customers.updated_at'
-            )
+            ->leftJoin('payments', 'payments.customer_id', '=', 'customers.id');
+
+        // Filter by user for staff - only show customers with payments from their sales
+        if ($this->isStaff()) {
+            $query->leftJoin('sales', 'payments.sale_id', '=', 'sales.id')
+                ->where('sales.user_id', Auth::id())
+                ->where('sales.sale_type', 'staff');
+        }
+
+        return $query->groupBy(
+            'customers.id',
+            'customers.name',
+            'customers.email',
+            'customers.address',
+            'customers.created_at',
+            'customers.updated_at'
+        )
             ->having('total_paid', '>', 0)
             ->orderByDesc('total_paid')
             ->paginate(20);
@@ -52,10 +61,18 @@ class ListCustomerReceipt extends Component
     public function showCustomerPayments($customerId)
     {
         $this->selectedCustomer = Customer::find($customerId);
-        $this->payments = Payment::with(['allocations', 'allocations.sale', 'cheques'])
-            ->where('customer_id', $customerId)
-            ->orderByDesc('payment_date')
-            ->get();
+
+        $query = Payment::with(['allocations', 'allocations.sale', 'cheques'])
+            ->where('customer_id', $customerId);
+
+        // Filter payments by user's sales for staff
+        if ($this->isStaff()) {
+            $query->whereHas('sale', function ($q) {
+                $q->where('user_id', Auth::id())->where('sale_type', 'staff');
+            });
+        }
+
+        $this->payments = $query->orderByDesc('payment_date')->get();
         $this->showPaymentModal = true;
     }
 

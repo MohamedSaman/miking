@@ -18,11 +18,22 @@ class Customer extends Model
         'address',
         'notes',
         'business_name',
+        'created_by',
+        'user_id',
     ];
 
     public function sales()
     {
         return $this->hasMany(Sale::class);
     }
-    
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

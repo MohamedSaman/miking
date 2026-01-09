@@ -38,6 +38,7 @@ class Quotation extends Model
         'converted_at',
         'created_by',
         'updated_by',
+        'user_id',
     ];
 
     protected $casts = [
@@ -73,10 +74,12 @@ class Quotation extends Model
             if (Auth::check()) {
                 $quotation->updated_by = Auth::id();
             }
-            
+
             // Auto update status to expired when valid_until date passes
-            if ($quotation->valid_until->lt(now()) && 
-                in_array($quotation->status, ['draft', 'sent'])) {
+            if (
+                $quotation->valid_until->lt(now()) &&
+                in_array($quotation->status, ['draft', 'sent'])
+            ) {
                 $quotation->status = 'expired';
             }
         });
@@ -107,6 +110,14 @@ class Quotation extends Model
     }
 
     /**
+     * Get the user who created the quotation (alias for creator).
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
      * Generate a unique quotation number.
      */
     public static function generateQuotationNumber(): string
@@ -114,14 +125,14 @@ class Quotation extends Model
         $prefix = 'QTN';
         $year = date('Y');
         $month = date('m');
-        
+
         $lastQuotation = static::whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
             ->orderBy('id', 'desc')
             ->first();
-            
+
         $sequence = $lastQuotation ? intval(substr($lastQuotation->quotation_number, -4)) + 1 : 1;
-        
+
         return $prefix . $year . $month . str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
 
@@ -131,19 +142,19 @@ class Quotation extends Model
     public function calculateTotals(): void
     {
         $items = $this->items ?? [];
-        
+
         $this->subtotal = 0;
         $this->discount_amount = 0;
-        
+
         foreach ($items as $item) {
             $quantity = $item['quantity'] ?? 1;
             $unitPrice = $item['unit_price'] ?? 0;
             $discount = $item['discount'] ?? 0;
-            
+
             $this->subtotal += $unitPrice * $quantity;
             $this->discount_amount += $discount * $quantity;
         }
-        
+
         $this->total_amount = $this->subtotal - $this->discount_amount + $this->tax_amount + $this->shipping_charges;
     }
 
@@ -153,7 +164,7 @@ class Quotation extends Model
     public function addItem(array $itemData): void
     {
         $items = $this->items ?? [];
-        
+
         $items[] = [
             'id' => count($items) + 1,
             'product_id' => $itemData['product_id'],
@@ -167,7 +178,7 @@ class Quotation extends Model
             'total' => (($itemData['unit_price'] ?? 0) * ($itemData['quantity'] ?? 1)) - (($itemData['discount'] ?? 0) * ($itemData['quantity'] ?? 1)),
             'description' => $itemData['description'] ?? null,
         ];
-        
+
         $this->items = $items;
         $this->calculateTotals();
     }
@@ -179,13 +190,13 @@ class Quotation extends Model
     {
         $items = $this->items ?? [];
         $items = array_filter($items, fn($item) => $item['id'] !== $itemId);
-        
+
         // Reindex items
         $items = array_values($items);
         foreach ($items as $index => &$item) {
             $item['id'] = $index + 1;
         }
-        
+
         $this->items = $items;
         $this->calculateTotals();
     }
@@ -196,7 +207,7 @@ class Quotation extends Model
     public function updateItem(int $itemId, array $itemData): void
     {
         $items = $this->items ?? [];
-        
+
         foreach ($items as &$item) {
             if ($item['id'] === $itemId) {
                 $item = array_merge($item, $itemData);
@@ -204,7 +215,7 @@ class Quotation extends Model
                 break;
             }
         }
-        
+
         $this->items = $items;
         $this->calculateTotals();
     }
@@ -223,13 +234,13 @@ class Quotation extends Model
     public function getItem(int $itemId): ?array
     {
         $items = $this->items ?? [];
-        
+
         foreach ($items as $item) {
             if ($item['id'] === $itemId) {
                 return $item;
             }
         }
-        
+
         return null;
     }
 
@@ -372,7 +383,7 @@ class Quotation extends Model
     public function scopeActive($query)
     {
         return $query->where('valid_until', '>=', now())
-                    ->whereIn('status', ['draft', 'sent']);
+            ->whereIn('status', ['draft', 'sent']);
     }
 
     /**
@@ -428,7 +439,7 @@ class Quotation extends Model
      */
     public function getStatusBadgeClassAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'draft' => 'bg-secondary',
             'sent' => 'bg-info',
             'accepted' => 'bg-success',

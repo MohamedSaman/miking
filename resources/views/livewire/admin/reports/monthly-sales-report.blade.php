@@ -1,7 +1,7 @@
 <div class="card shadow-sm border-0" style="border-radius: 20px; overflow: hidden;">
-    <div class="card-header border-0 py-4" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);">
+    <div class="card-header border-0 py-4" >
         <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
-            <button type="button" class="btn shadow-sm" style="background-color: #000000; color: #fff; border-radius: 12px; padding: 10px 20px; font-weight: 600; border: none;" wire:click="previousYear">
+            <button type="button" class="btn shadow-sm"  wire:click="previousYear">
                 <i class="bi bi-chevron-left"></i> Previous
             </button>
             
@@ -10,7 +10,7 @@
                     <div class="rounded-circle p-2 shadow-sm" style="width: 45px; height: 45px; background-color: #fff; display: flex; align-items: center; justify-content: center;">
                         <i class="bi bi-calendar-month" style="font-size: 1.3rem; color: #000000;"></i>
                     </div>
-                    <h5 class="mb-0 fw-bold" style="font-size: 1.4rem; color: #fff;">Monthly Sales Report</h5>
+                    <h5 class="mb-0 fw-bold" style="font-size: 1.4rem; ">Monthly Sales Report</h5>
                 </div>
                 <select class="form-select form-select-sm shadow-sm" style="width: 120px; border-radius: 12px; font-weight: 600; font-size: 1.0rem; background-color: #fff;" wire:model.live="monthlyYear">
                     @php
@@ -29,7 +29,7 @@
                 </select>
             </div>
             
-            <button type="button" class="btn shadow-sm" style="background-color: #000000; color: #fff; border-radius: 12px; padding: 10px 20px; font-weight: 600; border: none;" wire:click="nextYear" {{ !$this->canNavigateNextYear() ? 'disabled' : '' }}>
+            <button type="button" class="btn shadow-sm"  wire:click="nextYear" {{ !$this->canNavigateNextYear() ? 'disabled' : '' }}>
                 Next <i class="bi bi-chevron-right"></i>
             </button>
         </div>
@@ -113,7 +113,7 @@
                                     </div>
                                     <strong class="d-block" style="font-size: 0.9rem; color: #1c7ed6;">Rs.{{ number_format($item->payment_adjustment ?? 0, 2) }}</strong>
                                 </div>
-                                <div class="p-2 rounded-2" style="background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);">
+                                <div class="p-2 rounded-2" >
                                     <div class="d-flex align-items-center mb-1">
                                         <i class="bi bi-wallet2 me-2" style="font-size: 0.85rem; color: #fff;"></i>
                                         <small class="fw-medium" style="font-size: 0.75rem; color: #fff;">Net Total</small>

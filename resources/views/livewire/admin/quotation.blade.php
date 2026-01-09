@@ -347,11 +347,11 @@
     }
 
     .summary-card.pending {
-        border-left-color: #ffc107;
+        border-left-color: #2a83df;
     }
 
     .summary-card.completed {
-        border-left-color: #28a745;
+        border-left-color: #198754;
     }
 
     .icon-container {

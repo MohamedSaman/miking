@@ -26,7 +26,7 @@
     <div class="row mb-4">
         {{-- Cash in Hand --}}
         <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);">
                 <div class="card-body text-white text-center py-4">
                     <h2 class="mb-0 fw-bold">{{ number_format($cashInHand, 2) }}</h2>
                     <p class="mb-0 text-uppercase fw-semibold" style="letter-spacing: 1px;">CASH IN HAND</p>

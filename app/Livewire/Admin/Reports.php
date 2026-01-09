@@ -19,6 +19,7 @@ use App\Exports\StaffReportExport;
 use App\Exports\PaymentsReportExport;
 use App\Exports\AttendanceReportExport;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Livewire\Concerns\WithDynamicLayout;
 use Livewire\WithPagination;
 
@@ -255,6 +256,11 @@ class Reports extends Component
     {
         $query = Sale::with('items', 'customer', 'payments')->orderBy('created_at', 'desc');
 
+        // Filter by user for staff
+        if ($this->isStaff()) {
+            $query->where('user_id', Auth::id())->where('sale_type', 'staff');
+        }
+
         if ($start) $query->whereDate('created_at', '>=', $start);
         if ($end) $query->whereDate('created_at', '<=', $end);
 
@@ -374,28 +380,40 @@ class Reports extends Component
         $monthEndDate = $endDate->copy();
 
         // Get actual sales data
-        $salesData = DB::table('sales')
+        $salesQuery = DB::table('sales')
             ->select(
                 DB::raw('DATE(created_at) as sale_date'),
                 DB::raw('SUM(total_amount) as grand_total'),
                 DB::raw('COUNT(*) as total_sales')
             )
             ->whereDate('created_at', '>=', $monthStartDate)
-            ->whereDate('created_at', '<=', $monthEndDate)
-            ->groupBy('sale_date')
+            ->whereDate('created_at', '<=', $monthEndDate);
+
+        // Filter by user for staff
+        if ($this->isStaff()) {
+            $salesQuery->where('user_id', Auth::id())->where('sale_type', 'staff');
+        }
+
+        $salesData = $salesQuery->groupBy('sale_date')
             ->get()
             ->keyBy('sale_date');
 
         // Get return data from returns_products table
-        $returnsData = DB::table('returns_products')
+        $returnsQuery = DB::table('returns_products')
             ->join('sales', 'returns_products.sale_id', '=', 'sales.id')
             ->select(
                 DB::raw('DATE(sales.created_at) as sale_date'),
                 DB::raw('SUM(returns_products.total_amount) as return_total')
             )
             ->whereDate('sales.created_at', '>=', $monthStartDate)
-            ->whereDate('sales.created_at', '<=', $monthEndDate)
-            ->groupBy('sale_date')
+            ->whereDate('sales.created_at', '<=', $monthEndDate);
+
+        // Filter by user for staff
+        if ($this->isStaff()) {
+            $returnsQuery->where('sales.user_id', Auth::id())->where('sales.sale_type', 'staff');
+        }
+
+        $returnsData = $returnsQuery->groupBy('sale_date')
             ->get()
             ->keyBy('sale_date');
 
@@ -440,6 +458,11 @@ class Reports extends Component
             ->orderBy('year', 'desc')
             ->orderBy('month', 'asc');
 
+        // Filter by user for staff
+        if ($this->isStaff()) {
+            $query->where('sales.user_id', Auth::id())->where('sales.sale_type', 'staff');
+        }
+
         if ($start) $query->whereDate('sales.created_at', '>=', $start);
         if ($end) $query->whereDate('sales.created_at', '<=', $end);
 
@@ -447,19 +470,29 @@ class Reports extends Component
 
         // Get return totals from returns_products table for each month
         foreach ($monthlyData as $monthData) {
-            $returnTotal = DB::table('returns_products')
+            $returnQuery = DB::table('returns_products')
                 ->join('sales', 'returns_products.sale_id', '=', 'sales.id')
                 ->whereYear('sales.created_at', $monthData->year)
-                ->whereMonth('sales.created_at', $monthData->month)
-                ->sum('returns_products.total_amount');
+                ->whereMonth('sales.created_at', $monthData->month);
+
+            if ($this->isStaff()) {
+                $returnQuery->where('sales.user_id', Auth::id())->where('sales.sale_type', 'staff');
+            }
+
+            $returnTotal = $returnQuery->sum('returns_products.total_amount');
 
             // Calculate payment adjustment (price difference between product price and sale price)
-            $paymentAdjustment = DB::table('sale_items')
+            $adjustmentQuery = DB::table('sale_items')
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->join('product_prices', 'sale_items.product_id', '=', 'product_prices.product_id')
                 ->whereYear('sales.created_at', $monthData->year)
-                ->whereMonth('sales.created_at', $monthData->month)
-                ->selectRaw('SUM((product_prices.selling_price - sale_items.unit_price) * sale_items.quantity) as adjustment')
+                ->whereMonth('sales.created_at', $monthData->month);
+
+            if ($this->isStaff()) {
+                $adjustmentQuery->where('sales.user_id', Auth::id())->where('sales.sale_type', 'staff');
+            }
+
+            $paymentAdjustment = $adjustmentQuery->selectRaw('SUM((product_prices.selling_price - sale_items.unit_price) * sale_items.quantity) as adjustment')
                 ->value('adjustment');
 
             $monthData->return_total = $returnTotal ?? 0;

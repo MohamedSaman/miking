@@ -15,12 +15,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+
 #[Layout('components.layouts.staff')]
 #[Title('Due Payments')]
 class DuePayments extends Component
 {
     use WithPagination, WithFileUploads;
-    
+
 
     /** -----------------------------
      * UI / State
@@ -113,7 +114,7 @@ class DuePayments extends Component
             'type'   => 'unknown',
             'icon'   => 'bi-file-earmark',
             'color'  => 'text-secondary',
-            'preview'=> null,
+            'preview' => null,
         ];
 
         if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
@@ -200,7 +201,7 @@ class DuePayments extends Component
             $payment->update([
                 'amount'                => $received,
                 'due_payment_method'    => $this->duePaymentMethod,
-                'due_payment_attachment'=> $attachmentPath,
+                'due_payment_attachment' => $attachmentPath,
                 'status'                => 'pending', // Pending admin approval
                 'payment_date'          => now(),
             ]);
@@ -239,7 +240,6 @@ class DuePayments extends Component
 
             // refresh list
             $this->dispatch('refreshSales');
-
         } catch (Exception $e) {
             DB::rollBack();
             $this->dispatch('showToast', [
@@ -288,7 +288,7 @@ class DuePayments extends Component
 
             $existing = (string)($sale->notes ?? '');
             $noteLine = "Due date extended on " . now()->format('Y-m-d H:i') .
-                        " from {$oldDue} to {$this->newDueDate}. Reason: {$this->extensionReason}";
+                " from {$oldDue} to {$this->newDueDate}. Reason: {$this->extensionReason}";
             $sale->update(['notes' => trim($existing . "\n" . $noteLine)]);
 
             DB::commit();
@@ -301,7 +301,6 @@ class DuePayments extends Component
 
             $this->reset(['extendDueSaleId', 'newDueDate', 'extensionReason']);
             $this->dispatch('refreshSales');
-
         } catch (Exception $e) {
             DB::rollBack();
             $this->dispatch('showToast', [
@@ -316,12 +315,19 @@ class DuePayments extends Component
      * ------------------------------*/
     public function render()
     {
+        $staffId = auth()->id();
+
         $query = Payment::query()
-            ->where('is_completed', false)
-            ->whereNull('status')
+            ->where('payments.is_completed', false)
+            ->whereNull('payments.status')
             ->with(['sale.customer'])
-            ->whereHas('sale', function ($saleQuery) {
-                $saleQuery->where('user_id', auth()->id());
+            ->whereHas('sale', function ($saleQuery) use ($staffId) {
+                // Only show sales created by this staff member
+                $saleQuery->where('sales.user_id', $staffId)
+                    // And only customers created by this staff member
+                    ->whereHas('customer', function ($customerQuery) use ($staffId) {
+                        $customerQuery->where('customers.user_id', $staffId);
+                    });
             });
 
         // Apply search filter
@@ -351,8 +357,9 @@ class DuePayments extends Component
             \App\Models\Sale::select('due_date')
                 ->whereColumn('sales.id', 'payments.sale_id')
                 ->latest()
-                ->limit(1)
-        , 'asc')->paginate(10);
+                ->limit(1),
+            'asc'
+        )->paginate(10);
 
         return view('livewire.staff.due-payments', [
             'duePayments' => $duePayments,

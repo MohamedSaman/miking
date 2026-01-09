@@ -19,6 +19,7 @@ class ProductDetail extends Model
         'description',
         'barcode',
         'status',
+        'sale_bonus',
         'brand_id',
         'category_id',
         'supplier_id',

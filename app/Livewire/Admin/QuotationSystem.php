@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\ProductDetail;
 use App\Models\Quotation;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Livewire\Concerns\WithDynamicLayout;
 
@@ -22,14 +23,14 @@ class QuotationSystem extends Component
     public $searchResults = [];
     public $customerId = '';
     public $validUntil;
-    
+
     // Cart Items
     public $cart = [];
-    
+
     // Customer Properties
     public $customers = [];
     public $selectedCustomer = null;
-    
+
     // Customer Form (for new customer - only used in modal)
     public $customerName = '';
     public $customerPhone = '';
@@ -37,16 +38,16 @@ class QuotationSystem extends Component
     public $customerAddress = '';
     public $customerType = 'retail';
     public $businessName = '';
-    
+
     // Quotation Properties
     public $notes = '';
     public $termsConditions = "1. This quotation is valid for 30 days.\n2. Prices are subject to change.";
-    
+
     // Discount Properties
     public $additionalDiscount = 0;
     public $additionalDiscountType = 'fixed'; // 'fixed' or 'percentage'
-    
-    
+
+
     // Modals
     public $showQuotationModal = false;
     public $showCustomerModal = false;
@@ -76,7 +77,7 @@ class QuotationSystem extends Component
     {
         // Find or create walking customer (only one)
         $walkingCustomer = Customer::where('name', 'Walking Customer')->first();
-        
+
         if (!$walkingCustomer) {
             $walkingCustomer = Customer::create([
                 'name' => 'Walking Customer',
@@ -86,10 +87,10 @@ class QuotationSystem extends Component
                 'type' => 'retail',
                 'business_name' => null,
             ]);
-            
+
             $this->loadCustomers(); // Reload customers after creating new one
         }
-        
+
         $this->customerId = $walkingCustomer->id;
         $this->selectedCustomer = $walkingCustomer;
     }
@@ -108,7 +109,7 @@ class QuotationSystem extends Component
 
     public function getTotalDiscountProperty()
     {
-        return collect($this->cart)->sum(function($item) {
+        return collect($this->cart)->sum(function ($item) {
             return ($item['discount'] * $item['quantity']);
         });
     }
@@ -128,7 +129,7 @@ class QuotationSystem extends Component
             // Calculate percentage discount from subtotal after item discounts
             return ($this->subtotalAfterItemDiscounts * $this->additionalDiscount) / 100;
         }
-        
+
         // For fixed discount, ensure it doesn't exceed the subtotal
         return min($this->additionalDiscount, $this->subtotalAfterItemDiscounts);
     }
@@ -197,6 +198,7 @@ class QuotationSystem extends Component
                 'address' => $this->customerAddress,
                 'type' => $this->customerType,
                 'business_name' => $this->businessName,
+                'user_id' => Auth::id(),
             ]);
 
             // Reload customers and select the new one
@@ -204,7 +206,6 @@ class QuotationSystem extends Component
             $this->customerId = $customer->id;
             $this->selectedCustomer = $customer;
             $this->closeCustomerModal();
-            
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to create customer: ' . $e->getMessage());
         }
@@ -214,23 +215,58 @@ class QuotationSystem extends Component
     public function updatedSearch()
     {
         if (strlen($this->search) >= 2) {
-            $this->searchResults = ProductDetail::with(['stock', 'price'])
-                ->where('name', 'like', '%' . $this->search . '%')
-                ->orWhere('code', 'like', '%' . $this->search . '%')
-                ->orWhere('model', 'like', '%' . $this->search . '%')
-                ->take(10)
-                ->get()
-                ->map(function($product) {
-                    return [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'code' => $product->code,
-                        'model' => $product->model,
-                        'price' => $product->price->selling_price ?? 0,
-                        'stock' => $product->stock->available_stock ?? 0,
-                        'image' => $product->image
-                    ];
-                });
+            if ($this->isStaff()) {
+                // For staff: only show their allocated products
+                $this->searchResults = \App\Models\StaffProduct::where('staff_id', auth()->id())
+                    ->join('product_details', 'staff_products.product_id', '=', 'product_details.id')
+                    ->where(function ($query) {
+                        $query->where('product_details.name', 'like', '%' . $this->search . '%')
+                            ->orWhere('product_details.code', 'like', '%' . $this->search . '%')
+                            ->orWhere('product_details.model', 'like', '%' . $this->search . '%');
+                    })
+                    ->select(
+                        'product_details.id',
+                        'product_details.name',
+                        'product_details.code',
+                        'product_details.model',
+                        'product_details.image',
+                        'staff_products.unit_price as price',
+                        'staff_products.quantity',
+                        'staff_products.sold_quantity'
+                    )
+                    ->take(10)
+                    ->get()
+                    ->map(function ($product) {
+                        return [
+                            'id' => $product->id,
+                            'name' => $product->name,
+                            'code' => $product->code,
+                            'model' => $product->model,
+                            'price' => $product->price,
+                            'stock' => ($product->quantity - $product->sold_quantity),
+                            'image' => $product->image
+                        ];
+                    });
+            } else {
+                // For admin: show all products
+                $this->searchResults = ProductDetail::with(['stock', 'price'])
+                    ->where('name', 'like', '%' . $this->search . '%')
+                    ->orWhere('code', 'like', '%' . $this->search . '%')
+                    ->orWhere('model', 'like', '%' . $this->search . '%')
+                    ->take(10)
+                    ->get()
+                    ->map(function ($product) {
+                        return [
+                            'id' => $product->id,
+                            'name' => $product->name,
+                            'code' => $product->code,
+                            'model' => $product->model,
+                            'price' => $product->price->selling_price ?? 0,
+                            'stock' => $product->stock->available_stock ?? 0,
+                            'image' => $product->image
+                        ];
+                    });
+            }
         } else {
             $this->searchResults = [];
         }
@@ -240,10 +276,10 @@ class QuotationSystem extends Component
     public function addToCart($product)
     {
         $existing = collect($this->cart)->firstWhere('id', $product['id']);
-        
+
         if ($existing) {
             // Increase quantity if already in cart
-            $this->cart = collect($this->cart)->map(function($item) use ($product) {
+            $this->cart = collect($this->cart)->map(function ($item) use ($product) {
                 if ($item['id'] == $product['id']) {
                     $item['quantity'] += 1;
                     $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
@@ -253,7 +289,7 @@ class QuotationSystem extends Component
         } else {
             // Add new item - use discount_price if available, otherwise 0
             $discountPrice = ProductDetail::find($product['id'])->price->discount_price ?? 0;
-            
+
             $this->cart[] = [
                 'id' => $product['id'],
                 'name' => $product['name'],
@@ -265,17 +301,16 @@ class QuotationSystem extends Component
                 'total' => $product['price'] - $discountPrice // Initial total with discount applied
             ];
         }
-        
+
         $this->search = '';
         $this->searchResults = [];
-        
     }
 
     // Update Quantity
     public function updateQuantity($index, $quantity)
     {
         if ($quantity < 1) $quantity = 1;
-        
+
         $this->cart[$index]['quantity'] = $quantity;
         $this->cart[$index]['total'] = ($this->cart[$index]['price'] - $this->cart[$index]['discount']) * $quantity;
     }
@@ -304,7 +339,7 @@ class QuotationSystem extends Component
         if ($discount > $this->cart[$index]['price']) {
             $discount = $this->cart[$index]['price'];
         }
-        
+
         $this->cart[$index]['discount'] = $discount;
         $this->cart[$index]['total'] = ($this->cart[$index]['price'] - $discount) * $this->cart[$index]['quantity'];
     }
@@ -338,7 +373,7 @@ class QuotationSystem extends Component
             $this->additionalDiscount = 0;
             return;
         }
-        
+
         // If percentage discount, ensure it doesn't exceed 100%
         if ($this->additionalDiscountType === 'percentage' && $value > 100) {
             $this->additionalDiscount = 100;
@@ -363,7 +398,7 @@ class QuotationSystem extends Component
     {
         // Toggle between percentage and fixed
         $this->additionalDiscountType = $this->additionalDiscountType === 'percentage' ? 'fixed' : 'percentage';
-        
+
         // Reset value after switch
         $this->additionalDiscount = 0;
     }
@@ -392,93 +427,92 @@ class QuotationSystem extends Component
         $this->additionalDiscount = 0;
     }
 
-   // Create Quotation
-public function createQuotation()
-{
-    // Validate required fields
-    if (empty($this->cart)) {
-        session()->flash('error', 'Please add at least one product to the quotation.');
-        return;
-    }
-
-    // If no customer selected, use walking customer
-    if (!$this->selectedCustomer && !$this->customerId) {
-        $this->setDefaultCustomer();
-    }
-
-    try {
-        DB::beginTransaction();
-
-        // Get customer data
-        if ($this->selectedCustomer) {
-            $customer = $this->selectedCustomer;
-        } else {
-            $customer = Customer::find($this->customerId);
-        }
-
-        if (!$customer) {
-            session()->flash('error', 'Customer not found.');
+    // Create Quotation
+    public function createQuotation()
+    {
+        // Validate required fields
+        if (empty($this->cart)) {
+            session()->flash('error', 'Please add at least one product to the quotation.');
             return;
         }
 
-        // Prepare items for JSON storage
-        $items = collect($this->cart)->map(function($item, $index) {
-            return [
-                'id' => $index + 1,
-                'product_id' => $item['id'],
-                'product_code' => $item['code'],
-                'product_name' => $item['name'],
-                'product_model' => $item['model'],
-                'quantity' => $item['quantity'],
-                'unit_price' => $item['price'],
-                'discount_per_unit' => $item['discount'],
-                'total_discount' => $item['discount'] * $item['quantity'],
-                'total' => $item['total']
-            ];
-        })->toArray();
+        // If no customer selected, use walking customer
+        if (!$this->selectedCustomer && !$this->customerId) {
+            $this->setDefaultCustomer();
+        }
 
-        // ✅ FIX: Calculate total discount (item discounts + additional discount)
-        $totalItemDiscount = $this->totalDiscount;
-        $totalDiscount = $totalItemDiscount + $this->additionalDiscountAmount;
+        try {
+            DB::beginTransaction();
 
-        // Create quotation
-        $quotation = Quotation::create([
-            'quotation_number' => Quotation::generateQuotationNumber(),
-            'customer_id' => $customer->id,
-            'customer_type' => $customer->type,
-            'customer_name' => $customer->name,
-            'customer_phone' => $customer->phone,
-            'customer_email' => $customer->email,
-            'customer_address' => $customer->address,
-            'quotation_date' => now(),
-            'valid_until' => $this->validUntil,
-            'subtotal' => $this->subtotal,
-            'discount_amount' => $totalDiscount, 
-            'additional_discount' => $this->additionalDiscountAmount,
-            'additional_discount_type' => $this->additionalDiscountType,
-            'additional_discount_value' => $this->additionalDiscount,
-            'tax_amount' => 0,
-            'shipping_charges' => 0,
-            'total_amount' => $this->grandTotal,
-            'items' => $items,
-            'terms_conditions' => $this->termsConditions,
-            'notes' => $this->notes,
-            'status' => 'draft',
-        ]);
+            // Get customer data
+            if ($this->selectedCustomer) {
+                $customer = $this->selectedCustomer;
+            } else {
+                $customer = Customer::find($this->customerId);
+            }
 
-        DB::commit();
+            if (!$customer) {
+                session()->flash('error', 'Customer not found.');
+                return;
+            }
 
-        // Store quotation data and show modal WITHOUT resetting the page
-        $this->lastQuotationId = $quotation->id;
-        $this->createdQuotation = $quotation;
-        $this->showQuotationModal = true;
-        
+            // Prepare items for JSON storage
+            $items = collect($this->cart)->map(function ($item, $index) {
+                return [
+                    'id' => $index + 1,
+                    'product_id' => $item['id'],
+                    'product_code' => $item['code'],
+                    'product_name' => $item['name'],
+                    'product_model' => $item['model'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['price'],
+                    'discount_per_unit' => $item['discount'],
+                    'total_discount' => $item['discount'] * $item['quantity'],
+                    'total' => $item['total']
+                ];
+            })->toArray();
 
-    } catch (\Exception $e) {
-        DB::rollBack();
-        session()->flash('error', 'Failed to create quotation: ' . $e->getMessage());
+            // ✅ FIX: Calculate total discount (item discounts + additional discount)
+            $totalItemDiscount = $this->totalDiscount;
+            $totalDiscount = $totalItemDiscount + $this->additionalDiscountAmount;
+
+            // Create quotation
+            $quotation = Quotation::create([
+                'quotation_number' => Quotation::generateQuotationNumber(),
+                'customer_id' => $customer->id,
+                'customer_type' => $customer->type,
+                'customer_name' => $customer->name,
+                'customer_phone' => $customer->phone,
+                'customer_email' => $customer->email,
+                'customer_address' => $customer->address,
+                'quotation_date' => now(),
+                'valid_until' => $this->validUntil,
+                'subtotal' => $this->subtotal,
+                'discount_amount' => $totalDiscount,
+                'additional_discount' => $this->additionalDiscountAmount,
+                'additional_discount_type' => $this->additionalDiscountType,
+                'additional_discount_value' => $this->additionalDiscount,
+                'tax_amount' => 0,
+                'shipping_charges' => 0,
+                'total_amount' => $this->grandTotal,
+                'items' => $items,
+                'terms_conditions' => $this->termsConditions,
+                'notes' => $this->notes,
+                'status' => 'draft',
+                // created_by is set automatically in the Quotation model's booted method
+            ]);
+
+            DB::commit();
+
+            // Store quotation data and show modal WITHOUT resetting the page
+            $this->lastQuotationId = $quotation->id;
+            $this->createdQuotation = $quotation;
+            $this->showQuotationModal = true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Failed to create quotation: ' . $e->getMessage());
+        }
     }
-}
 
     // Download Quotation
     public function downloadQuotation()
@@ -489,14 +523,14 @@ public function createQuotation()
         }
 
         $quotation = Quotation::find($this->lastQuotationId);
-        
+
         if (!$quotation) {
             session()->flash('error', 'Quotation not found.');
             return;
         }
 
         $pdf = PDF::loadView('admin.quotations.print', compact('quotation'));
-        
+
         return response()->streamDownload(
             function () use ($pdf) {
                 echo $pdf->output();
@@ -514,21 +548,21 @@ public function createQuotation()
         }
 
         $quotation = Quotation::find($this->lastQuotationId);
-        
+
         if (!$quotation) {
             session()->flash('error', 'Quotation not found.');
             return;
         }
 
         $pdf = PDF::loadView('admin.quotations.print', compact('quotation'));
-        
+
         return $pdf->download('quotation-' . $quotation->quotation_number . '.pdf');
     }
 
     // Close Modal and reset only necessary fields
     public function closeModal()
     {
-        
+
         $this->showQuotationModal = false;
         $this->lastQuotationId = null;
         $this->createdQuotation = null;
@@ -541,7 +575,6 @@ public function createQuotation()
         $this->validUntil = now()->addDays(30)->format('Y-m-d');
         $this->setDefaultCustomer(); // Set walking customer again for new quotation
         $this->showQuotationModal = false;
-       
     }
 
     public function render()

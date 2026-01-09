@@ -475,7 +475,7 @@
                         @if(!empty($paymentMethodWiseRevenue))
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover mb-0">
-                                    <thead style="background: #f8f9fa;">
+                                    <thead style="background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);">
                                         <tr>
                                             <th>Payment Method</th>
                                             <th class="text-end">Amount</th>
@@ -511,7 +511,7 @@
                         @if(!empty($expenseByCategoryTotals))
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover mb-0">
-                                    <thead style="background: #f8f9fa;">
+                                    <thead style="background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);">
                                         <tr>
                                             <th>Category</th>
                                             <th class="text-end">Amount</th>
@@ -584,7 +584,7 @@
                 @if(!empty($monthlyTrends))
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
-                            <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                            <thead style="background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);">
                                 <tr>
                                     <th>📅 Month</th>
                                     <th class="text-end">📈 Revenue</th>

@@ -17,6 +17,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Quotation;
 use App\Models\ReturnsProduct;
+use App\Models\StaffProduct;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
@@ -29,6 +30,7 @@ use App\Http\Controllers\ProductApiController;
 use App\Models\ProductBatch;
 use Illuminate\Support\Facades\DB;
 use App\Livewire\Concerns\WithDynamicLayout;
+use Illuminate\Support\Facades\Auth;
 
 #[Title("Product List")]
 class Products extends Component
@@ -153,46 +155,88 @@ class Products extends Component
         $categories = CategoryList::orderBy('category_name')->get();
         $suppliers = ProductSupplier::orderBy('name')->get();
 
-        $products = ProductDetail::join('product_prices', 'product_details.id', '=', 'product_prices.product_id')
-            ->join('product_stocks', 'product_details.id', '=', 'product_stocks.product_id')
-            ->leftJoin('brand_lists', 'product_details.brand_id', '=', 'brand_lists.id')
-            ->leftJoin('category_lists', 'product_details.category_id', '=', 'category_lists.id')
-            ->select(
-                'product_details.id',
-                'product_details.code',
-                'product_details.name as product_name',
-                'product_details.model',
-                'product_details.image',
-                'product_details.description',
-                'product_details.barcode',
-                'product_details.status',
-                'product_prices.supplier_price',
-                'product_prices.selling_price',
-                'product_prices.discount_price',
-                'product_stocks.available_stock',
-                'product_stocks.damage_stock',
-                'product_stocks.total_stock',
-                'brand_lists.brand_name as brand',
-                'category_lists.category_name as category'
-            )
-            ->where(function ($query) {
-                $query->where('product_details.name', 'like', '%' . $this->search . '%')
-                    ->orWhere('product_details.code', 'like', '%' . $this->search . '%')
-                    ->orWhere('product_details.model', 'like', '%' . $this->search . '%')
-                    ->orWhere('brand_lists.brand_name', 'like', '%' . $this->search . '%')
-                    ->orWhere('category_lists.category_name', 'like', '%' . $this->search . '%')
-                    ->orWhere('product_details.status', 'like', '%' . $this->search . '%')
-                    ->orWhere('product_details.barcode', 'like', '%' . $this->search . '%');
-            })
-            ->orderByRaw("CASE WHEN product_details.code LIKE 'G-%' THEN 1 ELSE 0 END ASC")
-            ->orderBy('product_details.code', 'asc')
-            ->paginate($this->perPage);
+        // For staff, show only allocated products from staff_products table
+        if ($this->isStaff()) {
+            $products = StaffProduct::join('product_details', 'staff_products.product_id', '=', 'product_details.id')
+                ->join('product_prices', 'product_details.id', '=', 'product_prices.product_id')
+                ->leftJoin('brand_lists', 'product_details.brand_id', '=', 'brand_lists.id')
+                ->leftJoin('category_lists', 'product_details.category_id', '=', 'category_lists.id')
+                ->where('staff_products.staff_id', Auth::id())
+                ->select(
+                    'product_details.id',
+                    'product_details.code',
+                    'product_details.name as product_name',
+                    'product_details.model',
+                    'product_details.image',
+                    'product_details.description',
+                    'product_details.barcode',
+                    'product_details.status',
+                    'product_prices.supplier_price',
+                    'staff_products.unit_price as selling_price',
+                    'staff_products.discount_per_unit as discount_price',
+                    DB::raw('(staff_products.quantity - staff_products.sold_quantity) as available_stock'),
+                    DB::raw('0 as damage_stock'),
+                    'staff_products.quantity as total_stock',
+                    'brand_lists.brand_name as brand',
+                    'category_lists.category_name as category',
+                    'staff_products.sold_quantity',
+                    'staff_products.id as staff_product_id'
+                )
+                ->where(function ($query) {
+                    $query->where('product_details.name', 'like', '%' . $this->search . '%')
+                        ->orWhere('product_details.code', 'like', '%' . $this->search . '%')
+                        ->orWhere('product_details.model', 'like', '%' . $this->search . '%')
+                        ->orWhere('brand_lists.brand_name', 'like', '%' . $this->search . '%')
+                        ->orWhere('category_lists.category_name', 'like', '%' . $this->search . '%')
+                        ->orWhere('product_details.barcode', 'like', '%' . $this->search . '%');
+                })
+                ->orderByRaw("CASE WHEN product_details.code LIKE 'G-%' THEN 1 ELSE 0 END ASC")
+                ->orderBy('product_details.code', 'asc')
+                ->paginate($this->perPage);
+        } else {
+            // Admin sees all products
+            $products = ProductDetail::join('product_prices', 'product_details.id', '=', 'product_prices.product_id')
+                ->join('product_stocks', 'product_details.id', '=', 'product_stocks.product_id')
+                ->leftJoin('brand_lists', 'product_details.brand_id', '=', 'brand_lists.id')
+                ->leftJoin('category_lists', 'product_details.category_id', '=', 'category_lists.id')
+                ->select(
+                    'product_details.id',
+                    'product_details.code',
+                    'product_details.name as product_name',
+                    'product_details.model',
+                    'product_details.image',
+                    'product_details.description',
+                    'product_details.barcode',
+                    'product_details.status',
+                    'product_prices.supplier_price',
+                    'product_prices.selling_price',
+                    'product_prices.discount_price',
+                    'product_stocks.available_stock',
+                    'product_stocks.damage_stock',
+                    'product_stocks.total_stock',
+                    'brand_lists.brand_name as brand',
+                    'category_lists.category_name as category'
+                )
+                ->where(function ($query) {
+                    $query->where('product_details.name', 'like', '%' . $this->search . '%')
+                        ->orWhere('product_details.code', 'like', '%' . $this->search . '%')
+                        ->orWhere('product_details.model', 'like', '%' . $this->search . '%')
+                        ->orWhere('brand_lists.brand_name', 'like', '%' . $this->search . '%')
+                        ->orWhere('category_lists.category_name', 'like', '%' . $this->search . '%')
+                        ->orWhere('product_details.status', 'like', '%' . $this->search . '%')
+                        ->orWhere('product_details.barcode', 'like', '%' . $this->search . '%');
+                })
+                ->orderByRaw("CASE WHEN product_details.code LIKE 'G-%' THEN 1 ELSE 0 END ASC")
+                ->orderBy('product_details.code', 'asc')
+                ->paginate($this->perPage);
+        }
 
         return view('livewire.admin.Productes', [
             'products' => $products,
             'brands' => $brands,
             'categories' => $categories,
             'suppliers' => $suppliers,
+            'isStaff' => $this->isStaff(),
         ])->layout($this->layout);
     }
     public function updatedPerPage()
@@ -548,16 +592,39 @@ class Products extends Component
     // 🔹 View Product Details
     public function viewProductDetails($id)
     {
-        $this->viewProduct = ProductDetail::with(['price', 'stock'])
-            ->leftJoin('brand_lists', 'product_details.brand_id', '=', 'brand_lists.id')
-            ->leftJoin('category_lists', 'product_details.category_id', '=', 'category_lists.id')
-            ->select(
-                'product_details.*',
-                'brand_lists.brand_name as brand',
-                'category_lists.category_name as category'
-            )
-            ->where('product_details.id', $id)
-            ->first();
+        // For staff users, show only their allocated product details
+        if ($this->isStaff()) {
+            $this->viewProduct = StaffProduct::where('staff_id', auth()->id())
+                ->where('product_id', $id)
+                ->leftJoin('product_details', 'staff_products.product_id', '=', 'product_details.id')
+                ->leftJoin('brand_lists', 'product_details.brand_id', '=', 'brand_lists.id')
+                ->select(
+                    'product_details.id',
+                    'product_details.name',
+                    'product_details.code',
+                    'product_details.model',
+                    'product_details.image',
+                    'product_details.status',
+                    'product_details.description',
+                    'staff_products.unit_price',
+                    'staff_products.quantity',
+                    'staff_products.sold_quantity',
+                    'brand_lists.brand_name as brand'
+                )
+                ->first();
+        } else {
+            // For admin users, show full product details
+            $this->viewProduct = ProductDetail::with(['price', 'stock'])
+                ->leftJoin('brand_lists', 'product_details.brand_id', '=', 'brand_lists.id')
+                ->leftJoin('category_lists', 'product_details.category_id', '=', 'category_lists.id')
+                ->select(
+                    'product_details.*',
+                    'brand_lists.brand_name as brand',
+                    'category_lists.category_name as category'
+                )
+                ->where('product_details.id', $id)
+                ->first();
+        }
 
         $this->js("$('#viewProductModal').modal('show')");
     }

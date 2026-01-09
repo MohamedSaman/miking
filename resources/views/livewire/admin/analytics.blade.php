@@ -21,7 +21,7 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, #007bff, #28a745, #ffc107, #dc3545);
+            background: linear-gradient(90deg, #2a83df, #28a745, #ffc107, #dc3545);
         }
 
         .analytics-metric-card:hover {
@@ -41,7 +41,7 @@
             margin-bottom: 16px;
         }
 
-        .revenue-icon { background: linear-gradient(135deg, #007bff, #0056b3); }
+        .revenue-icon { background: linear-gradient(135deg, #2a83df, #1a5fb8); }
         .sales-icon { background: linear-gradient(135deg, #28a745, #1e7e34); }
         .due-icon { background: linear-gradient(135deg, #dc3545, #bd2130); }
         .profit-icon { background: linear-gradient(135deg, #ffc107, #e0a800); }
@@ -140,9 +140,9 @@
         }
 
         .chart-controls .btn.active {
-            background: #007bff;
+            background: #2a83df;
             color: white;
-            border-color: #007bff;
+            border-color: #2a83df;
         }
 
         .status-legend {
@@ -732,13 +732,13 @@
                         {
                             label: 'Total Sales',
                             data: salesData,
-                            borderColor: '#007bff',
-                            backgroundColor: 'rgba(0, 123, 255, 0.15)',
+                            borderColor: '#2a83df',
+                            backgroundColor: 'rgba(42, 131, 223, 0.1)',
                             borderWidth: 4,
                             pointRadius: 6,
                             pointHoverRadius: 8,
-                            pointBackgroundColor: '#007bff',
-                            pointBorderColor: '#fff',
+                            pointBackgroundColor: '#2a83df',
+                            pointBorderColor: '#2a83df',
                             pointBorderWidth: 2,
                             fill: true,
                             tension: 0.4
@@ -790,7 +790,7 @@
                             backgroundColor: 'rgba(0, 0, 0, 0.8)',
                             titleColor: '#fff',
                             bodyColor: '#fff',
-                            borderColor: '#007bff',
+                            borderColor: '#2a83df',
                             borderWidth: 1,
                             callbacks: {
                                 label: function(context) {
@@ -869,7 +869,7 @@
                             backgroundColor: 'rgba(0, 0, 0, 0.8)',
                             titleColor: '#fff',
                             bodyColor: '#fff',
-                            borderColor: '#007bff',
+                            borderColor: '#2a83df',
                             borderWidth: 1,
                             callbacks: {
                                 label: function(context) {
@@ -1015,7 +1015,7 @@
                             backgroundColor: 'rgba(0, 0, 0, 0.8)',
                             titleColor: '#fff',
                             bodyColor: '#fff',
-                            borderColor: '#007bff',
+                            borderColor: '#2a83df',
                             borderWidth: 1,
                             callbacks: {
                                 label: function(context) {

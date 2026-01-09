@@ -8,6 +8,7 @@ use Livewire\Attributes\Title;
 use App\Models\Sale;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Livewire\Concerns\WithDynamicLayout;
 
 #[Title('Analytics')]
@@ -36,8 +37,14 @@ class Analytics extends Component
 
     public function mount()
     {
+        // Build base query filtered by role
+        $baseQuery = Sale::query();
+        if ($this->isStaff()) {
+            $baseQuery->where('user_id', Auth::id())->where('sale_type', 'staff');
+        }
+
         // Get sales statistics
-        $salesStats = Sale::select(
+        $salesStats = (clone $baseQuery)->select(
             DB::raw('SUM(total_amount) as total_sales'),
             DB::raw('SUM(due_amount) as total_due'),
             DB::raw('COUNT(*) as sales_count')
@@ -55,7 +62,7 @@ class Analytics extends Component
         }
 
         // Get previous month's revenue for comparison
-        $previousMonthSales = Sale::whereMonth(
+        $previousMonthQuery = (clone $baseQuery)->whereMonth(
             'created_at',
             '=',
             now()->subMonth()->month
@@ -63,7 +70,7 @@ class Analytics extends Component
             DB::raw('SUM(total_amount - due_amount) as revenue')
         )->first();
 
-        $this->previousMonthRevenue = $previousMonthSales->revenue ?? 0;
+        $this->previousMonthRevenue = $previousMonthQuery->revenue ?? 0;
 
         // Calculate month-over-month change percentage
         if ($this->previousMonthRevenue > 0) {
@@ -71,7 +78,7 @@ class Analytics extends Component
         }
 
         // Get fully paid invoices data
-        $fullPaidData = Sale::where('payment_status', 'paid')
+        $fullPaidData = (clone $baseQuery)->where('payment_status', 'paid')
             ->select(
                 DB::raw('COUNT(*) as count'),
                 DB::raw('SUM(total_amount) as amount')
@@ -81,7 +88,7 @@ class Analytics extends Component
         $this->fullPaidAmount = $fullPaidData->amount ?? 0;
 
         // Get partially paid invoices data
-        $partialPaidData = Sale::where('payment_status', 'partial')
+        $partialPaidData = (clone $baseQuery)->where('payment_status', 'partial')
             ->select(
                 DB::raw('COUNT(*) as count'),
                 DB::raw('SUM(due_amount) as amount')
@@ -96,6 +103,14 @@ class Analytics extends Component
 
     public function loadAnalyticsData()
     {
+        // Build user filter for staff
+        $userFilter = '';
+        $userFilterParams = [];
+        if ($this->isStaff()) {
+            $userFilter = ' AND user_id = ? AND sale_type = ?';
+            $userFilterParams = [Auth::id(), 'staff'];
+        }
+
         // Get monthly sales data for the last 12 months
         $this->monthlySalesData = DB::table('sales')
             ->select(
@@ -107,6 +122,9 @@ class Analytics extends Component
                 DB::raw('SUM(due_amount) as due_amount')
             )
             ->where('created_at', '>=', now()->subMonths(12))
+            ->when($this->isStaff(), function ($query) {
+                $query->where('user_id', Auth::id())->where('sale_type', 'staff');
+            })
             ->groupBy('year', 'month')
             ->orderBy('year', 'asc')
             ->orderBy('month', 'asc')
@@ -131,6 +149,9 @@ class Analytics extends Component
                 DB::raw('COUNT(*) as count'),
                 DB::raw('SUM(total_amount) as amount')
             )
+            ->when($this->isStaff(), function ($query) {
+                $query->where('user_id', Auth::id())->where('sale_type', 'staff');
+            })
             ->groupBy('payment_status')
             ->get()
             ->map(function ($item) {
@@ -143,14 +164,25 @@ class Analytics extends Component
             ->toArray();
 
         // Get payment trends (last 6 months)
-        $this->paymentTrendsData = DB::table('payments')
+        $paymentQuery = DB::table('payments')
             ->select(
                 DB::raw('YEAR(payment_date) as year'),
                 DB::raw('MONTH(payment_date) as month'),
                 DB::raw('COUNT(*) as payment_count'),
                 DB::raw('SUM(amount) as total_payments')
             )
-            ->where('payment_date', '>=', now()->subMonths(6))
+            ->where('payment_date', '>=', now()->subMonths(6));
+
+        // For staff, filter payments by their sales
+        if ($this->isStaff()) {
+            $paymentQuery->whereIn('sale_id', function ($q) {
+                $q->select('id')->from('sales')
+                    ->where('user_id', Auth::id())
+                    ->where('sale_type', 'staff');
+            });
+        }
+
+        $this->paymentTrendsData = $paymentQuery
             ->groupBy('year', 'month')
             ->orderBy('year', 'asc')
             ->orderBy('month', 'asc')

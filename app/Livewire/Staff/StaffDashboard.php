@@ -41,6 +41,11 @@ class StaffDashboard extends Component
 
     public function mount()
     {
+        // Check if user has permission to view dashboard
+        if (!Auth::user()->hasPermission('menu_dashboard')) {
+            return redirect()->route('staff.billing')->with('error', 'You do not have permission to access the dashboard.');
+        }
+
         // Calculate available stock value for this staff
         $userId = Auth::id();
         $availableStockValue = StaffProduct::where('staff_id', $userId)
@@ -134,7 +139,7 @@ class StaffDashboard extends Component
 
     protected function loadRecentSales($userId)
     {
-        $this->recentSales = Sale::where('user_id', $userId)
+        $this->recentSales = Sale::where('sales.user_id', $userId)
             ->join('customers', 'sales.customer_id', '=', 'customers.id')
             ->select(
                 'sales.id',

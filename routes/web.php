@@ -56,6 +56,7 @@ use App\Livewire\Admin\SalesSystem;
 use App\Livewire\Admin\SalesList;
 use App\Livewire\Admin\PosSales;
 use App\Livewire\Admin\PurchaseOrderList;
+use App\Livewire\Admin\StaffProductAllocation;
 use App\Models\Setting as ModelsSetting;
 use App\Livewire\Admin\Settings;
 use App\Livewire\Admin\Expenses;
@@ -75,6 +76,8 @@ use App\Livewire\Admin\ReturnCheque;
 use App\Livewire\Admin\ReturnSupplier;
 use App\Livewire\Admin\ListSupplierReturn;
 use App\Livewire\Admin\ProfitLoss;
+use App\Livewire\Admin\StaffSalesView;
+use App\Livewire\Admin\StaffPaymentApproval;
 
 /*
 |--------------------------------------------------------------------------
@@ -170,6 +173,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/staff-salary', StaffSallary::class)->name('staff-salary');
         Route::get('/loan-management', LoanManage::class)->name('loan-management');
         Route::get('/sales-system', SalesSystem::class)->name('sales-system');
+        Route::get('/staff-product-allocation', StaffProductAllocation::class)->name('staff-product-allocation');
+        Route::get('/staff-sales', StaffSalesView::class)->name('staff-sales');
+        Route::get('/staff-payment-approval', StaffPaymentApproval::class)->name('staff-payment-approval');
         Route::get('/pos-sales', PosSales::class)->name('pos-sales');
 
         Route::get('/supplier-management', SupplierManage::class)->name('supplier-management');
@@ -244,19 +250,22 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/purchase-order-list', PurchaseOrderList::class)->name('purchase-order-list');
         Route::get('/supplier-management', SupplierManage::class)->name('supplier-management');
 
+        // Customers
+        Route::get('/manage-customers', \App\Livewire\Staff\ManageCustomer::class)->name('manage-customers');
+
         // Quotations
-        Route::get('/quotation', Quotation::class)->name('quotation');
-        Route::get('/quotation-system', QuotationSystem::class)->name('quotation-system');
-        Route::get('/quotation-list', QuotationList::class)->name('quotation-list');
+        Route::get('/quotation-system', \App\Livewire\Staff\StaffQuotationSystem::class)->name('quotation-system');
+        Route::get('/quotation-list', \App\Livewire\Staff\StaffQuotationList::class)->name('quotation-list');
 
         // Returns
-        Route::get('/return-product', ReturnProduct::class)->name('return-product');
-        Route::get('/return-list', ReturnList::class)->name('return-list');
+        Route::get('/return-add', \App\Livewire\Staff\StaffReturnManagement::class)->name('return-add');
+        Route::get('/return-list', \App\Livewire\Staff\StaffReturnList::class)->name('return-list');
         Route::get('/return-supplier', ReturnSupplier::class)->name('return-supplier');
         Route::get('/list-supplier-return', ListSupplierReturn::class)->name('list-supplier-return');
 
         // Payments
-        Route::get('/due-payments', DuePayments::class)->name('due-payments');
+        Route::get('/due-payments', \App\Livewire\Staff\AddPayment::class)->name('due-payments');
+        Route::get('/payments-list', \App\Livewire\Staff\PaymentsList::class)->name('payments-list');
         Route::get('/view-payments', ViewPayments::class)->name('view-payments');
         Route::get('/add-customer-receipt', AddCustomerReceipt::class)->name('add-customer-receipt');
         Route::get('/list-customer-receipt', ListCustomerReceipt::class)->name('list-customer-receipt');

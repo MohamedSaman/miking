@@ -21,25 +21,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* Theme tokens: Black & White theme */
+        /* Theme tokens: Blue & White theme */
         :root {
-            /* Backgrounds - White */
-            --page-bg: #ffffff;
+            /* Backgrounds - Page background uses a subtle off-white for theme */
+            --page-bg: #f7f8fbff;
             --surface: #ffffff;
 
-            /* Primary / Brand - Black */
-            --primary: #000000;
-            --primary-600: #333333;
-            --primary-100: #f0f0f0;
+            /* Primary / Brand - Blue */
+            --primary: #2a83df;
+            --primary-600: #1a5fb8;
+            --primary-100: #e3f2fd;
 
             /* Accent - keep for amounts */
             --accent: #198754;
 
-            /* Muted / borders / text - Black tones */
-            --muted: #555555;
-            --muted-2: #333333;
-            --border: #cccccc;
-            --muted-3: #dddddd;
+            /* Muted / borders / text - Blue-gray tones */
+            --muted: #64748b;
+            --muted-2: #475569;
+            --border: #cbd5e1;
+            --muted-3: #e2e8f0;
 
             /* Status colors - keep distinct */
             --success-bg: #d1e7dd;
@@ -49,15 +49,15 @@
             --danger-bg: #f8d7da;
             --danger-text: #842029;
 
-            /* Topbar / sidebar - Black */
-            --sidebar-bg: #000000;
+            /* Topbar / sidebar - Blue */
+            --sidebar-bg: #2a83df;
             --topbar-bg: #ffffff;
 
-            /* Text - Black */
-            --text: #000000;
+            /* Text - Dark */
+            --text: #1e293b;
 
             /* Avatars */
-            --avatar-bg: #000000;
+            --avatar-bg: #2a83df;
             --avatar-text: #ffffff;
         }
 
@@ -180,10 +180,10 @@
         .sidebar {
             width: 265px;
             height: 100vh;
-            background-color: #ffffff;
-            color: #000000;
+            background: linear-gradient(180deg, #2a83df 0%, #1a5fb8 100%);
+            color: #ffffff;
 
-            padding: 20px 0;
+            padding: 0 0 20px;
             position: fixed;
             transition: all 0.3s ease;
             z-index: 1040;
@@ -191,7 +191,7 @@
             /* Enable vertical scrolling */
             overflow-x: hidden;
             /* Hide horizontal overflow */
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.12);
+            box-shadow: 2px 0 8px rgba(42, 131, 223, 0.25);
         }
 
         /* Add custom scrollbar styling for sidebar */
@@ -200,12 +200,12 @@
         }
 
         .sidebar::-webkit-scrollbar-track {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .sidebar::-webkit-scrollbar-thumb {
-            background-color: #ffffff;
-
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
         }
 
         /* Add padding to the bottom of sidebar to ensure last items are visible */
@@ -237,15 +237,17 @@
         }
 
         .sidebar-header {
-            padding: 0 20px 20px;
-            margin-bottom: 15px;
+            padding: 20px 20px 0;
+            margin-bottom: 5px;
+            
         }
 
         .sidebar-title {
             font-weight: 600;
             font-size: 1.2rem;
-            color: #000000;
+            color: #ffffff;
             letter-spacing: -0.02em;
+            
         }
 
         /* Navigation styles */
@@ -255,24 +257,25 @@
         }
 
         .nav-link {
-            color: #000;
+            color: rgba(255, 255, 255, 0.9);
             padding: 8px 20px;
             transition: all 0.2s;
         }
 
 
         .nav-link.active {
-            background: #333333;
-            background: linear-gradient(0deg, #222222 0%, #444444 100%);
+            background: rgba(255, 255, 255, 0.2);
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%);
             color: #ffffff;
             font-weight: 500;
+            border-left: 3px solid #ffffff;
         }
 
         .nav-link:focus,
         .nav-link:hover,
         .nav-link:focus-visible {
-            color: #000;
-
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
             outline: none;
         }
 
@@ -325,26 +328,26 @@
 
         /* Disabled menu item styles */
         .nav-link.disabled {
-            color: #adb5bd !important;
+            color: rgba(255, 255, 255, 0.4) !important;
             cursor: not-allowed !important;
             opacity: 0.6;
             pointer-events: none;
         }
 
         .nav-link.disabled i {
-            color: #adb5bd !important;
+            color: rgba(255, 255, 255, 0.4) !important;
         }
 
         .nav-link.disabled:hover {
             background-color: transparent !important;
-            color: #adb5bd !important;
+            color: rgba(255, 255, 255, 0.4) !important;
         }
 
         /* Top bar styles */
         .top-bar {
             height: 60px;
-            background-color: var(--topbar-bg);
-            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);
+            border-bottom: none;
             padding: 0 20px;
             position: fixed;
             top: 0;
@@ -354,7 +357,7 @@
             display: flex;
             align-items: center;
             transition: left 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+            box-shadow: 0 2px 8px rgba(42, 131, 223, 0.3);
         }
 
         .top-bar.collapsed {
@@ -362,7 +365,7 @@
         }
 
         .top-bar .title {
-            color: #000000;
+            color: #ffffff;
         }
 
         /* User info styles */
@@ -373,11 +376,11 @@
             padding: 5px;
             border-radius: 5px;
             transition: background-color 0.2s;
-            color: #000000;
+            color: #ffffff;
         }
 
         .admin-info:hover {
-            background-color: #333333;
+            background-color: rgba(255, 255, 255, 0.2);
             color: #ffffff;
         }
 
@@ -387,14 +390,14 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background-color: #000000;
-            color: #ffffff;
+            background: #ffffff;
+            color: #2a83df;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
             letter-spacing: -0.03em;
-            border: 1px solid #ffffff;
+            border: 2px solid #ffffff;
         }
 
         .admin-name {
@@ -438,7 +441,7 @@
             margin-left: 260px;
             margin-top: 60px;
             padding: 20px;
-            background-color: #ffffff;
+            background-color: var(--page-bg);
             min-height: calc(100vh - 60px);
             width: calc(100% - 250px);
             transition: all 0.3s ease;
@@ -503,13 +506,13 @@
         }
 
         .content-tab.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
+            color: #2a83df;
+            border-bottom-color: #2a83df;
             font-weight: 600;
         }
 
         .content-tab:hover:not(.active) {
-            color: var(--primary);
+            color: #2a83df;
             border-bottom-color: var(--border);
         }
 
@@ -689,22 +692,27 @@
             border-top: none;
             font-weight: 600;
             color: #ffffff;
-            background: #000000;
-            background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);
+            background: #2a83df;
+            background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .btn {
-            background: #0d6efd;
+            background: #2a83df;
             color: #ffffff;
             border: none;
         }
 
         .btn-primary {
-            background: #0d6efd;
+            background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);
             color: #ffffff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1a5fb8 0%, #2a83df 100%);
         }
 
         .btn-success {
@@ -719,7 +727,7 @@
 
         .btn-warning {
             background: #ffc107;
-            color: #000000;
+            color: #212529;
         }
 
         .btn-secondary {
@@ -729,8 +737,13 @@
 
         .btn-outline-primary {
             background: transparent;
-            color: #0d6efd;
-            border: 1px solid #0d6efd;
+            color: #2a83df;
+            border: 1px solid #2a83df;
+        }
+
+        .btn-outline-primary:hover {
+            background: #2a83df;
+            color: #ffffff;
         }
 
         .btn-outline-secondary {
@@ -746,7 +759,7 @@
         }
 
         .modal-header {
-            background: #000000;
+            background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);
             color: #ffffff;
         }
 
@@ -758,6 +771,7 @@
             #sidebarToggler {
                 width: 50px !important;
                 height: 50px !important;
+                
             }
 
             #sidebarToggler i {
@@ -809,10 +823,11 @@
             <div class="sidebar-header d-flex justify-content-center">
                 <div class="sidebar-title">
 
-                    <img src="{{ asset('images/MI-King.png') }}" alt="Logo" width="100">
+                    <img src="{{ asset('images/mi-logo.png') }}" alt="Logo" width="200">
 
                 </div>
             </div>
+            <hr style="color:#fff;">
             <ul class="nav flex-column">
 
                 <li>
@@ -924,6 +939,32 @@
                                 </a>
                             </li>
                             --}}
+                        </ul>
+                    </div>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link dropdown-toggle" href="#staffSubmenu" data-bs-toggle="collapse" role="button"
+                        aria-expanded="false" aria-controls="staffSubmenu">
+                        <i class="bi bi-file-earmark-text"></i> <span>Staff Management</span>
+                    </a>
+                    <div class="collapse" id="staffSubmenu">
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-sales') ? 'active' : '' }}" href="{{ route('admin.staff-sales') }}">
+                                    <i class="bi bi-shop"></i> <span>Staff Sales</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('admin.staff-product-allocation') ? 'active' : '' }}" href="{{ route('admin.staff-product-allocation') }}">
+                                    <i class="bi bi-person-badge"></i> <span>Staff Allocation</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-payment-approval') ? 'active' : '' }}" href="{{ route('admin.staff-payment-approval') }}">
+                                    <i class="bi bi-credit-card"></i> <span>Payment Approvals</span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </li>
@@ -1149,13 +1190,13 @@
         <!-- Top Navigation Bar -->
         <nav class="top-bar d-flex justify-content-between align-items-center">
             <!-- Sidebar toggle button -->
-            <button id="sidebarToggler" class="btn d-flex align-items-center justify-content-center" style="color:#ffffff; border-color:#ffffff; width: 44px; height: 44px;">
+            <button id="sidebarToggler" class="btn d-flex align-items-center justify-content-center " style="color:#ffffff; border:1px solid#ffffff; width: 44px; height: 44px;">
                 <i class="bi bi-list" style="font-size: 1.5rem;"></i>
             </button>
 
             <!-- Centered Company Name (hidden on small screens) -->
             <div class="flex-grow-1 d-none d-md-flex justify-content-center">
-                <h5 class="m-0 fw-bold" style="letter-spacing: -0.02em;">MI-KING</h5>
+                <h5 class="m-0 fw-bold" style="letter-spacing: -0.02em; color: #ffffff;">MI-KING</h5>
             </div>
             @php
             use App\Models\CashInHand as CashModel;
@@ -1164,7 +1205,7 @@
 
             <!-- Editable Cash in Hand Display -->
             <div class="badge  bg-opacity-10 rounded-pill shadow-sm border  border-opacity-25 d-none d-md-flex align-items-center gap-2 me-2"
-                style="color:#000000;border-color:#000000; font-size: 0.9rem; cursor: pointer;"
+                style="background-color: rgba(255,255,255,0.2) !important; color:#ffffff; border-color:rgba(255,255,255,0.5) !important; font-size: 0.9rem; cursor: pointer;"
                 onclick="handlePOSClick()"
                 role="button">
                 <div class="d-flex align-items-center gap-1 px-2 py-1 fs-6">
@@ -1689,7 +1730,7 @@
                             title: 'Register Already Closed',
                             text: 'The POS register has already been closed for today. You cannot access the POS system again until tomorrow.',
                             confirmButtonText: 'OK',
-                            confirmButtonColor: '#000000'
+                            confirmButtonColor: '#2a83df'
                         });
                         return;
                     }

@@ -192,7 +192,7 @@
     }
 
     .summary-card.total {
-        border-left-color: #4361ee;
+        border-left-color: #2a83df;
     }
 
     .icon-container {
@@ -227,8 +227,8 @@
         border-top: none;
         font-weight: 600;
         color: #ffffff;
-        background: #000000;
-        background: linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(68, 68, 68, 1) 100%);
+        background: #2a83df;
+        background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);
         font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
