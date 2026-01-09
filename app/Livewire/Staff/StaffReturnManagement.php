@@ -88,7 +88,7 @@ class StaffReturnManagement extends Component
 
             DB::commit();
 
-            session()->flash('message', 'Product return processed successfully. ' . 
+            session()->flash('message', 'Product return processed successfully. ' .
                 ($this->is_damaged ? 'Marked as damaged (non-saleable).' : 'Added back to your stock.'));
 
             $this->reset(['product_id', 'customer_id', 'quantity', 'unit_price', 'is_damaged', 'reason', 'notes', 'selectedProduct']);

@@ -25,9 +25,9 @@ class StaffReturnList extends Component
                     $q->where('name', 'like', '%' . $this->search . '%')
                         ->orWhere('barcode', 'like', '%' . $this->search . '%');
                 })
-                ->orWhereHas('customer', function ($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%');
-                });
+                    ->orWhereHas('customer', function ($q) {
+                        $q->where('name', 'like', '%' . $this->search . '%');
+                    });
             })
             ->when($this->statusFilter !== 'all', function ($query) {
                 $query->where('status', $this->statusFilter);
