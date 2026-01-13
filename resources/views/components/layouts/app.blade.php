@@ -35,7 +35,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('../images/bgproduct.jpg');
+            background-image: url('../images/bgproduct.png');
             background-size: cover;
             background-position: center;
             z-index: 0;

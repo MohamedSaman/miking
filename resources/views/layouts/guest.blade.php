@@ -27,7 +27,7 @@
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background-image: url('{{ asset('/images/bgproduct.jpg') }}');
+                background-image: url('{{ asset('/images/bgproduct.png') }}');
                 background-size: cover;
                 background-position: center;
                 z-index: 0;
