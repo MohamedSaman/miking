@@ -68,8 +68,8 @@
                     </div>
                 </div>
 
-                <div class="card-body p-0 overflow-auto">
-                    <div class="table-responsive">
+                <div class="card-body p-0" style="overflow: visible;">
+                    <div class="table-responsive" style="overflow: visible;">
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
@@ -136,11 +136,12 @@
         <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
                 type="button"
                 data-bs-toggle="dropdown"
+                data-bs-boundary="viewport"
                 aria-expanded="false">
             <i class="bi bi-gear-fill"></i> Actions
         </button>
 
-        <ul class="dropdown-menu dropdown-menu-end">
+        <ul class="dropdown-menu dropdown-menu-end shadow">
 
             <!-- Create Sale (only if not converted) -->
             @if($quotation->status !== 'converted')

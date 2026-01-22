@@ -14,6 +14,7 @@ use App\Models\Payment;
 use App\Models\Cheque;
 use App\Models\StaffProduct;
 use App\Models\StaffSale;
+use App\Services\StaffBonusService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -44,6 +45,7 @@ class Billing extends Component
     public $customerAddress = '';
     public $customerType = 'retail';
     public $businessName = '';
+    public $customerTypeSale = 'retail'; // Added for sale type selection
 
     // Sale Properties
     public $notes = '';
@@ -87,16 +89,24 @@ class Billing extends Component
         }
 
         $this->loadCustomers();
+        $this->setDefaultCustomer(); // Set Walking Customer as default
         $this->tempChequeDate = now()->format('Y-m-d');
     }
 
-    // Load customers - only customers created by this staff member
+    // Load customers - staff's customers + global Walking Customer
     public function loadCustomers()
     {
         $staffId = Auth::id();
 
-        // Get customers created by this staff member only
-        $this->customers = Customer::where('user_id', $staffId)
+        // Get customers created by this staff member + global Walking Customer
+        $this->customers = Customer::where(function($query) use ($staffId) {
+                $query->where('user_id', $staffId)
+                      ->orWhere(function($q) {
+                          $q->where('name', 'Walking Customer')
+                            ->whereNull('user_id');
+                      });
+            })
+            ->orderByRaw("CASE WHEN name = 'Walking Customer' THEN 0 ELSE 1 END")
             ->orderBy('name')
             ->get();
     }
@@ -155,16 +165,16 @@ class Billing extends Component
     public function getDueAmountProperty()
     {
         if ($this->paymentMethod === 'credit') {
-            return $this->grandTotal;
+            return floatval($this->grandTotal);
         }
-        return max(0, $this->grandTotal - (int)$this->totalPaidAmount);
+        return max(0, floatval($this->grandTotal) - floatval($this->totalPaidAmount));
     }
 
     public function getPaymentStatusProperty()
     {
-        if ($this->paymentMethod === 'credit' || (int)$this->totalPaidAmount <= 0) {
+        if ($this->paymentMethod === 'credit' || floatval($this->totalPaidAmount) <= 0) {
             return 'pending';
-        } elseif ((int)$this->totalPaidAmount >= $this->grandTotal) {
+        } elseif (floatval($this->totalPaidAmount) >= floatval($this->grandTotal)) {
             return 'paid';
         } else {
             return 'partial';
@@ -176,7 +186,7 @@ class Billing extends Component
         if ($this->paymentMethod === 'credit') {
             return 'partial';
         }
-        if ((int)$this->totalPaidAmount >= $this->grandTotal) {
+        if (floatval($this->totalPaidAmount) >= floatval($this->grandTotal)) {
             return 'full';
         } else {
             return 'partial';
@@ -310,12 +320,40 @@ class Billing extends Component
             $this->loadCustomers();
             $this->customerId = $customer->id;
             $this->selectedCustomer = $customer;
+            
+            // Auto update sale type based on customer type
+            if ($customer->type === 'wholesale') {
+                $this->customerTypeSale = 'wholesale';
+            } else {
+                $this->customerTypeSale = 'retail';
+            }
+            
             $this->closeCustomerModal();
 
-            $this->js("Swal.fire('success', 'Customer created successfully!', 'success')");
+            $this->js("Swal.fire('success', 'Customer created and selected successfully!', 'success')");
         } catch (\Exception $e) {
             $this->js("Swal.fire('error', 'Failed to create customer', 'error')");
         }
+    }
+
+
+
+    // When sale type changes, update prices in cart
+    public function updatedCustomerTypeSale($value)
+    {
+        $this->cart = collect($this->cart)->map(function ($item) use ($value) {
+            // Check if we have both prices stored
+            if (isset($item['wholesale_price']) && isset($item['retail_price'])) {
+                if ($value === 'wholesale' && $item['wholesale_price'] > 0) {
+                    $item['price'] = $item['wholesale_price'];
+                } else {
+                    $item['price'] = $item['retail_price'];
+                }
+                // Recalculate total
+                $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
+            }
+            return $item;
+        })->toArray();
     }
 
     // Search for staff allocated products only
@@ -354,6 +392,8 @@ class Billing extends Component
                         'code' => $staffProduct->product->code,
                         'model' => $staffProduct->product->model ?? '',
                         'price' => $staffProduct->unit_price,
+                        'retail_price' => $staffProduct->product->price->retail_price ?? $staffProduct->product->price->selling_price ?? 0,
+                        'wholesale_price' => $staffProduct->product->price->wholesale_price ?? 0,
                         'stock' => max(0, $availableStock),
                         'image' => $staffProduct->product->image ?? ''
                     ];
@@ -391,16 +431,26 @@ class Billing extends Component
                 return $item;
             })->toArray();
         } else {
+            // Determine price based on current sale type
+            $retailPrice = $product['retail_price'] ?? $product['price'];
+            $wholesalePrice = $product['wholesale_price'] ?? 0;
+            
+            $finalPrice = ($this->customerTypeSale === 'wholesale' && $wholesalePrice > 0) 
+                          ? $wholesalePrice 
+                          : $retailPrice;
+
             $newItem = [
                 'key' => uniqid('cart_'),
                 'id' => $product['id'],
                 'name' => $product['name'],
                 'code' => $product['code'],
                 'model' => $product['model'],
-                'price' => $product['price'],
+                'price' => $finalPrice,
+                'retail_price' => $retailPrice,
+                'wholesale_price' => $wholesalePrice,
                 'quantity' => 1,
                 'discount' => 0,
-                'total' => $product['price'],
+                'total' => $finalPrice,
                 'stock' => $product['stock']
             ];
 
@@ -566,8 +616,8 @@ class Billing extends Component
 
         // Check if payment amount matches grand total (except for credit)
         if ($this->paymentMethod !== 'credit') {
-            if ((int)$this->totalPaidAmount < $this->grandTotal) {
-                $this->pendingDueAmount = $this->grandTotal - (int)$this->totalPaidAmount;
+            if ($this->totalPaidAmount < $this->grandTotal) {
+                $this->pendingDueAmount = $this->grandTotal - $this->totalPaidAmount;
                 $this->showPaymentConfirmModal = true;
                 return;
             }
@@ -615,7 +665,10 @@ class Billing extends Component
                 }
             }
 
-            // Create sale in sales table with 'staff' type and 'pending' status for payment
+            // Create sale in sales table with 'staff' type
+            // Determine payment status based on payment
+            $paymentStatus = $this->paymentStatus; // Uses computed property: paid/partial/pending
+            
             $sale = Sale::create([
                 'sale_id' => Sale::generateSaleId(),
                 'invoice_number' => Sale::generateInvoiceNumber(),
@@ -625,12 +678,14 @@ class Billing extends Component
                 'discount_amount' => $this->totalDiscount + $this->additionalDiscountAmount,
                 'total_amount' => $this->grandTotal,
                 'payment_type' => $this->databasePaymentType,
-                'payment_status' => 'pending', // Payment requires admin approval
+                'payment_method' => $this->paymentMethod, // Add payment method
+                'payment_status' => $paymentStatus, // Use computed status: paid/partial/pending
                 'due_amount' => $this->dueAmount,
                 'notes' => $this->notes,
                 'user_id' => $staffId,
                 'status' => 'confirm',
-                'sale_type' => 'staff'
+                'sale_type' => 'staff',
+                'customer_type_sale' => $this->customerTypeSale, // Save sale type
             ]);
 
             // Create sale items
@@ -649,21 +704,27 @@ class Billing extends Component
                 ]);
             }
 
-            // Create Payment Record with pending status
-            if ($this->paymentMethod !== 'credit' && (int)$this->totalPaidAmount > 0) {
+            // Create Payment Record - completed if full payment, pending if credit/partial
+            if ($this->paymentMethod === 'credit' || $this->totalPaidAmount > 0) {
+                $paymentAmount = $this->paymentMethod === 'credit' ? 0 : $this->totalPaidAmount;
+                
+                // Determine if payment is completed (paid in full)
+                $isCompleted = ($paymentStatus === 'paid');
+                $paymentRecordStatus = $isCompleted ? 'approved' : 'pending';
+
                 $payment = Payment::create([
                     'customer_id' => $customer->id,
                     'sale_id' => $sale->id,
-                    'amount' => (int)$this->totalPaidAmount,
+                    'amount' => $paymentAmount,
                     'payment_method' => $this->paymentMethod,
                     'payment_date' => now(),
-                    'is_completed' => false, // Not completed until admin approves
-                    'status' => 'pending', // Requires admin approval
+                    'is_completed' => $isCompleted, // Completed if full payment
+                    'status' => $paymentRecordStatus, // approved if paid, pending if credit/partial
                     'created_by' => $staffId, // Track which staff made the payment
                 ]);
 
-                // Handle payment method specific data
-                if ($this->paymentMethod === 'cash') {
+            // Handle payment method specific data
+            if ($this->paymentMethod === 'cash') {
                     $payment->update([
                         'payment_reference' => 'STAFF-CASH-' . now()->format('YmdHis'),
                     ]);
@@ -730,7 +791,11 @@ class Billing extends Component
             DB::commit();
 
             $this->lastSaleId = $sale->id;
-            $this->createdSale = Sale::with(['customer', 'items', 'payments'])->find($sale->id);
+            $this->createdSale = Sale::with(['customer', 'items', 'payments', 'user'])->find($sale->id);
+            
+            // Calculate and record staff bonuses for this sale
+            StaffBonusService::calculateBonusesForSale($this->createdSale);
+            
             $this->showSaleModal = true;
 
             // Clear cart and reset
@@ -747,6 +812,25 @@ class Billing extends Component
             Log::error('Staff billing error: ' . $e->getMessage());
             $this->js("Swal.fire('error', 'Failed to create sale: " . $e->getMessage() . "', 'error')");
         }
+    }
+
+    public function printInvoice($saleId)
+    {
+        $sale = Sale::find($saleId);
+        if (!$sale) {
+            $this->js("Swal.fire('error', 'Sale not found.', 'error')");
+            return;
+        }
+        
+        $printUrl = route('staff.print.sale', $sale->id);
+        $this->js("window.open('$printUrl', '_blank', 'width=800,height=600');");
+    }
+
+    public function closeModals()
+    {
+        $this->showSaleModal = false;
+        $this->showCustomerModal = false;
+        $this->showPaymentConfirmModal = false;
     }
 
     public function downloadInvoice()
@@ -818,6 +902,25 @@ class Billing extends Component
 
         $this->loadCustomers();
         $this->setDefaultCustomer();
+    }
+
+    public function setDefaultCustomer()
+    {
+        // Use the same global Walking Customer as admin (not staff-specific)
+        $walkingCustomer = Customer::where('name', 'Walking Customer')->first();
+
+        if (!$walkingCustomer) {
+            $walkingCustomer = Customer::create([
+                'name' => 'Walking Customer',
+                'phone' => '0000000000',
+                'address' => 'N/A',
+                'type' => 'retail',
+            ]);
+            $this->loadCustomers();
+        }
+
+        $this->customerId = $walkingCustomer->id;
+        $this->selectedCustomer = $walkingCustomer;
     }
 
     public function render()

@@ -112,10 +112,11 @@ class StaffPaymentApproval extends Component
                 ]);
             }
 
-            // Update sale payment status
-            if ($payment->sale) {
+            // Update sale payment status (Skip for credit sales as they should remain pending/due)
+            if ($payment->sale && $payment->payment_method !== 'credit') {
                 $totalPaid = Payment::where('sale_id', $payment->sale_id)
                     ->where('status', 'approved')
+                    ->where('payment_method', '!=', 'credit') // Don't count credit "payments" as paid cash
                     ->sum('amount');
 
                 $sale = $payment->sale;
@@ -127,6 +128,11 @@ class StaffPaymentApproval extends Component
             }
 
             DB::commit();
+
+            // Calculate and record staff bonuses
+            if ($payment->sale) {
+                \App\Services\StaffBonusService::calculateBonusesForSale($payment->sale);
+            }
 
             $this->js("Swal.fire('success', 'Payment approved successfully!', 'success')");
             $this->updateCounts();

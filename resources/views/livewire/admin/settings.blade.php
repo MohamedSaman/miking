@@ -12,7 +12,153 @@
     {{-- Accordion --}}
     <div class="accordion" id="settingsAccordion">
         
+        {{-- Product Sales Bonus Management Accordion --}}
+        <div class="accordion-item border-0 mb-4 shadow-sm rounded-4">
+            <h2 class="accordion-header" id="headingBonusManagement">
+                <button class="accordion-button fw-semibold bg-white text-dark rounded-4 collapsed"
+                    type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseBonusManagement" aria-expanded="false"
+                    aria-controls="collapseBonusManagement">
+                    <i class="bi bi-gift fs-5 me-3 text-warning"></i>
+                    Product Sales Bonus Management
+                </button>
+            </h2>
+            <div id="collapseBonusManagement" class="accordion-collapse collapse" wire:ignore.self
+                aria-labelledby="headingBonusManagement" data-bs-parent="#settingsAccordion">
+                <div class="accordion-body">
+                    
+                    {{-- Bulk Update Section --}}
+                    <div class="card shadow-sm border-0 mb-4 bg-light">
+                        <div class="card-header bg-warning bg-opacity-10">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-lightning-charge me-2"></i>Bulk Update All Products</h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Wholesale Section -->
+                            <h6 class="text-primary border-bottom pb-2 mb-3">Wholesale Bonuses</h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-5">
+                                    <label class="form-label fw-semibold small">Wholesale Cash Bonus</label>
+                                    <div class="input-group">
+                                        <select class="form-select bg-white" wire:model="bulkWholesaleCashBonusType">
+                                            <option value="percentage">Percentage (%)</option>
+                                            <option value="fixed">Fixed Amount</option>
+                                        </select>
+                                        <input type="number" step="0.01" class="form-control" wire:model="bulkWholesaleCashBonusValue" placeholder="Value">
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label fw-semibold small">Wholesale Credit Bonus</label>
+                                    <div class="input-group">
+                                        <select class="form-select bg-white" wire:model="bulkWholesaleCreditBonusType">
+                                            <option value="percentage">Percentage (%)</option>
+                                            <option value="fixed">Fixed Amount</option>
+                                        </select>
+                                        <input type="number" step="0.01" class="form-control" wire:model="bulkWholesaleCreditBonusValue" placeholder="Value">
+                                    </div>
+                                </div>
+                            </div>
 
+                            <!-- Retail Section -->
+                            <h6 class="text-success border-bottom pb-2 mb-3">Retail Bonuses</h6>
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <label class="form-label fw-semibold small">Retail Cash Bonus</label>
+                                    <div class="input-group">
+                                        <select class="form-select bg-white" wire:model="bulkRetailCashBonusType">
+                                            <option value="percentage">Percentage (%)</option>
+                                            <option value="fixed">Fixed Amount</option>
+                                        </select>
+                                        <input type="number" step="0.01" class="form-control" wire:model="bulkRetailCashBonusValue" placeholder="Value">
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label fw-semibold small">Retail Credit Bonus</label>
+                                    <div class="input-group">
+                                        <select class="form-select bg-white" wire:model="bulkRetailCreditBonusType">
+                                            <option value="percentage">Percentage (%)</option>
+                                            <option value="fixed">Fixed Amount</option>
+                                        </select>
+                                        <input type="number" step="0.01" class="form-control" wire:model="bulkRetailCreditBonusValue" placeholder="Value">
+                                    </div>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button class="btn btn-warning w-100 fw-semibold text-white" 
+                                            wire:click="confirmBulkUpdate"
+                                            wire:loading.attr="disabled">
+                                        Apply to All
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Individual Management Section --}}
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-search me-2"></i>Individual Product Management</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <input type="text" class="form-control" placeholder="Search product by name or code..." wire:model.live.debounce.300ms="bonusSearch">
+                            </div>
+
+                            @if(!empty($bonusProducts))
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Code</th>
+                                                <th>Name</th>
+                                                <th>Price</th>
+                                                <th class="table-primary bg-opacity-10">Wholesale Cash</th>
+                                                <th class="table-primary bg-opacity-10">Wholesale Credit</th>
+                                                <th class="table-success bg-opacity-10">Retail Cash</th>
+                                                <th class="table-success bg-opacity-10">Retail Credit</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($bonusProducts as $product)
+                                            <tr>
+                                                <td><span class="badge bg-secondary">{{ $product->code }}</span></td>
+                                                <td>
+                                                    <div class="fw-semibold">{{ $product->name }}</div>
+                                                    <small class="text-muted">{{ $product->unit }}</small>
+                                                </td>
+                                                <td>Rs. {{ number_format($product->price->selling_price ?? 0, 2) }}</td>
+                                                
+                                                <td class="table-primary bg-opacity-10 fw-bold text-dark">Rs. {{ number_format($product->wholesale_cash_bonus, 2) }}</td>
+                                                <td class="table-primary bg-opacity-10 fw-bold text-dark">Rs. {{ number_format($product->wholesale_credit_bonus, 2) }}</td>
+                                                
+                                                <td class="table-success bg-opacity-10 fw-bold text-dark">Rs. {{ number_format($product->retail_cash_bonus, 2) }}</td>
+                                                <td class="table-success bg-opacity-10 fw-bold text-dark">Rs. {{ number_format($product->retail_credit_bonus, 2) }}</td>
+                                                
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" 
+                                                            wire:click="editProductBonus({{ $product->id }})">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @elseif(strlen($bonusSearch) > 0)
+                                <div class="text-center py-4 text-muted">
+                                    No products found matching "{{ $bonusSearch }}"
+                                </div>
+                            @else
+                                <div class="text-center py-4 text-muted">
+                                    Start typing to search for products...
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
 
         {{-- Expense Categories Management Accordion --}}
         <div class="accordion-item border-0 mb-4 shadow-sm rounded-4">
@@ -25,7 +171,7 @@
                     Expense Categories & Types
                 </button>
             </h2>
-            <div id="collapseExpenseCategories" class="accordion-collapse collapse"
+            <div id="collapseExpenseCategories" class="accordion-collapse collapse" wire:ignore.self
                 aria-labelledby="headingExpenseCategories" data-bs-parent="#settingsAccordion">
                 <div class="accordion-body">
                     {{-- Add Button --}}
@@ -88,7 +234,7 @@
                     Staff Permissions Management
                 </button>
             </h2>
-            <div id="collapseStaffPermissions" class="accordion-collapse collapse"
+            <div id="collapseStaffPermissions" class="accordion-collapse collapse" wire:ignore.self
                 aria-labelledby="headingStaffPermissions" data-bs-parent="#settingsAccordion">
                 <div class="accordion-body">
                     <div class="alert alert-info border-0 shadow-sm mb-4">
@@ -159,7 +305,7 @@
                     System Configurations
                 </button>
             </h2>
-            <div id="collapseSystemConfigs" class="accordion-collapse collapse"
+            <div id="collapseSystemConfigs" class="accordion-collapse collapse" wire:ignore.self
                 aria-labelledby="headingSystemConfigs" data-bs-parent="#settingsAccordion">
                 <div class="accordion-body">
 
@@ -584,6 +730,99 @@
     </div>
     @endif
 
+    {{-- Edit Product Bonus Modal --}}
+    @if($showBonusModal)
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" wire:key="bonus-modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header bg-warning text-white rounded-top-4">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-gift"></i> Edit Product Sales Bonus
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" wire:click="closeBonusModal"></button>
+                </div>
+
+                <form wire:submit.prevent="updateProductBonus">
+                    <div class="modal-body">
+                        <!-- Wholesale Section -->
+                        <h6 class="text-primary border-bottom pb-2 mb-3">Wholesale Bonuses</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Wholesale Cash Bonus</label>
+                                <div class="input-group">
+                                    <select class="form-select bg-white" wire:model="editBonusWholesaleCashType" style="max-width: 110px;">
+                                        <option value="fixed">Fixed (Rs)</option>
+                                        <option value="percentage">Percent (%)</option>
+                                    </select>
+                                    <input type="number" step="0.01" wire:model="editBonusWholesaleCash"
+                                        class="form-control @error('editBonusWholesaleCash') is-invalid @enderror" placeholder="0.00">
+                                </div>
+                                @error('editBonusWholesaleCash') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Wholesale Credit Bonus</label>
+                                <div class="input-group">
+                                    <select class="form-select bg-white" wire:model="editBonusWholesaleCreditType" style="max-width: 110px;">
+                                        <option value="fixed">Fixed (Rs)</option>
+                                        <option value="percentage">Percent (%)</option>
+                                    </select>
+                                    <input type="number" step="0.01" wire:model="editBonusWholesaleCredit"
+                                        class="form-control @error('editBonusWholesaleCredit') is-invalid @enderror" placeholder="0.00">
+                                </div>
+                                @error('editBonusWholesaleCredit') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Retail Section -->
+                        <h6 class="text-success border-bottom pb-2 mb-3">Retail Bonuses</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Retail Cash Bonus</label>
+                                <div class="input-group">
+                                    <select class="form-select bg-white" wire:model="editBonusRetailCashType" style="max-width: 110px;">
+                                        <option value="fixed">Fixed (Rs)</option>
+                                        <option value="percentage">Percent (%)</option>
+                                    </select>
+                                    <input type="number" step="0.01" wire:model="editBonusRetailCash"
+                                        class="form-control @error('editBonusRetailCash') is-invalid @enderror" placeholder="0.00">
+                                </div>
+                                @error('editBonusRetailCash') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Retail Credit Bonus</label>
+                                <div class="input-group">
+                                    <select class="form-select bg-white" wire:model="editBonusRetailCreditType" style="max-width: 110px;">
+                                        <option value="fixed">Fixed (Rs)</option>
+                                        <option value="percentage">Percent (%)</option>
+                                    </select>
+                                    <input type="number" step="0.01" wire:model="editBonusRetailCredit"
+                                        class="form-control @error('editBonusRetailCredit') is-invalid @enderror" placeholder="0.00">
+                                </div>
+                                @error('editBonusRetailCredit') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top">
+                        <button type="button" class="btn btn-secondary shadow-sm" wire:click="closeBonusModal" wire:loading.attr="disabled">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-warning text-white shadow-sm" wire:loading.attr="disabled">
+                            <span wire:loading.remove>
+                                <i class="bi bi-check-circle"></i> Update Bonus
+                            </span>
+                            <span wire:loading>
+                                <span class="spinner-border spinner-border-sm" role="status"></span>
+                                Saving...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
 </div>
 
 @push('styles')
@@ -641,6 +880,25 @@
 
 @push('scripts')
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // SweetAlert for Bulk Bonus Update
+    window.addEventListener('swal:confirm-bulk-update', event => {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This will update sales bonus for ALL products based on the settings!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ffc107',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, Apply to All',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Livewire.dispatch('applyBulkBonusConfirmed');
+            }
+        });
+    });
+</script>
 <script>
     // SweetAlert for delete confirmation (System Configurations)
     window.addEventListener('swal:confirm-delete', event => {

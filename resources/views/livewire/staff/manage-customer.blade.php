@@ -35,8 +35,8 @@
                 <span class="text-sm text-muted">entries</span>
             </div>
         </div>
-        <div class="card-body p-0 overflow-auto">
-            <div class="table-responsive">
+        <div class="card-body p-0" style="overflow: visible;">
+            <div class="table-responsive" style="overflow: visible;">
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
                         <tr>
@@ -53,7 +53,7 @@
                     <tbody>
                         @if($customers->count() > 0)
                             @foreach($customers as $customer)
-                                <tr>
+                                <tr wire:key="customer-{{ $customer->id }}">
                                     <td class="ps-4">{{ ($customers->currentPage() - 1) * $customers->perPage() + $loop->iteration }}</td>
                                     <td>
                                         <span class="fw-medium text-dark">{{ $customer->name }}</span>
@@ -79,43 +79,32 @@
                                     <td>
                                         <small class="text-muted">{{ $customer->created_at->format('d/m/Y') }}</small>
                                     </td>
-                                    <td class="text-end pe-2">
+                                    <td class="text-end pe-4">
                                         <div class="dropdown">
-                                            <button class="btn btn-outline-secondary dropdown-toggle"
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
                                                     type="button"
+                                                    id="actionBtn-{{ $customer->id }}"
                                                     data-bs-toggle="dropdown"
                                                     aria-expanded="false">
                                                 <i class="bi bi-gear-fill"></i> Actions
                                             </button>
 
-                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="actionBtn-{{ $customer->id }}">
                                                 <!-- Edit Customer -->
                                                 <li>
-                                                    <button class="dropdown-item"
+                                                    <button class="dropdown-item py-2"
                                                             wire:click="editCustomer({{ $customer->id }})"
-                                                            wire:loading.attr="disabled"
-                                                            title="Edit Customer">
-                                                        <span wire:loading wire:target="editCustomer({{ $customer->id }})">
-                                                            <i class="spinner-border spinner-border-sm me-2"></i> Loading...
-                                                        </span>
-                                                        <span wire:loading.remove wire:target="editCustomer({{ $customer->id }})">
-                                                            <i class="bi bi-pencil text-primary me-2"></i> Edit
-                                                        </span>
+                                                            wire:loading.attr="disabled">
+                                                        <i class="bi bi-pencil text-primary me-2"></i> Edit
                                                     </button>
                                                 </li>
 
                                                 <!-- Delete Customer -->
                                                 <li>
-                                                    <button class="dropdown-item"
+                                                    <button class="dropdown-item py-2"
                                                             wire:click="confirmDelete({{ $customer->id }})"
-                                                            wire:loading.attr="disabled"
-                                                            title="Delete Customer">
-                                                        <span wire:loading wire:target="confirmDelete({{ $customer->id }})">
-                                                            <i class="spinner-border spinner-border-sm me-2"></i> Loading...
-                                                        </span>
-                                                        <span wire:loading.remove wire:target="confirmDelete({{ $customer->id }})">
-                                                            <i class="bi bi-trash text-danger me-2"></i> Delete
-                                                        </span>
+                                                            wire:loading.attr="disabled">
+                                                        <i class="bi bi-trash text-danger me-2"></i> Delete
                                                     </button>
                                                 </li>
                                             </ul>

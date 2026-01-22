@@ -84,7 +84,7 @@ class User extends Authenticatable
 
     /**
      * Check if user has a specific permission
-     * If staff has no permissions assigned, show only dashboard as default
+     * Some pages are always accessible to staff without permission
      */
     public function hasPermission($permissionKey)
     {
@@ -92,13 +92,20 @@ class User extends Authenticatable
             return true; // Admin has all permissions
         }
 
-        // If staff has no permissions assigned at all, only show dashboard
-        $hasAnyPermissions = $this->staffPermissions()->exists();
-        if (!$hasAnyPermissions) {
-            return $permissionKey === 'menu_dashboard'; // Only dashboard available if no permissions set
+        // These permissions are always available to staff without admin approval
+        $alwaysAllowedPermissions = [
+            'menu_dashboard',      // Overview
+            'menu_sales_add',      // POS Sales / Billing
+            'menu_products',       // Products
+            'menu_products_list',  // Products List
+            'menu_customers',      // Customer Management
+        ];
+
+        if (in_array($permissionKey, $alwaysAllowedPermissions)) {
+            return true;
         }
 
-        // If permissions are assigned, check for specific permission
+        // For other permissions, check if admin has granted them
         return $this->staffPermissions()
             ->where('permission_key', $permissionKey)
             ->where('is_active', true)

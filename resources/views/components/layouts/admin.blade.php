@@ -965,6 +965,16 @@
                                     <i class="bi bi-credit-card"></i> <span>Payment Approvals</span>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-bonus') ? 'active' : '' }}" href="{{ route('admin.staff-bonus') }}">
+                                    <i class="bi bi-gift"></i> <span>Staff Bonus</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-salary-management') ? 'active' : '' }}" href="{{ route('admin.staff-salary-management') }}">
+                                    <i class="bi bi-wallet2"></i> <span>Staff Salary</span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </li>

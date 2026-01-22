@@ -19,7 +19,11 @@ class ProductDetail extends Model
         'description',
         'barcode',
         'status',
-        'sale_bonus',
+        'unit',
+        'retail_cash_bonus',
+        'retail_credit_bonus',
+        'wholesale_cash_bonus',
+        'wholesale_credit_bonus',
         'brand_id',
         'category_id',
         'supplier_id',
@@ -82,5 +86,10 @@ class ProductDetail extends Model
     {
         // If image exists, return it; otherwise return default image path
         return $value ?: 'images/product.jpg';
+    }
+
+    public function staffProducts()
+    {
+        return $this->hasMany(StaffProduct::class, 'product_id');
     }
 }

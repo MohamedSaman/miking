@@ -42,6 +42,7 @@ class StaffBilling extends Component
     public $customerAddress = '';
     public $customerType = 'retail';
     public $businessName = '';
+    public $customerTypeSale = 'retail'; // Added for sale type selection
 
     // Sale Properties
     public $notes = '';
@@ -198,6 +199,23 @@ class StaffBilling extends Component
     }
 
     // Search for staff allocated products only
+    public function updatedCustomerTypeSale($value)
+    {
+        $this->cart = collect($this->cart)->map(function ($item) use ($value) {
+            // Check if we have both prices stored
+            if (isset($item['wholesale_price']) && isset($item['retail_price'])) {
+                if ($value === 'wholesale' && $item['wholesale_price'] > 0) {
+                    $item['price'] = $item['wholesale_price'];
+                } else {
+                    $item['price'] = $item['retail_price'];
+                }
+                // Recalculate total
+                $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
+            }
+            return $item;
+        })->toArray();
+    }
+
     public function updatedSearch()
     {
         if (strlen($this->search) >= 2) {
@@ -227,13 +245,21 @@ class StaffBilling extends Component
                 ->take(10)
                 ->map(function ($staffProduct) {
                     $availableStock = ($staffProduct->quantity ?? 0) - ($staffProduct->sold_quantity ?? 0);
+                    
+                    // access master price details
+                    $masterPrice = $staffProduct->product->price;
+                    $sellingPrice = $masterPrice->selling_price ?? 0;
+                    $retailPrice = $masterPrice->retail_price ?? $sellingPrice;
+                    $wholesalePrice = $masterPrice->wholesale_price ?? 0;
 
                     return [
                         'id' => $staffProduct->product->id,
                         'name' => $staffProduct->product->name,
                         'code' => $staffProduct->product->code,
                         'model' => $staffProduct->product->model ?? '',
-                        'price' => $staffProduct->unit_price,
+                        'price' => $staffProduct->unit_price > 0 ? $staffProduct->unit_price : $sellingPrice,
+                        'retail_price' => $retailPrice,
+                        'wholesale_price' => $wholesalePrice,
                         'stock' => max(0, $availableStock),
                         'image' => $staffProduct->product->image ?? ''
                     ];
@@ -270,6 +296,14 @@ class StaffBilling extends Component
                 return $item;
             })->toArray();
         } else {
+            // Determine price based on current sale type
+            $retailPrice = $product['retail_price'] ?? $product['price'];
+            $wholesalePrice = $product['wholesale_price'] ?? 0;
+            
+            $finalPrice = ($this->customerTypeSale === 'wholesale' && $wholesalePrice > 0) 
+                          ? $wholesalePrice 
+                          : $retailPrice;
+
             // For staff, no additional discount
             $newItem = [
                 'key' => uniqid('cart_'),
@@ -277,10 +311,12 @@ class StaffBilling extends Component
                 'name' => $product['name'],
                 'code' => $product['code'],
                 'model' => $product['model'],
-                'price' => $product['price'],
+                'price' => $finalPrice,
+                'retail_price' => $retailPrice,
+                'wholesale_price' => $wholesalePrice,
                 'quantity' => 1,
                 'discount' => 0,
-                'total' => $product['price'],
+                'total' => $finalPrice,
                 'stock' => $product['stock']
             ];
 
@@ -423,7 +459,8 @@ class StaffBilling extends Component
                 'notes' => $this->notes,
                 'user_id' => Auth::id(),
                 'status' => 'confirm',
-                'sale_type' => 'staff'
+                'sale_type' => 'staff',
+                'customer_type_sale' => $this->customerTypeSale // Save sale type
             ]);
 
             // Create sale items

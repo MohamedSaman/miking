@@ -531,6 +531,7 @@ class StaffQuotationList extends Component
                     'discount_amount' => $totalCombinedDiscount,
                     'total_amount' => $this->grandTotal,
                     'payment_type' => 'full',
+                    'payment_method' => 'cash',
                     'payment_status' => 'pending',
                     'due_amount' => $this->grandTotal,
                     'notes' => $this->saleData['notes'],
@@ -583,7 +584,8 @@ class StaffQuotationList extends Component
                 $this->loadQuotations();
                 $this->dispatch('refreshPage');
                 $this->dispatch('close-modal.create-sale-modal');
-                $this->js('window.location.reload();');
+                // Redirect to staff sales list
+                $this->js('setTimeout(function() { window.location.href = "' . route('staff.sales-list') . '"; }, 1000);');
             });
         } catch (\Exception $e) {
             $this->dispatch('show-error', 'Failed to create sale: ' . $e->getMessage());

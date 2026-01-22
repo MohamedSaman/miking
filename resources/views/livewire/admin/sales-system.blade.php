@@ -62,6 +62,18 @@
                                 @endif
                             </div>
                         </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Sale Type *</label>
+                            <select class="form-select shadow-sm" wire:model.live="customerTypeSale">
+                                <option value="retail">Retail Sale</option>
+                                <option value="wholesale">Wholesale Sale</option>
+                            </select>
+                            <div class="form-text mt-2">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Determines price & bonus rates
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -113,6 +125,7 @@
                 </div>
             </div>
         </div>
+
 
 
         {{-- Sale Items Table --}}

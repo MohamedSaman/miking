@@ -11,11 +11,12 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <!-- Barcode scanner library -->
-    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js" defer></script>
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 
     <!-- Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* Use admin theme tokens */
         :root {
@@ -174,16 +175,20 @@
 
             <ul class="nav flex-column">
                 {{-- Dashboard --}}
-                @if(auth()->user()->hasPermission('menu_dashboard'))
                 <li>
                     <a class="nav-link {{ request()->routeIs('staff.dashboard') ? 'active' : '' }}" href="{{ route('staff.dashboard') }}">
                         <i class="bi bi-speedometer2"></i> <span>Overview</span>
                     </a>
                 </li>
-                @endif
+
+                {{-- Staff POS Sale - Under Overview --}}
+                <li>
+                    <a class="nav-link {{ request()->routeIs('staff.billing') ? 'active' : '' }}" href="{{ route('staff.billing') }}">
+                        <i class="bi bi-cart-plus"></i> <span>Staff POS Sale</span>
+                    </a>
+                </li>
 
                 {{-- Products Menu --}}
-                @if(auth()->user()->hasPermission('menu_products'))
                 <li class="nav-item">
                     <a class="nav-link dropdown-toggle" href="#inventorySubmenu" data-bs-toggle="collapse" role="button"
                         aria-expanded="false" aria-controls="inventorySubmenu">
@@ -191,34 +196,17 @@
                     </a>
                     <div class="collapse" id="inventorySubmenu">
                         <ul class="nav flex-column ms-3">
-                            @if(auth()->user()->hasPermission('menu_products_list'))
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('staff.Productes') }}">
                                     <i class="bi bi-card-list"></i> <span>List Product</span>
                                 </a>
                             </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_products_brand'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.Product-brand') }}">
-                                    <i class="bi bi-tags"></i> <span>Product Brand</span>
-                                </a>
-                            </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_products_category'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.Product-category') }}">
-                                    <i class="bi bi-tags-fill"></i> <span>Product Category</span>
-                                </a>
-                            </li>
-                            @endif
                         </ul>
                     </div>
                 </li>
-                @endif
 
-                {{-- Sales Menu --}}
-                @if(auth()->user()->hasPermission('menu_sales'))
+                {{-- Sales Menu - Requires Permission --}}
+                @if(auth()->user()->hasPermission('menu_sales_list'))
                 <li class="nav-item">
                     <a class="nav-link dropdown-toggle" href="#salesSubmenu" data-bs-toggle="collapse" role="button"
                         aria-expanded="false" aria-controls="salesSubmenu">
@@ -226,33 +214,17 @@
                     </a>
                     <div class="collapse" id="salesSubmenu">
                         <ul class="nav flex-column ms-3">
-                            @if(auth()->user()->hasPermission('menu_sales_add'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.sales-system') }}">
-                                    <i class="bi bi-plus-circle"></i> <span>Add Sales</span>
-                                </a>
-                            </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_sales_list'))
-                            <li class="nav-item">
+                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('staff.sales-list') }}">
-                                    <i class="bi bi-table"></i> <span>List Sales</span>
+                                    <i class="bi bi-table"></i> <span>Sales List</span>
                                 </a>
                             </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_sales_pos'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.pos-sales') }}">
-                                    <i class="bi bi-shop"></i> <span>POS Sales</span>
-                                </a>
-                            </li>
-                            @endif
                         </ul>
                     </div>
                 </li>
                 @endif
 
-                {{-- Quotation Menu --}}
+                {{-- Quotation Menu - Requires Permission --}}
                 @if(auth()->user()->hasPermission('menu_quotation'))
                 <li class="nav-item">
                     <a class="nav-link dropdown-toggle" href="#stockSubmenu" data-bs-toggle="collapse" role="button"
@@ -261,20 +233,16 @@
                     </a>
                     <div class="collapse" id="stockSubmenu">
                         <ul class="nav flex-column ms-3">
-                            @if(auth()->user()->hasPermission('menu_quotation_add'))
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('staff.quotation-system') }}">
                                     <i class="bi bi-file-plus"></i> <span>Add Quotation</span>
                                 </a>
                             </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_quotation_list'))
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('staff.quotation-list') }}">
                                     <i class="bi bi-card-list"></i> <span>List Quotation</span>
                                 </a>
                             </li>
-                            @endif
                         </ul>
                     </div>
                 </li>
@@ -308,7 +276,7 @@
                 </li>
                 @endif
 
-                {{-- Return Menu --}}
+                {{-- Return Menu - Requires Permission --}}
                 @if(auth()->user()->hasPermission('menu_return'))
                 <li class="nav-item">
                     <a class="nav-link dropdown-toggle" href="#returnSubmenu" data-bs-toggle="collapse" role="button"
@@ -317,34 +285,16 @@
                     </a>
                     <div class="collapse" id="returnSubmenu">
                         <ul class="nav flex-column ms-3">
-                            @if(auth()->user()->hasPermission('menu_return_customer_add'))
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('staff.return-add') }}">
                                     <i class="bi bi-arrow-return-left"></i> <span>Add Customer Return</span>
                                 </a>
                             </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_return_customer_list'))
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('staff.return-list') }}">
                                     <i class="bi bi-list-check"></i> <span>List Customer Return</span>
                                 </a>
                             </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_return_supplier_add'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.return-supplier') }}">
-                                    <i class="bi bi-arrow-return-left"></i> <span>Add Supplier Return</span>
-                                </a>
-                            </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_return_supplier_list'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.list-supplier-return') }}">
-                                    <i class="bi bi-list-check"></i> <span>List Supplier Return</span>
-                                </a>
-                            </li>
-                            @endif
                         </ul>
                     </div>
                 </li>
@@ -385,29 +335,17 @@
                 </li>
                 @endif
 
-                {{-- Expenses Menu --}}
+                {{-- Expenses Menu - Requires Permission --}}
                 @if(auth()->user()->hasPermission('menu_expenses'))
                 <li class="nav-item">
-                    <a class="nav-link dropdown-toggle" href="#expensesSubmenu" data-bs-toggle="collapse" role="button"
-                        aria-expanded="false" aria-controls="expensesSubmenu">
+                    <a class="nav-link" href="{{ route('staff.expenses') }}">
                         <i class="bi bi-wallet2"></i> <span>Expenses</span>
                     </a>
-                    <div class="collapse" id="expensesSubmenu">
-                        <ul class="nav flex-column ms-3">
-                            @if(auth()->user()->hasPermission('menu_expenses_list'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.expenses') }}">
-                                    <i class="bi bi-wallet2"></i> <span>List Expenses</span>
-                                </a>
-                            </li>
-                            @endif
-                        </ul>
-                    </div>
                 </li>
                 @endif
 
-                {{-- Payment Management Menu --}}
-                @if(auth()->user()->hasPermission('menu_payment'))
+                {{-- Payment Management Menu - Requires Permission --}}
+                @if(auth()->user()->hasPermission('menu_payment_management'))
                 <li class="nav-item">
                     <a class="nav-link dropdown-toggle" href="#paymentSubmenu" data-bs-toggle="collapse" role="button"
                         aria-expanded="false" aria-controls="paymentSubmenu">
@@ -425,82 +363,19 @@
                                     <i class="bi bi-list-check"></i> <span>Payment List</span>
                                 </a>
                             </li>
-                            @if(auth()->user()->hasPermission('menu_payment_customer_receipt_add'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.add-customer-receipt') }}">
-                                    <i class="bi bi-person-plus"></i> <span>Add Customer Receipt</span>
-                                </a>
-                            </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_payment_customer_receipt_list'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.list-customer-receipt') }}">
-                                    <i class="bi bi-people-fill"></i> <span>List Customer Receipt</span>
-                                </a>
-                            </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_payment_supplier_add'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.add-supplier-receipt') }}">
-                                    <i class="bi bi-truck-flatbed"></i> <span>Add Supplier Payment</span>
-                                </a>
-                            </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_payment_supplier_list'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.list-supplier-receipt') }}">
-                                    <i class="bi bi-clipboard-data"></i> <span>List Supplier Payment</span>
-                                </a>
-                            </li>
-                            @endif
                         </ul>
                     </div>
                 </li>
                 @endif
 
-                {{-- People Menu --}}
-                @if(auth()->user()->hasPermission('menu_people'))
+                {{-- Customer Management - Always Visible --}}
                 <li class="nav-item">
-                    <a class="nav-link dropdown-toggle" href="#peopleSubmenu" data-bs-toggle="collapse" role="button"
-                        aria-expanded="false" aria-controls="peopleSubmenu">
-                        <i class="bi bi-people-fill"></i> <span>People</span>
+                    <a class="nav-link" href="{{ route('staff.manage-customers') }}">
+                        <i class="bi bi-people"></i> <span>Customer Management</span>
                     </a>
-                    <div class="collapse" id="peopleSubmenu">
-                        <ul class="nav flex-column ms-3">
-                            @if(auth()->user()->hasPermission('menu_people_suppliers'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.supplier-management') }}">
-                                    <i class="bi bi-people"></i> <span>List Suppliers</span>
-                                </a>
-                            </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_people_customers'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.manage-customers') }}">
-                                    <i class="bi bi-person-lines-fill"></i> <span>List Customer</span>
-                                </a>
-                            </li>
-                            @endif
-                            @if(auth()->user()->hasPermission('menu_people_staff'))
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('staff.manage-staff') }}">
-                                    <i class="bi bi-person-badge"></i> <span>List Staff</span>
-                                </a>
-                            </li>
-                            @endif
-                        </ul>
-                    </div>
                 </li>
-                @endif
 
-                {{-- POS --}}
-                @if(auth()->user()->hasPermission('menu_pos'))
-                <li>
-                    <a class="nav-link" href="{{ route('staff.billing') }}">
-                        <i class="bi bi-cash"></i> <span>POS</span>
-                    </a>
-                </li>
-                @endif
+
 
                 {{-- Reports --}}
                 @if(auth()->user()->hasPermission('menu_reports'))
@@ -569,7 +444,8 @@
         </nav>
         <!-- Main Content -->
         <main class="main-content">
-            {{ $slot }}
+            {{ $slot ?? '' }}
+            @yield('content')
         </main>
     </div>
 
@@ -688,7 +564,31 @@
 
             // Initialize sidebar state based on screen size
             function initializeSidebar() {
-                // Existing code...
+                const isMobile = window.innerWidth < 768;
+
+                if (isMobile) {
+                    // Mobile: default collapsed (hidden)
+                    sidebar.classList.remove('show');
+                    sidebar.classList.remove('collapsed'); // Clean classes
+                    topBar.classList.remove('collapsed');
+                    mainContent.classList.remove('collapsed');
+                } else {
+                    // Desktop: check localStorage
+                    const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+
+                    if (isCollapsed) {
+                        sidebar.classList.add('collapsed');
+                        topBar.classList.add('collapsed');
+                        mainContent.classList.add('collapsed');
+                    } else {
+                        sidebar.classList.remove('collapsed');
+                        topBar.classList.remove('collapsed');
+                        mainContent.classList.remove('collapsed');
+                    }
+                }
+                
+                // Adjust height after initialization
+                setTimeout(adjustSidebarHeight, 100);
             }
 
             // Toggle sidebar function - unified for mobile and desktop

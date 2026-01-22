@@ -771,17 +771,29 @@ class AddCustomerReceipt extends Component
 
     public function getCustomersProperty()
     {
-        return Customer::with(['sales' => function ($query) {
+        $query = Customer::with(['sales' => function ($query) {
             $query->where(function ($q) {
                 $q->where('payment_status', 'pending')
                     ->orWhere('payment_status', 'partial');
             });
+            
+            // Filter sales by user for staff
+            if ($this->isStaff()) {
+                $query->where('user_id', Auth::id())
+                      ->where('sale_type', 'staff');
+            }
         }])
             ->whereHas('sales', function ($query) {
                 $query->where(function ($q) {
                     $q->where('payment_status', 'pending')
                         ->orWhere('payment_status', 'partial');
                 });
+                
+                // Filter sales by user for staff
+                if ($this->isStaff()) {
+                    $query->where('user_id', Auth::id())
+                          ->where('sale_type', 'staff');
+                }
             })
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
@@ -792,6 +804,8 @@ class AddCustomerReceipt extends Component
             })
             ->orderBy('name')
             ->paginate(10);
+            
+        return $query;
     }
 
     public function render()

@@ -15,10 +15,12 @@ class Sale extends Model
         'invoice_number',
         'customer_id',
         'customer_type',
+        'customer_type_sale',
         'subtotal',
         'discount_amount',
         'total_amount',
         'payment_type',
+        'payment_method',
         'payment_status',
         'status',
         'notes',
@@ -90,5 +92,13 @@ class Sale extends Model
     public function returns()
     {
         return $this->hasMany(ReturnsProduct::class, 'sale_id');
-    }   
+    }
+
+    /**
+     * Get the staff bonuses associated with this sale
+     */
+    public function staffBonuses()
+    {
+        return $this->hasMany(StaffBonus::class);
+    }
 }

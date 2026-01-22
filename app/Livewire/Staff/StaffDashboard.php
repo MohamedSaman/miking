@@ -41,18 +41,12 @@ class StaffDashboard extends Component
 
     public function mount()
     {
-        // Check if user has permission to view dashboard
-        if (!Auth::user()->hasPermission('menu_dashboard')) {
-            return redirect()->route('staff.billing')->with('error', 'You do not have permission to access the dashboard.');
-        }
-
         // Calculate available stock value for this staff
         $userId = Auth::id();
         $availableStockValue = StaffProduct::where('staff_id', $userId)
             ->select(DB::raw('SUM((quantity - sold_quantity) * unit_price) as available_value'))
             ->value('available_value');
         $this->availableStockValue = $availableStockValue ?? 0;
-        $userId = Auth::id();
 
         // Get sales statistics for this staff member
         $salesStats = Sale::where('user_id', $userId)
@@ -109,9 +103,8 @@ class StaffDashboard extends Component
 
         // Fix customer statistics to count unique customers correctly
         $this->totalCustomers = Sale::where('user_id', $userId)
-            ->select('customer_id')
             ->distinct()
-            ->count('user_id');
+            ->count('customer_id');
 
         // Get customer types breakdown - fixed to count distinct customers
         $customerTypes = Sale::where('user_id', $userId)

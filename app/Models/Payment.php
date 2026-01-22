@@ -13,6 +13,7 @@ class Payment extends Model
         'sale_id',
         'amount',
         'payment_method',
+        'payment_type',
         'payment_reference',
         'card_number',
         'bank_name',

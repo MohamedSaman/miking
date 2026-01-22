@@ -36,7 +36,6 @@
                             <select class="form-select shadow-sm" wire:model.live="customerId">
                                 <option value="">-- Select a Customer --</option>
                                 @foreach($customers as $customer)
-                                    <option value="">-- Select a Customer --</option>
                                     <option value="{{ $customer->id }}">
                                         {{ $customer->name }}
                                         @if($customer->phone)

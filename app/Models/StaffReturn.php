@@ -11,6 +11,7 @@ class StaffReturn extends Model
 
     protected $fillable = [
         'staff_id',
+        'sale_id',
         'product_id',
         'customer_id',
         'quantity',
@@ -21,6 +22,11 @@ class StaffReturn extends Model
         'notes',
         'status',
     ];
+
+    public function sale()
+    {
+        return $this->belongsTo(Sale::class);
+    }
 
     protected $casts = [
         'is_damaged' => 'boolean',

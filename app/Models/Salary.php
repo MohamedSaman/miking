@@ -39,6 +39,8 @@ class Salary extends Model
         'deductions',
         'overtime',
         'additional_salary',
+        'advance_salary',
+        'advance_status',
         'net_salary',
         'total_hours',
         'overtime_hours',
