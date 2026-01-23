@@ -58,6 +58,7 @@ use App\Livewire\Admin\PosSales;
 use App\Livewire\Admin\PurchaseOrderList;
 use App\Livewire\Admin\StaffProductAllocation;
 use App\Models\Setting as ModelsSetting;
+use App\Livewire\Admin\SalesDistributionManagement;
 use App\Livewire\Admin\Settings;
 use App\Livewire\Admin\Expenses;
 use App\Livewire\Admin\Income;
@@ -195,6 +196,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/quotation-system', QuotationSystem::class)->name('quotation-system');
         Route::get('/quotation-list', QuotationList::class)->name('quotation-list');
         Route::get('/sales-list', SalesList::class)->name('sales-list');
+        Route::get('/sales-distribution', SalesDistributionManagement::class)->name('sales-distribution');
         Route::get('/settings', Settings::class)->name('settings');
         Route::get('/return-product', ReturnProduct::class)->name('return-product');
         Route::get('/purchase-order-list', PurchaseOrderList::class)->name('purchase-order-list');
@@ -238,6 +240,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/sales-system', SalesSystem::class)->name('sales-system');
         Route::get('/pos-sales', PosSales::class)->name('pos-sales');
         Route::get('/sales-list', SalesList::class)->name('sales-list');
+        Route::get('/sales-distribution', SalesDistributionManagement::class)->name('sales-distribution');
         Route::get('/store-billing', StoreBilling::class)->name('store-billing');
 
         // Customers

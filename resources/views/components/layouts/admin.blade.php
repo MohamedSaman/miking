@@ -921,6 +921,7 @@
                                     <i class="bi bi-shop"></i> <span>POS Sales</span>
                                 </a>
                             </li>
+
                             {{-- no need him  --}}
                             {{--
                             <li class="nav-item">
@@ -941,6 +942,13 @@
                             --}}
                         </ul>
                     </div>
+                </li>
+                
+                <!-- Sales Distribution - Standalone -->
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('admin.sales-distribution') ? 'active' : '' }}" href="{{ route('admin.sales-distribution') }}">
+                        <i class="bi bi-truck"></i> <span>Sales Distribution</span>
+                    </a>
                 </li>
                 
                 <li class="nav-item">

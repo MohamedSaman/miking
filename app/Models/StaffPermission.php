@@ -96,6 +96,9 @@ class StaffPermission extends Model
 
             // Analytics
             'menu_analytics' => 'Analytics',
+
+            // Sales Distribution
+            'sales_distribution_access' => 'Sales Distribution Page Access',
         ];
     }
 
@@ -166,6 +169,9 @@ class StaffPermission extends Model
             'Reports & Analytics' => [
                 'menu_reports',
                 'menu_analytics',
+            ],
+            'Distribution Management' => [
+                'sales_distribution_access',
             ],
         ];
     }

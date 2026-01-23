@@ -214,13 +214,23 @@
                     </a>
                     <div class="collapse" id="salesSubmenu">
                         <ul class="nav flex-column ms-3">
-                             <li class="nav-item">
+                            <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('staff.sales-list') }}">
                                     <i class="bi bi-table"></i> <span>Sales List</span>
                                 </a>
                             </li>
+
                         </ul>
                     </div>
+                </li>
+                @endif
+
+                {{-- Sales Distribution - Standalone with Permission --}}
+                @if(auth()->user()->hasPermission('sales_distribution_access'))
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('staff.sales-distribution') ? 'active' : '' }}" href="{{ route('staff.sales-distribution') }}">
+                        <i class="bi bi-truck"></i> <span>Sales Distribution</span>
+                    </a>
                 </li>
                 @endif
 

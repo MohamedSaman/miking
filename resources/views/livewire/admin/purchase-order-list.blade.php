@@ -339,10 +339,9 @@
                                 <th style="width: 120px;">Code</th>
                                 <th>Product Name</th>
                                 <th style="width: 120px;">Order Quantity</th>
-                                
                                 <th style="width: 150px;">Supplier Price</th>
                                 <th style="width: 150px;">Total Price</th>
-                                <th style="width: 80px;">Action</th>
+                                <th style="width: 100px;">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -376,6 +375,11 @@
                                     <strong class="text-success">Rs. {{ number_format($item['total_price'], 2) }}</strong>
                                 </td>
                                 <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary mb-1" 
+                                        wire:click="openBonusModal({{ $index }})"
+                                        title="Set Sales Bonus">
+                                        <i class="bi bi-gift"></i>
+                                    </button>
                                     <button class="btn btn-sm btn-outline-danger"
                                         wire:click="removeItem({{ $index }})"
                                         title="Remove item">
@@ -685,7 +689,15 @@
                         @endphp
                         <tr>
                             <td>{{ $item->product->code ?? 'N/A' }}</td>
-                            <td>{{ $item->product->name ?? 'N/A' }}</td>
+                            <td>
+                                <div><strong>{{ $item->product->name ?? 'N/A' }}</strong></div>
+                                <div class="mt-1 d-flex flex-wrap gap-1">
+                                    <span class="badge bg-light text-dark border small" title="Retail Cash Bonus">RC: {{ number_format($item->product->retail_cash_bonus ?? 0, 0) }}</span>
+                                    <span class="badge bg-light text-dark border small" title="Retail Credit Bonus">RCR: {{ number_format($item->product->retail_credit_bonus ?? 0, 0) }}</span>
+                                    <span class="badge bg-light text-dark border small" title="Wholesale Cash Bonus">WC: {{ number_format($item->product->wholesale_cash_bonus ?? 0, 0) }}</span>
+                                    <span class="badge bg-light text-dark border small" title="Wholesale Credit Bonus">WCR: {{ number_format($item->product->wholesale_credit_bonus ?? 0, 0) }}</span>
+                                </div>
+                            </td>
                             <td>
                                 @if($item->status == 'pending')
                                 <span class="badge bg-warning">Pending</span>
@@ -837,6 +849,11 @@
                                 </strong>
                             </td>
                             <td class="text-center">
+                                <button class="btn btn-sm btn-outline-primary mb-1" 
+                                    wire:click="openBonusModal({{ $index }}, 'edit')"
+                                    title="Set Sales Bonus">
+                                    <i class="bi bi-gift"></i>
+                                </button>
                                 <button class="btn btn-sm btn-outline-danger"
                                     wire:click="removeEditItem({{ $index }})"
                                     title="Remove item">
@@ -880,6 +897,57 @@
 </div>
 </div>
 
+    {{-- Sales Bonus Modal --}}
+    <div wire:ignore.self class="modal fade" id="bonusModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-gift me-2"></i> Set Sales Bonus
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-muted">Retail Cash Bonus</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted">Rs.</span>
+                                <input type="number" class="form-control" wire:model="bonusRetailCash" min="0" step="0.01" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-muted">Retail Credit Bonus</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted">Rs.</span>
+                                <input type="number" class="form-control" wire:model="bonusRetailCredit" min="0" step="0.01" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-muted">Wholesale Cash Bonus</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted">Rs.</span>
+                                <input type="number" class="form-control" wire:model="bonusWholesaleCash" min="0" step="0.01" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-muted">Wholesale Credit Bonus</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted">Rs.</span>
+                                <input type="number" class="form-control" wire:model="bonusWholesaleCredit" min="0" step="0.01" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary border-0" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" wire:click="saveBonusValues">
+                        <i class="bi bi-check-circle me-1"></i> Save Bonus
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @push('scripts')

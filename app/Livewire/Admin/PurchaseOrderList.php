@@ -62,6 +62,13 @@ class PurchaseOrderList extends Component
     public $newProducts = [];
     public $perPage = 10;
 
+    public $bonusItemIndex = null;
+    public $bonusRetailCash = 0;
+    public $bonusRetailCredit = 0;
+    public $bonusWholesaleCash = 0;
+    public $bonusWholesaleCredit = 0;
+    public $bonusMode = 'create'; // 'create' or 'edit'
+
     public function mount()
     {
         $this->suppliers = ProductSupplier::all();
@@ -159,7 +166,7 @@ class PurchaseOrderList extends Component
                 'name' => $product->name,
                 'quantity' => 1,
                 'supplier_price' => $price,
-                'total_price' => $price
+                'total_price' => $price,
             ]);
         }
 
@@ -209,6 +216,49 @@ class PurchaseOrderList extends Component
         unset($this->orderItems[$index]);
         $this->orderItems = array_values($this->orderItems);
         $this->calculateGrandTotal();
+    }
+
+    public function openBonusModal($index, $mode = 'create')
+    {
+        $this->bonusMode = $mode;
+        $items = $mode === 'create' ? $this->orderItems : $this->editOrderItems;
+
+        if (!isset($items[$index])) return;
+
+        $this->bonusItemIndex = $index;
+        $productId = $items[$index]['product_id'];
+        $product = ProductDetail::find($productId);
+
+        if ($product) {
+            $this->bonusRetailCash = $product->retail_cash_bonus ?? 0;
+            $this->bonusRetailCredit = $product->retail_credit_bonus ?? 0;
+            $this->bonusWholesaleCash = $product->wholesale_cash_bonus ?? 0;
+            $this->bonusWholesaleCredit = $product->wholesale_credit_bonus ?? 0;
+        }
+
+        $this->js("new bootstrap.Modal(document.getElementById('bonusModal')).show();");
+    }
+
+    public function saveBonusValues()
+    {
+        $items_property = $this->bonusMode === 'create' ? 'orderItems' : 'editOrderItems';
+        
+        if ($this->bonusItemIndex === null || !isset($this->{$items_property}[$this->bonusItemIndex])) return;
+
+        $productId = $this->{$items_property}[$this->bonusItemIndex]['product_id'];
+        $product = ProductDetail::find($productId);
+
+        if ($product) {
+            $product->update([
+                'retail_cash_bonus' => $this->bonusRetailCash,
+                'retail_credit_bonus' => $this->bonusRetailCredit,
+                'wholesale_cash_bonus' => $this->bonusWholesaleCash,
+                'wholesale_credit_bonus' => $this->bonusWholesaleCredit,
+            ]);
+        }
+
+        $this->js("bootstrap.Modal.getInstance(document.getElementById('bonusModal')).hide();");
+        $this->js("Swal.fire({ icon: 'success', title: 'Product Bonus Updated', text: 'Default bonus for this product has been updated.', timer: 1500, showConfirmButton: false });");
     }
 
     public function saveOrder()
