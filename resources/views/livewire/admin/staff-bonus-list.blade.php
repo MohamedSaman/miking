@@ -180,7 +180,7 @@
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
             <h5 class="mb-0 fw-bold">
-                <i class="bi bi-list-check text-primary me-2"></i>Bonus Details
+                <i class="bi bi-list-check text-primary me-2"></i>Sale-wise Bonus Details
             </h5>
             <div class="d-flex align-items-center gap-2">
                 <label class="text-muted small">Show</label>
@@ -202,12 +202,11 @@
                             <th>Date</th>
                             <th>Invoice</th>
                             <th>Staff</th>
-                            <th>Product</th>
-                            <th class="text-center">Qty</th>
+                            <th>Items</th>
                             <th>Sale Type</th>
                             <th>Payment</th>
-                            <th class="text-end">Bonus/Unit</th>
-                            <th class="text-end">Total Bonus</th>
+                            <th class="text-end">Total Sale Bonus</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -220,50 +219,45 @@
                                 <small class="text-muted">{{ $bonus->created_at->format('H:i') }}</small>
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark">{{ $bonus->sale->invoice_number ?? 'N/A' }}</span>
+                                <span class="badge bg-light text-dark fw-bold">{{ $bonus->sale->invoice_number ?? 'N/A' }}</span>
                             </td>
                             <td>
                                 <div class="d-flex align-items-center">
                                     <div class="avatar bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px; font-size: 12px;">
                                         {{ strtoupper(substr($bonus->staff->name ?? 'S', 0, 1)) }}
                                     </div>
-                                    <span>{{ $bonus->staff->name ?? 'Unknown' }}</span>
+                                    <span class="fw-medium">{{ $bonus->staff->name ?? 'Unknown' }}</span>
                                 </div>
                             </td>
                             <td>
-                                <div>
-                                    <span class="fw-medium">{{ $bonus->product->name ?? 'N/A' }}</span>
-                                    <br>
-                                    <small class="text-muted">{{ $bonus->product->code ?? '' }}</small>
-                                </div>
-                            </td>
-                            <td class="text-center">
-                                <span class="badge bg-secondary">{{ $bonus->quantity }}</span>
+                                <span class="badge bg-secondary rounded-pill">{{ $bonus->items_count }} products</span>
                             </td>
                             <td>
                                 @if($bonus->sale_type === 'wholesale')
-                                <span class="badge bg-success">Wholesale</span>
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Wholesale</span>
                                 @else
-                                <span class="badge bg-info">Retail</span>
+                                <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">Retail</span>
                                 @endif
                             </td>
                             <td>
                                 @if($bonus->payment_method === 'cash')
-                                <span class="badge bg-warning text-dark">Cash</span>
+                                <span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25">Cash</span>
                                 @else
-                                <span class="badge bg-danger">Credit</span>
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Credit</span>
                                 @endif
                             </td>
                             <td class="text-end">
-                                <span class="text-muted">Rs.{{ number_format($bonus->bonus_per_unit, 2) }}</span>
+                                <span class="fw-bold text-success fs-6">Rs.{{ number_format($bonus->total_sale_bonus, 2) }}</span>
                             </td>
-                            <td class="text-end">
-                                <span class="fw-bold text-success">Rs.{{ number_format($bonus->total_bonus, 2) }}</span>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3" wire:click="viewSaleBonus({{ $bonus->sale_id }})">
+                                    <i class="bi bi-eye me-1"></i> View
+                                </button>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="10" class="text-center py-5">
+                            <td colspan="9" class="text-center py-5">
                                 <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
                                 <p class="text-muted mb-0">No bonus records found</p>
                             </td>
@@ -281,4 +275,90 @@
         </div>
         @endif
     </div>
+
+    {{-- Bonus Detail Modal --}}
+    @if($showBonusDetailModal && $selectedSaleInfo)
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white py-3">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-info-circle me-2"></i>Bonus Breakdown for Invoice #{{ $selectedSaleInfo->invoice_number }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" wire:click="closeBonusDetailModal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6 border-end">
+                            <label class="text-muted small d-block mb-1">STAF MEMBER</label>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                    {{ strtoupper(substr($selectedSaleInfo->user->name ?? 'S', 0, 1)) }}
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold">{{ $selectedSaleInfo->user->name ?? 'Unknown' }}</h6>
+                                    <small class="text-muted">{{ $selectedSaleInfo->user->email ?? '' }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 ps-md-4">
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="text-muted small d-block mb-1">SALE DATE</label>
+                                    <span class="fw-medium">{{ $selectedSaleInfo->created_at->format('d M, Y H:i') }}</span>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="text-muted small d-block mb-1">CUSTOMER</label>
+                                    <span class="fw-medium">{{ $selectedSaleInfo->customer->name ?? 'Walk-in Customer' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product Details</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-end">Bonus/Unit</th>
+                                    <th class="text-end">Total Bonus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php $totalModalBonus = 0; @endphp
+                                @foreach($selectedSaleBonuses as $bonus)
+                                @php $totalModalBonus += $bonus->total_bonus; @endphp
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ $bonus->product->name ?? 'N/A' }}</div>
+                                        <small class="text-muted">{{ $bonus->product->code ?? '' }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary rounded-pill">{{ $bonus->quantity }}</span>
+                                    </td>
+                                    <td class="text-end">Rs.{{ number_format($bonus->bonus_per_unit, 2) }}</td>
+                                    <td class="text-end fw-bold text-success">Rs.{{ number_format($bonus->total_bonus, 2) }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Grand Total Bonus:</td>
+                                    <td class="text-end fw-bold text-primary fs-5">Rs.{{ number_format($totalModalBonus, 2) }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0 py-3">
+                    <button type="button" class="btn btn-secondary px-4" wire:click="closeBonusDetailModal">Close</button>
+                    <a href="{{ route('admin.staff-sales') }}?view_sale_id={{ $selectedSaleInfo->id }}" class="btn btn-primary px-4">
+                        <i class="bi bi-receipt me-1"></i> View Original Sale
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>

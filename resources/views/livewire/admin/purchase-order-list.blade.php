@@ -341,7 +341,7 @@
                                 <th style="width: 120px;">Order Quantity</th>
                                 <th style="width: 150px;">Supplier Price</th>
                                 <th style="width: 150px;">Total Price</th>
-                                <th style="width: 100px;">Action</th>
+                                <th style="width: 220px;">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -375,16 +375,18 @@
                                     <strong class="text-success">Rs. {{ number_format($item['total_price'], 2) }}</strong>
                                 </td>
                                 <td class="text-center">
-                                    <button class="btn btn-sm btn-outline-primary mb-1" 
-                                        wire:click="openBonusModal({{ $index }})"
-                                        title="Set Sales Bonus">
-                                        <i class="bi bi-gift"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger"
-                                        wire:click="removeItem({{ $index }})"
-                                        title="Remove item">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <button class="btn btn-sm btn-primary d-flex align-items-center gap-1" 
+                                            wire:click="openBonusModal({{ $index }})"
+                                            title="Set Sales Bonus">
+                                            <i class="bi bi-gift-fill small"></i> Bonus
+                                        </button>
+                                        <button class="btn btn-sm btn-danger d-flex align-items-center gap-1"
+                                            wire:click="removeItem({{ $index }})"
+                                            title="Remove item">
+                                            <i class="bi bi-trash-fill small"></i> Delete
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             @empty
@@ -816,7 +818,7 @@
                             <th style="width: 120px;">Quantity</th>
                             <th style="width: 120px;">Unit Price</th>
                             <th style="width: 150px;">Total</th>
-                            <th style="width: 80px;">Action</th>
+                            <th style="width: 180px;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -849,16 +851,18 @@
                                 </strong>
                             </td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-primary mb-1" 
-                                    wire:click="openBonusModal({{ $index }}, 'edit')"
-                                    title="Set Sales Bonus">
-                                    <i class="bi bi-gift"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger"
-                                    wire:click="removeEditItem({{ $index }})"
-                                    title="Remove item">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button class="btn btn-sm btn-primary d-flex align-items-center gap-1" 
+                                        wire:click="openBonusModal({{ $index }}, 'edit')"
+                                        title="Set Sales Bonus">
+                                        <i class="bi bi-gift-fill small"></i> Bonus
+                                    </button>
+                                    <button class="btn btn-sm btn-danger d-flex align-items-center gap-1"
+                                        wire:click="removeEditItem({{ $index }})"
+                                        title="Remove item">
+                                        <i class="bi bi-trash-fill small"></i> Delete
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         @endforeach
@@ -908,34 +912,75 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <div class="row g-3">
+                    <div class="row g-4">
+                        <!-- Retail Cash Bonus -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-muted">Retail Cash Bonus</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light text-muted">Rs.</span>
-                                <input type="number" class="form-control" wire:model="bonusRetailCash" min="0" step="0.01" placeholder="0.00">
+                            <label class="form-label fw-bold small text-primary mb-2">Retail Cash Bonus</label>
+                            <div class="d-flex gap-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                    <input type="number" class="form-control" wire:model.live="bonusRetailCash" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" wire:model.live="bonusRetailCashPercentage" min="0" step="0.01" placeholder="0">
+                                    <span class="input-group-text bg-light text-muted">%</span>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Retail Credit Bonus -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-muted">Retail Credit Bonus</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light text-muted">Rs.</span>
-                                <input type="number" class="form-control" wire:model="bonusRetailCredit" min="0" step="0.01" placeholder="0.00">
+                            <label class="form-label fw-bold small text-primary mb-2">Retail Credit Bonus</label>
+                            <div class="d-flex gap-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                    <input type="number" class="form-control" wire:model.live="bonusRetailCredit" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" wire:model.live="bonusRetailCreditPercentage" min="0" step="0.01" placeholder="0">
+                                    <span class="input-group-text bg-light text-muted">%</span>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Wholesale Cash Bonus -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-muted">Wholesale Cash Bonus</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light text-muted">Rs.</span>
-                                <input type="number" class="form-control" wire:model="bonusWholesaleCash" min="0" step="0.01" placeholder="0.00">
+                            <label class="form-label fw-bold small text-primary mb-2">Wholesale Cash Bonus</label>
+                            <div class="d-flex gap-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                    <input type="number" class="form-control" wire:model.live="bonusWholesaleCash" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" wire:model.live="bonusWholesaleCashPercentage" min="0" step="0.01" placeholder="0">
+                                    <span class="input-group-text bg-light text-muted">%</span>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Wholesale Credit Bonus -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-muted">Wholesale Credit Bonus</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light text-muted">Rs.</span>
-                                <input type="number" class="form-control" wire:model="bonusWholesaleCredit" min="0" step="0.01" placeholder="0.00">
+                            <label class="form-label fw-bold small text-primary mb-2">Wholesale Credit Bonus</label>
+                            <div class="d-flex gap-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                    <input type="number" class="form-control" wire:model.live="bonusWholesaleCredit" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" wire:model.live="bonusWholesaleCreditPercentage" min="0" step="0.01" placeholder="0">
+                                    <span class="input-group-text bg-light text-muted">%</span>
+                                </div>
                             </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-muted small bg-light p-2 rounded border">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="bi bi-info-circle me-1"></i> Retail Reference:</span>
+                            <span class="fw-bold">Rs. {{ number_format($itemRetailPrice, 2) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span><i class="bi bi-info-circle me-1"></i> Wholesale Reference:</span>
+                            <span class="fw-bold">Rs. {{ number_format($itemWholesalePrice, 2) }}</span>
                         </div>
                     </div>
                 </div>

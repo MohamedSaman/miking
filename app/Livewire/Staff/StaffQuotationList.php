@@ -527,11 +527,12 @@ class StaffQuotationList extends Component
                     'invoice_number' => Sale::generateInvoiceNumber(),
                     'customer_id' => $customer->id,
                     'customer_type' => $customer->type,
+                    'customer_type_sale' => $this->selectedQuotation->sale_type ?? 'retail',
                     'subtotal' => $this->subtotal,
                     'discount_amount' => $totalCombinedDiscount,
                     'total_amount' => $this->grandTotal,
                     'payment_type' => 'full',
-                    'payment_method' => 'cash',
+                    'payment_method' => 'credit',
                     'payment_status' => 'pending',
                     'due_amount' => $this->grandTotal,
                     'notes' => $this->saleData['notes'],
@@ -578,6 +579,9 @@ class StaffQuotationList extends Component
                     'status' => 'converted',
                     'converted_at' => now()
                 ]);
+
+                // Calculate and record staff bonuses
+                \App\Services\StaffBonusService::calculateBonusesForSale($sale);
 
                 $this->dispatch('show-success', 'Sale created successfully from quotation!');
 

@@ -23,6 +23,13 @@ class StaffBonusService
             $saleType = $sale->customer_type_sale ?? 'retail';
             $paymentMethod = $sale->payment_method ?? 'cash';
             $staffId = $sale->user_id;
+            
+            // Check if the user is a staff member. Admins do not get bonuses.
+            $user = \App\Models\User::find($staffId);
+            if (!$user || $user->role !== 'staff') {
+                Log::info("Staff Bonus skipped: User is not staff or not found.", ['user_id' => $staffId]);
+                return;
+            }
 
             // Get all sale items
             $saleItems = $sale->items;

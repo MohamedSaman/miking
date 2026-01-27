@@ -113,6 +113,24 @@ class Settings extends Component
         $this->availablePermissions = StaffPermission::availablePermissions();
         $this->permissionCategories = StaffPermission::permissionCategories();
         $this->expenseDate = now()->format('Y-m-d');
+        
+        // Load bulk bonus settings from database
+        $this->loadBulkBonusSettings();
+    }
+
+    public function loadBulkBonusSettings()
+    {
+        $this->bulkRetailCashBonusType = Setting::where('key', 'bulk_retail_cash_bonus_type')->value('value') ?? 'percentage';
+        $this->bulkRetailCashBonusValue = Setting::where('key', 'bulk_retail_cash_bonus_value')->value('value') ?? 0;
+        
+        $this->bulkRetailCreditBonusType = Setting::where('key', 'bulk_retail_credit_bonus_type')->value('value') ?? 'percentage';
+        $this->bulkRetailCreditBonusValue = Setting::where('key', 'bulk_retail_credit_bonus_value')->value('value') ?? 0;
+        
+        $this->bulkWholesaleCashBonusType = Setting::where('key', 'bulk_wholesale_cash_bonus_type')->value('value') ?? 'percentage';
+        $this->bulkWholesaleCashBonusValue = Setting::where('key', 'bulk_wholesale_cash_bonus_value')->value('value') ?? 0;
+        
+        $this->bulkWholesaleCreditBonusType = Setting::where('key', 'bulk_wholesale_credit_bonus_type')->value('value') ?? 'percentage';
+        $this->bulkWholesaleCreditBonusValue = Setting::where('key', 'bulk_wholesale_credit_bonus_value')->value('value') ?? 0;
     }
 
     public function loadExpenseCategories()
@@ -549,6 +567,9 @@ class Settings extends Component
                 'bulkWholesaleCreditBonusValue' => 'required|numeric|min:0',
             ]);
 
+            // Save these as defaults first
+            $this->saveBulkDefaults();
+
             $products = ProductDetail::with('price')->get();
             $count = 0;
 
@@ -594,6 +615,46 @@ class Settings extends Component
 
         } catch (\Exception $e) {
             $this->js("Swal.fire('Error!', 'Unable to apply bulk bonus. Please check values.', 'error')");
+        }
+    }
+
+    public function saveBulkDefaults()
+    {
+        $settings = [
+            'bulk_retail_cash_bonus_type' => $this->bulkRetailCashBonusType,
+            'bulk_retail_cash_bonus_value' => $this->bulkRetailCashBonusValue,
+            'bulk_retail_credit_bonus_type' => $this->bulkRetailCreditBonusType,
+            'bulk_retail_credit_bonus_value' => $this->bulkRetailCreditBonusValue,
+            'bulk_wholesale_cash_bonus_type' => $this->bulkWholesaleCashBonusType,
+            'bulk_wholesale_cash_bonus_value' => $this->bulkWholesaleCashBonusValue,
+            'bulk_wholesale_credit_bonus_type' => $this->bulkWholesaleCreditBonusType,
+            'bulk_wholesale_credit_bonus_value' => $this->bulkWholesaleCreditBonusValue,
+        ];
+
+        foreach ($settings as $key => $value) {
+            Setting::updateOrCreate(
+                ['key' => $key],
+                ['value' => $value, 'date' => now()]
+            );
+        }
+        
+        $this->loadSettings(); // Refresh general settings list if visible
+    }
+
+    public function updateBonusDefaults()
+    {
+        try {
+            $this->validate([
+                'bulkRetailCashBonusValue' => 'required|numeric|min:0',
+                'bulkRetailCreditBonusValue' => 'required|numeric|min:0',
+                'bulkWholesaleCashBonusValue' => 'required|numeric|min:0',
+                'bulkWholesaleCreditBonusValue' => 'required|numeric|min:0',
+            ]);
+
+            $this->saveBulkDefaults();
+            $this->js("Swal.fire('Success!', 'Bonus defaults updated successfully.', 'success')");
+        } catch (\Exception $e) {
+            $this->js("Swal.fire('Error!', 'Unable to update defaults.', 'error')");
         }
     }
 

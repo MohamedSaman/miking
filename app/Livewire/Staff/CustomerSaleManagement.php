@@ -25,6 +25,10 @@ class CustomerSaleManagement extends Component
     public $selectedSale = null;
     public $saleItems = [];
 
+    public function mount()
+    {
+    }
+
     protected $queryString = [
         'search' => ['except' => ''],
         'filterStatus' => ['except' => ''],

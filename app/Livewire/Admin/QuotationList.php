@@ -42,9 +42,14 @@ class QuotationList extends Component
     public $searchTerms = [];
     public $showSearchResults = [];
     public $perPage = 10;
+    public $filterUser = '';
+    public $staffUsers = [];
 
     public function mount()
     {
+        if (!$this->isStaff()) {
+            $this->staffUsers = \App\Models\User::all();
+        }
         // initial count only; the paginated list is returned from render()
         $this->loadQuotations();
     }
@@ -594,6 +599,10 @@ class QuotationList extends Component
                     ->orWhere('customer_name', 'like', '%' . $this->search . '%')
                     ->orWhere('customer_phone', 'like', '%' . $this->search . '%');
             });
+        }
+
+        if ($this->filterUser) {
+            $query->where('created_by', $this->filterUser);
         }
 
         $quotations = $query->orderBy('created_at', 'desc')->paginate($this->perPage);

@@ -20,6 +20,8 @@ class SalesDistribution extends Model
         'description',
         'products',
         'distribution_date',
+        'invoice_no',
+        'selection_type',
         'created_by',
     ];
 

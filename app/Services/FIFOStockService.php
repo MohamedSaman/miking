@@ -72,6 +72,8 @@ class FIFOStockService
             if ($stock) {
                 $stock->available_stock -= $quantity;
                 $stock->sold_count += $quantity;
+                // Keep total_stock in sync: available + damage
+                $stock->total_stock = $stock->available_stock + $stock->damage_stock;
                 $stock->save();
             }
 

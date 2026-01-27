@@ -23,21 +23,17 @@ class ReturnList extends Component
 
     // Do not store the full collection/paginator in a public property
     public $returnsCount = 0;
-    public $staffReturnsCount = 0;
     public $returnSearch = '';
-    public $staffReturnSearch = '';
     public $selectedReturn = null;
-    public $selectedStaffReturn = null;
     public $showReceiptModal = false;
     public $currentReturnId = null;
     public $perPage = 10;
-    public $activeTab = 'returns'; // 'returns' or 'staff-returns'
+    public $activeTab = 'returns';
 
     public function mount()
     {
         // Load lightweight count; actual paginated data is returned from render()
         $this->loadReturns();
-        $this->loadStaffReturns();
     }
 
     protected function loadReturns()
@@ -65,26 +61,6 @@ class ReturnList extends Component
         $this->returnsCount = $query->count();
     }
 
-    protected function loadStaffReturns()
-    {
-        $query = StaffReturn::with(['sale', 'product', 'staff', 'customer']);
-
-        if (!empty($this->staffReturnSearch)) {
-            $search = '%' . $this->staffReturnSearch . '%';
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('sale', function ($sq) use ($search) {
-                    $sq->where('invoice_number', 'like', $search);
-                })->orWhereHas('product', function ($pq) use ($search) {
-                    $pq->where('name', 'like', $search)
-                        ->orWhere('code', 'like', $search);
-                })->orWhereHas('staff', function ($uq) use ($search) {
-                    $uq->where('name', 'like', $search);
-                });
-            });
-        }
-        $this->staffReturnsCount = $query->count();
-    }
-
     public function setActiveTab($tab)
     {
         $this->activeTab = $tab;
@@ -95,12 +71,6 @@ class ReturnList extends Component
     {
         $this->resetPage();
         $this->loadReturns();
-    }
-
-    public function updatedStaffReturnSearch()
-    {
-        $this->resetPage();
-        $this->loadStaffReturns();
     }
 
     public function showReturnDetails($id)
@@ -186,6 +156,8 @@ class ReturnList extends Component
             if ($productStock->sold_count >= $return->return_quantity) {
                 $productStock->sold_count += $return->return_quantity;
             }
+            // Sync total stock
+            $productStock->total_stock = $productStock->available_stock + $productStock->damage_stock;
             $productStock->save();
         }
     }
@@ -193,145 +165,13 @@ class ReturnList extends Component
     public function closeModal()
     {
         $this->selectedReturn = null;
-        $this->selectedStaffReturn = null;
         $this->currentReturnId = null;
         $this->showReceiptModal = false;
         $this->dispatch('hideModal', 'returnDetailsModal');
         $this->dispatch('hideModal', 'deleteReturnModal');
         $this->dispatch('hideModal', 'receiptModal');
-        $this->dispatch('hideModal', 'staffReturnDetailsModal');
-        $this->dispatch('hideModal', 'approveStaffReturnModal');
-        $this->dispatch('hideModal', 'rejectStaffReturnModal');
     }
 
-    // Staff Return Methods
-    public function showStaffReturnDetails($id)
-    {
-        $this->selectedStaffReturn = StaffReturn::with(['sale.customer', 'product', 'staff', 'customer'])->find($id);
-        $this->dispatch('showModal', 'staffReturnDetailsModal');
-    }
-
-    public function approveStaffReturn($id)
-    {
-        $this->selectedStaffReturn = StaffReturn::with(['sale', 'product'])->find($id);
-        $this->dispatch('showModal', 'approveStaffReturnModal');
-    }
-
-    public function confirmApproveStaffReturn()
-    {
-        try {
-            DB::beginTransaction();
-
-            if ($this->selectedStaffReturn) {
-                // Update status to approved
-                $this->selectedStaffReturn->status = 'approved';
-                $this->selectedStaffReturn->save();
-
-                // Restore stock - increase available stock
-                $productStock = ProductStock::where('product_id', $this->selectedStaffReturn->product_id)->first();
-                if ($productStock) {
-                    $productStock->available_stock += $this->selectedStaffReturn->quantity;
-                    if ($productStock->sold_count >= $this->selectedStaffReturn->quantity) {
-                        $productStock->sold_count -= $this->selectedStaffReturn->quantity;
-                    }
-                    $productStock->save();
-                }
-
-                // Reduce due amount from sale if exists
-                if ($this->selectedStaffReturn->sale_id) {
-                    $sale = Sale::find($this->selectedStaffReturn->sale_id);
-                    if ($sale && $sale->due_amount > 0) {
-                        $returnAmount = floatval($this->selectedStaffReturn->total_amount);
-                        $currentDue = floatval($sale->due_amount);
-                        
-                        // Reduce due amount by return total
-                        $newDue = max(0, $currentDue - $returnAmount);
-                        $sale->due_amount = $newDue;
-                        
-                        // Update payment status if due is cleared
-                        if ($newDue == 0) {
-                            $sale->payment_status = 'paid';
-                        }
-                        $sale->save();
-                    }
-                }
-
-                DB::commit();
-
-                $this->loadStaffReturns();
-                $this->dispatch('hideModal', 'approveStaffReturnModal');
-                $this->dispatch('showToast', ['type' => 'success', 'message' => 'Staff return approved successfully! Stock updated and due amount adjusted.']);
-                $this->selectedStaffReturn = null;
-            }
-        } catch (\Exception $e) {
-            DB::rollBack();
-            $this->dispatch('showToast', ['type' => 'error', 'message' => 'Error approving return: ' . $e->getMessage()]);
-        }
-    }
-
-    public function rejectStaffReturn($id)
-    {
-        $this->selectedStaffReturn = StaffReturn::with(['sale', 'product', 'staff'])->find($id);
-        $this->dispatch('showModal', 'rejectStaffReturnModal');
-    }
-
-    public function confirmRejectStaffReturn()
-    {
-        try {
-            if ($this->selectedStaffReturn) {
-                $this->selectedStaffReturn->status = 'rejected';
-                $this->selectedStaffReturn->save();
-
-                $this->loadStaffReturns();
-                $this->dispatch('hideModal', 'rejectStaffReturnModal');
-                $this->dispatch('showToast', ['type' => 'warning', 'message' => 'Staff return rejected.']);
-                $this->selectedStaffReturn = null;
-            }
-        } catch (\Exception $e) {
-            $this->dispatch('showToast', ['type' => 'error', 'message' => 'Error rejecting return: ' . $e->getMessage()]);
-        }
-    }
-
-    public function deleteStaffReturn($id)
-    {
-        $this->selectedStaffReturn = StaffReturn::find($id);
-        $this->dispatch('showModal', 'deleteStaffReturnModal');
-    }
-
-    public function confirmDeleteStaffReturn()
-    {
-        try {
-            if ($this->selectedStaffReturn) {
-                // If it was approved, restore the stock changes
-                if ($this->selectedStaffReturn->status === 'approved') {
-                    $productStock = ProductStock::where('product_id', $this->selectedStaffReturn->product_id)->first();
-                    if ($productStock) {
-                        $productStock->available_stock -= $this->selectedStaffReturn->quantity;
-                        $productStock->sold_count += $this->selectedStaffReturn->quantity;
-                        $productStock->save();
-                    }
-
-                    // Restore due amount
-                    if ($this->selectedStaffReturn->sale_id) {
-                        $sale = Sale::find($this->selectedStaffReturn->sale_id);
-                        if ($sale) {
-                            $sale->due_amount += floatval($this->selectedStaffReturn->total_amount);
-                            $sale->payment_status = 'partial';
-                            $sale->save();
-                        }
-                    }
-                }
-
-                $this->selectedStaffReturn->delete();
-                $this->loadStaffReturns();
-                $this->dispatch('hideModal', 'deleteStaffReturnModal');
-                $this->dispatch('showToast', ['type' => 'success', 'message' => 'Staff return deleted successfully!']);
-                $this->selectedStaffReturn = null;
-            }
-        } catch (\Exception $e) {
-            $this->dispatch('showToast', ['type' => 'error', 'message' => 'Error deleting return: ' . $e->getMessage()]);
-        }
-    }
 
     public function render()
     {
@@ -358,38 +198,9 @@ class ReturnList extends Component
         }
         $returns = $query->paginate($this->perPage);
 
-        // Staff returns query (only for admin)
-        $staffReturns = collect();
-        $pendingStaffReturnsCount = 0;
-        
-        if (!$this->isStaff()) {
-            $staffQuery = StaffReturn::with(['sale.customer', 'product', 'staff', 'customer'])
-                ->orderByDesc('created_at');
-
-            if (!empty($this->staffReturnSearch)) {
-                $search = '%' . $this->staffReturnSearch . '%';
-                $staffQuery->where(function ($q) use ($search) {
-                    $q->whereHas('sale', function ($sq) use ($search) {
-                        $sq->where('invoice_number', 'like', $search);
-                    })->orWhereHas('product', function ($pq) use ($search) {
-                        $pq->where('name', 'like', $search)
-                            ->orWhere('code', 'like', $search);
-                    })->orWhereHas('staff', function ($uq) use ($search) {
-                        $uq->where('name', 'like', $search);
-                    });
-                });
-            }
-            
-            $staffReturns = $staffQuery->paginate($this->perPage, ['*'], 'staffPage');
-            $pendingStaffReturnsCount = StaffReturn::where('status', 'pending')->count();
-        }
-
         return view('livewire.admin.return-list', [
             'returns' => $returns,
-            'staffReturns' => $staffReturns,
-            'pendingStaffReturnsCount' => $pendingStaffReturnsCount,
             'selectedReturn' => $this->selectedReturn,
-            'selectedStaffReturn' => $this->selectedStaffReturn,
             'currentReturnId' => $this->currentReturnId,
         ])->layout($this->layout);
     }

@@ -58,7 +58,6 @@ use App\Livewire\Admin\PosSales;
 use App\Livewire\Admin\PurchaseOrderList;
 use App\Livewire\Admin\StaffProductAllocation;
 use App\Models\Setting as ModelsSetting;
-use App\Livewire\Admin\SalesDistributionManagement;
 use App\Livewire\Admin\Settings;
 use App\Livewire\Admin\Expenses;
 use App\Livewire\Admin\Income;
@@ -81,6 +80,12 @@ use App\Livewire\Admin\StaffSalesView;
 use App\Livewire\Admin\StaffPaymentApproval;
 use App\Livewire\Admin\StaffBonusList;
 use App\Livewire\Admin\StaffSalary;
+use App\Livewire\Admin\StaffAllocationList;
+use App\Livewire\Admin\StaffAllocatedProducts;
+use App\Livewire\Admin\StaffReturnRequests;
+use App\Livewire\Admin\StaffCustomerReturnList;
+use App\Livewire\Admin\SalesDistributionManagement;
+use App\Livewire\Staff\MyAllocatedProducts;
 
 /*
 |--------------------------------------------------------------------------
@@ -196,11 +201,16 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/quotation-system', QuotationSystem::class)->name('quotation-system');
         Route::get('/quotation-list', QuotationList::class)->name('quotation-list');
         Route::get('/sales-list', SalesList::class)->name('sales-list');
-        Route::get('/sales-distribution', SalesDistributionManagement::class)->name('sales-distribution');
         Route::get('/settings', Settings::class)->name('settings');
         Route::get('/return-product', ReturnProduct::class)->name('return-product');
         Route::get('/purchase-order-list', PurchaseOrderList::class)->name('purchase-order-list');
         Route::get('/return-list', ReturnList::class)->name('return-list');
+        Route::get('/staff-allocation-list', StaffAllocationList::class)->name('staff-allocation-list');
+        Route::get('/staff-return-requests/{staffId?}', StaffReturnRequests::class)->name('staff-return-requests');
+        Route::get('/staff-product-return/{staffId?}', StaffReturnRequests::class)->name('staff-product-return');
+        Route::get('/staff-customer-return', StaffCustomerReturnList::class)->name('staff-customer-return');
+        Route::get('/staff-allocated-products/{staffId?}', StaffAllocatedProducts::class)->name('staff-allocated-products');
+        Route::get('/sales-distribution', SalesDistributionManagement::class)->name('sales-distribution');
         Route::get('/add-customer-receipt', AddCustomerReceipt::class)->name('add-customer-receipt');
         Route::get('/cheque-list', ChequeList::class)->name('cheque-list');
         Route::get('/return-cheque', ReturnCheque::class)->name('return-cheque');
@@ -240,7 +250,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/sales-system', SalesSystem::class)->name('sales-system');
         Route::get('/pos-sales', PosSales::class)->name('pos-sales');
         Route::get('/sales-list', SalesList::class)->name('sales-list');
-        Route::get('/sales-distribution', SalesDistributionManagement::class)->name('sales-distribution');
         Route::get('/store-billing', StoreBilling::class)->name('store-billing');
 
         // Customers
@@ -267,8 +276,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         // Returns
         Route::get('/return-add', \App\Livewire\Staff\StaffReturnManagement::class)->name('return-add');
         Route::get('/return-list', \App\Livewire\Staff\StaffReturnList::class)->name('return-list');
+        Route::get('/staff-customer-return', \App\Livewire\Staff\StaffReturnList::class)->name('staff-customer-return');
         Route::get('/return-supplier', ReturnSupplier::class)->name('return-supplier');
         Route::get('/list-supplier-return', ListSupplierReturn::class)->name('list-supplier-return');
+        Route::get('/allocated-products', MyAllocatedProducts::class)->name('allocated-products');
 
         // Payments
         Route::get('/due-payments', AddCustomerReceipt::class)->name('due-payments'); // Use same component as add-customer-receipt
@@ -303,6 +314,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
         // Print Sale
         Route::get('/print/sale/{id}', [PrintController::class, 'printSale'])->name('print.sale');
+
+        // Sales Distribution
+        Route::get('/sales-distribution', SalesDistributionManagement::class)->name('sales-distribution');
     });
 
     // !! Export routes (accessible to authenticated users)

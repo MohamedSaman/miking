@@ -68,6 +68,14 @@ class PurchaseOrderList extends Component
     public $bonusWholesaleCash = 0;
     public $bonusWholesaleCredit = 0;
     public $bonusMode = 'create'; // 'create' or 'edit'
+    public $itemSupplierPrice = 0;
+    public $itemRetailPrice = 0;
+    public $itemWholesalePrice = 0;
+
+    public $bonusRetailCashPercentage = 0;
+    public $bonusRetailCreditPercentage = 0;
+    public $bonusWholesaleCashPercentage = 0;
+    public $bonusWholesaleCreditPercentage = 0;
 
     public function mount()
     {
@@ -234,9 +242,81 @@ class PurchaseOrderList extends Component
             $this->bonusRetailCredit = $product->retail_credit_bonus ?? 0;
             $this->bonusWholesaleCash = $product->wholesale_cash_bonus ?? 0;
             $this->bonusWholesaleCredit = $product->wholesale_credit_bonus ?? 0;
+            
+            $this->itemSupplierPrice = floatval($items[$index]['supplier_price'] ?? 0);
+            
+            // Get current prices from the database for calculation reference
+            $priceModel = \App\Models\ProductPrice::where('product_id', $productId)->first();
+            $this->itemRetailPrice = floatval($priceModel->retail_price ?? $priceModel->selling_price ?? 0);
+            $this->itemWholesalePrice = floatval($priceModel->wholesale_price ?? 0);
+            
+            // Calculate percentages based on correct reference prices
+            if ($this->itemRetailPrice > 0) {
+                $this->bonusRetailCashPercentage = round(($this->bonusRetailCash / $this->itemRetailPrice) * 100, 2);
+                $this->bonusRetailCreditPercentage = round(($this->bonusRetailCredit / $this->itemRetailPrice) * 100, 2);
+            } else {
+                $this->bonusRetailCashPercentage = 0;
+                $this->bonusRetailCreditPercentage = 0;
+            }
+
+            if ($this->itemWholesalePrice > 0) {
+                $this->bonusWholesaleCashPercentage = round(($this->bonusWholesaleCash / $this->itemWholesalePrice) * 100, 2);
+                $this->bonusWholesaleCreditPercentage = round(($this->bonusWholesaleCredit / $this->itemWholesalePrice) * 100, 2);
+            } else {
+                $this->bonusWholesaleCashPercentage = 0;
+                $this->bonusWholesaleCreditPercentage = 0;
+            }
         }
 
         $this->js("new bootstrap.Modal(document.getElementById('bonusModal')).show();");
+    }
+
+    public function updatedBonusRetailCash($value)
+    {
+        if ($this->itemRetailPrice > 0) {
+            $this->bonusRetailCashPercentage = round(($value / $this->itemRetailPrice) * 100, 2);
+        }
+    }
+
+    public function updatedBonusRetailCashPercentage($value)
+    {
+        $this->bonusRetailCash = round(($value / 100) * $this->itemRetailPrice, 2);
+    }
+
+    public function updatedBonusRetailCredit($value)
+    {
+        if ($this->itemRetailPrice > 0) {
+            $this->bonusRetailCreditPercentage = round(($value / $this->itemRetailPrice) * 100, 2);
+        }
+    }
+
+    public function updatedBonusRetailCreditPercentage($value)
+    {
+        $this->bonusRetailCredit = round(($value / 100) * $this->itemRetailPrice, 2);
+    }
+
+    public function updatedBonusWholesaleCash($value)
+    {
+        if ($this->itemWholesalePrice > 0) {
+            $this->bonusWholesaleCashPercentage = round(($value / $this->itemWholesalePrice) * 100, 2);
+        }
+    }
+
+    public function updatedBonusWholesaleCashPercentage($value)
+    {
+        $this->bonusWholesaleCash = round(($value / 100) * $this->itemWholesalePrice, 2);
+    }
+
+    public function updatedBonusWholesaleCredit($value)
+    {
+        if ($this->itemWholesalePrice > 0) {
+            $this->bonusWholesaleCreditPercentage = round(($value / $this->itemWholesalePrice) * 100, 2);
+        }
+    }
+
+    public function updatedBonusWholesaleCreditPercentage($value)
+    {
+        $this->bonusWholesaleCredit = round(($value / 100) * $this->itemWholesalePrice, 2);
     }
 
     public function saveBonusValues()
@@ -257,8 +337,25 @@ class PurchaseOrderList extends Component
             ]);
         }
 
-        $this->js("bootstrap.Modal.getInstance(document.getElementById('bonusModal')).hide();");
-        $this->js("Swal.fire({ icon: 'success', title: 'Product Bonus Updated', text: 'Default bonus for this product has been updated.', timer: 1500, showConfirmButton: false });");
+        $this->js("
+            const modalEl = document.getElementById('bonusModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            
+            // Force cleanup of backdrop and body classes
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+
+            Swal.fire({ 
+                icon: 'success', 
+                title: 'Product Bonus Updated', 
+                text: 'Default bonus for this product has been updated.', 
+                timer: 1500, 
+                showConfirmButton: false 
+            });
+        ");
     }
 
     public function saveOrder()
@@ -359,8 +456,16 @@ class PurchaseOrderList extends Component
 
             // Close modal and show success
             $this->js("
-                const modal = bootstrap.Modal.getInstance(document.getElementById('addPurchaseOrderModal'));
+                const modalEl = document.getElementById('addPurchaseOrderModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
                 if (modal) modal.hide();
+                
+                // Force cleanup of backdrop and body classes
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+
                 Swal.fire({
                     icon: 'success',
                     title: 'Success!',
@@ -579,8 +684,16 @@ class PurchaseOrderList extends Component
             $this->editOrderItems = [];
 
             $this->js("
-                const modal = bootstrap.Modal.getInstance(document.getElementById('editOrderModal'));
+                const modalEl = document.getElementById('editOrderModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
                 if (modal) modal.hide();
+                
+                // Force cleanup of backdrop and body classes
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+
                 Swal.fire({
                     icon: 'success',
                     title: 'Success!',
@@ -1060,8 +1173,16 @@ class PurchaseOrderList extends Component
 
             // Close modal and show success message
             $this->js("
-                const modal = bootstrap.Modal.getInstance(document.getElementById('grnModal'));
+                const modalEl = document.getElementById('grnModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
                 if (modal) modal.hide();
+                
+                // Force cleanup of backdrop and body classes
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+
                 Swal.fire({
                     icon: 'success',
                     title: 'Success!',

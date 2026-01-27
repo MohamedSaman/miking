@@ -30,6 +30,11 @@ class StaffBonusList extends Component
     public $wholesaleCreditBonus = 0;
     public $retailCashBonus = 0;
     public $retailCreditBonus = 0;
+    
+    // Modal properties
+    public $showBonusDetailModal = false;
+    public $selectedSaleBonuses = [];
+    public $selectedSaleInfo = null;
 
     public function mount()
     {
@@ -64,13 +69,22 @@ class StaffBonusList extends Component
 
     public function getBonusesProperty()
     {
-        $query = StaffBonus::with(['staff', 'product', 'sale'])
+        $query = StaffBonus::select(
+                'sale_id',
+                'staff_id',
+                'sale_type',
+                'payment_method',
+                'created_at',
+                DB::raw('SUM(total_bonus) as total_sale_bonus'),
+                DB::raw('COUNT(*) as items_count')
+            )
+            ->with(['staff', 'sale'])
+            ->whereHas('staff', function($q) {
+                $q->where('role', 'staff');
+            })
             ->when($this->search, function ($q) {
                 $q->whereHas('staff', function ($sq) {
                     $sq->where('name', 'like', '%' . $this->search . '%');
-                })->orWhereHas('product', function ($pq) {
-                    $pq->where('name', 'like', '%' . $this->search . '%')
-                       ->orWhere('code', 'like', '%' . $this->search . '%');
                 })->orWhereHas('sale', function ($sq) {
                     $sq->where('invoice_number', 'like', '%' . $this->search . '%');
                 });
@@ -90,9 +104,27 @@ class StaffBonusList extends Component
             ->when($this->dateTo, function ($q) {
                 $q->whereDate('created_at', '<=', $this->dateTo);
             })
+            ->groupBy('sale_id', 'staff_id', 'sale_type', 'payment_method', 'created_at')
             ->orderBy('created_at', 'desc');
 
         return $query->paginate($this->perPage);
+    }
+
+    public function viewSaleBonus($saleId)
+    {
+        $this->selectedSaleInfo = \App\Models\Sale::with(['customer', 'user'])->find($saleId);
+        $this->selectedSaleBonuses = StaffBonus::with(['product'])
+            ->where('sale_id', $saleId)
+            ->get();
+        
+        $this->showBonusDetailModal = true;
+    }
+
+    public function closeBonusDetailModal()
+    {
+        $this->showBonusDetailModal = false;
+        $this->selectedSaleBonuses = [];
+        $this->selectedSaleInfo = null;
     }
 
     public function getStaffBonusSummaryProperty()
@@ -125,6 +157,9 @@ class StaffBonusList extends Component
                 DB::raw('COUNT(*) as total_sales')
             )
             ->with('staff')
+            ->whereHas('staff', function($q) {
+                $q->where('role', 'staff');
+            })
             ->when($this->staffFilter, function ($q) {
                 $q->where('staff_id', $this->staffFilter);
             })
@@ -147,6 +182,9 @@ class StaffBonusList extends Component
     public function getTotalStatsProperty()
     {
         return StaffBonus::query()
+            ->whereHas('staff', function($q) {
+                $q->where('role', 'staff');
+            })
             ->when($this->staffFilter, function ($q) {
                 $q->where('staff_id', $this->staffFilter);
             })

@@ -1466,20 +1466,32 @@
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label fw-semibold">Wholesale Cash Bonus:</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">Rs.</span>
-                                                <input type="number" step="0.01" class="form-control" wire:model="wholesale_cash_bonus">
+                                            <label class="form-label fw-bold small text-primary mb-2">Wholesale Cash Bonus</label>
+                                            <div class="d-flex gap-2">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                                    <input type="number" class="form-control" wire:model.live="wholesale_cash_bonus" min="0" step="0.01">
+                                                </div>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" class="form-control" wire:model.live="wholesale_cash_bonus_percentage" min="0" step="0.01">
+                                                    <span class="input-group-text bg-light text-muted">%</span>
+                                                </div>
                                             </div>
                                             @error('wholesale_cash_bonus') <span class="text-danger small">* {{ $message }}</span> @enderror
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label fw-semibold">Wholesale Credit Bonus:</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">Rs.</span>
-                                                <input type="number" step="0.01" class="form-control" wire:model="wholesale_credit_bonus">
+                                            <label class="form-label fw-bold small text-primary mb-2">Wholesale Credit Bonus</label>
+                                            <div class="d-flex gap-2">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                                    <input type="number" class="form-control" wire:model.live="wholesale_credit_bonus" min="0" step="0.01">
+                                                </div>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" class="form-control" wire:model.live="wholesale_credit_bonus_percentage" min="0" step="0.01">
+                                                    <span class="input-group-text bg-light text-muted">%</span>
+                                                </div>
                                             </div>
                                             @error('wholesale_credit_bonus') <span class="text-danger small">* {{ $message }}</span> @enderror
                                         </div>
@@ -1490,24 +1502,39 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label fw-semibold">Retail Cash Bonus:</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">Rs.</span>
-                                                <input type="number" step="0.01" class="form-control" wire:model="retail_cash_bonus">
+                                            <label class="form-label fw-bold small text-success mb-2">Retail Cash Bonus</label>
+                                            <div class="d-flex gap-2">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                                    <input type="number" class="form-control" wire:model.live="retail_cash_bonus" min="0" step="0.01">
+                                                </div>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" class="form-control" wire:model.live="retail_cash_bonus_percentage" min="0" step="0.01">
+                                                    <span class="input-group-text bg-light text-muted">%</span>
+                                                </div>
                                             </div>
                                             @error('retail_cash_bonus') <span class="text-danger small">* {{ $message }}</span> @enderror
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label fw-semibold">Retail Credit Bonus:</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">Rs.</span>
-                                                <input type="number" step="0.01" class="form-control" wire:model="retail_credit_bonus">
+                                            <label class="form-label fw-bold small text-success mb-2">Retail Credit Bonus</label>
+                                            <div class="d-flex gap-2">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                                    <input type="number" class="form-control" wire:model.live="retail_credit_bonus" min="0" step="0.01">
+                                                </div>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" class="form-control" wire:model.live="retail_credit_bonus_percentage" min="0" step="0.01">
+                                                    <span class="input-group-text bg-light text-muted">%</span>
+                                                </div>
                                             </div>
                                             @error('retail_credit_bonus') <span class="text-danger small">* {{ $message }}</span> @enderror
                                         </div>
                                     </div>
+                                </div>
+                                <div class="mt-2 text-muted small">
+                                    <i class="bi bi-info-circle me-1"></i> Retail bonuses use Retail/Selling Price as reference. Wholesale bonuses use Wholesale Price as reference.
                                 </div>
                             </div>
                         </div>

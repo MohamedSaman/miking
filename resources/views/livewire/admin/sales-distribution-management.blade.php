@@ -7,22 +7,27 @@
             </h3>
             <p class="text-muted mb-0">Track and manage sales distribution logs and travel expenses</p>
         </div>
+        @if($this->isStaff())
         <button class="btn btn-primary" wire:click="openAddModal">
             <i class="bi bi-plus-lg me-1"></i> Add Distribution
         </button>
+        @endif
     </div>
 
     <!-- Filters -->
     <div class="card mb-4">
         <div class="card-body">
             <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">Search</label>
-                    <input type="text" class="form-control" placeholder="Staff, Location, Handover..." wire:model.live.debounce.300ms="search">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted mb-1">Search Distribution</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0" placeholder="Staff, Location, Handover..." wire:model.live.debounce.300ms="search">
+                    </div>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label small fw-bold">Status</label>
-                    <select class="form-select" wire:model.live="statusFilter">
+                    <label class="form-label small fw-bold text-muted mb-1">Status</label>
+                    <select class="form-select form-select-sm" wire:model.live="statusFilter">
                         <option value="">All Status</option>
                         <option value="pending">Pending</option>
                         <option value="completed">Completed</option>
@@ -30,16 +35,16 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label small fw-bold">From Date</label>
-                    <input type="date" class="form-control" wire:model.live="dateFrom">
+                    <label class="form-label small fw-bold text-muted mb-1">From Date</label>
+                    <input type="date" class="form-control form-control-sm" wire:model.live="dateFrom">
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label small fw-bold">To Date</label>
-                    <input type="date" class="form-control" wire:model.live="dateTo">
+                    <label class="form-label small fw-bold text-muted mb-1">To Date</label>
+                    <input type="date" class="form-control form-control-sm" wire:model.live="dateTo">
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <button class="btn btn-outline-secondary w-100" wire:click="$set('search', ''); $set('statusFilter', ''); $set('dateFrom', ''); $set('dateTo', '')">
-                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Filters
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-sm btn-outline-secondary w-100" wire:click="$set('search', ''); $set('statusFilter', ''); $set('dateFrom', ''); $set('dateTo', '')">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
                     </button>
                 </div>
             </div>
@@ -70,7 +75,12 @@
                             <td>
                                 <div class="fw-bold">{{ $item->staff_name }}</div>
                             </td>
-                            <td>{{ $item->dispatch_location }}</td>
+                            <td>
+                                {{ $item->dispatch_location }}
+                                @if($item->invoice_no)
+                                <div class="text-muted small">Invoice: <span class="badge bg-light text-dark border">{{ $item->invoice_no }}</span></div>
+                                @endif
+                            </td>
                             <td>{{ number_format($item->distance_km, 1) }} KM</td>
                             <td><span class="fw-bold">Rs.{{ number_format($item->travel_expense, 2) }}</span></td>
                             <td>{{ $item->handover_to }}</td>
@@ -86,19 +96,27 @@
                                 <span class="badge {{ $statusClass }}">{{ ucfirst($item->status) }}</span>
                             </td>
                             <td class="text-end pe-4">
-                                @if($this->isAdmin() && $item->status !== 'approved')
-                                <button class="btn btn-sm btn-outline-success me-1" wire:click="approve({{ $item->id }})" title="Approve">
-                                    <i class="bi bi-check-circle"></i>
-                                </button>
-                                @endif
-                                <button class="btn btn-sm btn-outline-primary me-1" wire:click="openEditModal({{ $item->id }})" title="Edit">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                @if($this->isAdmin())
-                                <button class="btn btn-sm btn-outline-danger" wire:click="confirmDelete({{ $item->id }})" title="Delete">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                                @endif
+                                <div class="d-flex justify-content-end gap-1">
+                                    @if($this->isAdmin())
+                                        @if($item->status !== 'approved')
+                                        <button class="btn btn-sm btn-outline-success" wire:click="approve({{ $item->id }})" title="Approve">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                        @endif
+                                        <button class="btn btn-sm btn-outline-info" wire:click="openEditModal({{ $item->id }})" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" wire:click="confirmDelete({{ $item->id }})" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    @endif
+
+                                    @if($this->isStaff() && $item->status !== 'approved')
+                                    <button class="btn btn-sm btn-outline-primary" wire:click="openEditModal({{ $item->id }})" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                         @empty
@@ -210,17 +228,84 @@
 
                             <div class="col-md-12 mt-3">
                                 <label class="form-label fw-bold">Description (Optional)</label>
-                                <textarea class="form-control" wire:model="description" rows="2" placeholder="Any additional notes..."></textarea>
+                                <textarea class="form-control" wire:model="description" @if($this->isAdmin()) disabled @endif rows="2" placeholder="Any additional notes..."></textarea>
                             </div>
                         </div>
 
+                        <!-- Selection Toggle -->
+                        <div class="col-12 mt-4 mb-3">
+                            <h6 class="text-primary fw-bold border-bottom pb-2 mb-3"><i class="bi bi-list-check me-2"></i>Distribution Content</h6>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="selection_type" id="type_invoice" value="invoice" wire:model.live="selection_type" @if($this->isAdmin()) disabled @endif>
+                                <label class="btn btn-outline-primary" for="type_invoice">Select Existing Invoice</label>
+
+                                <input type="radio" class="btn-check" name="selection_type" id="type_products" value="products" wire:model.live="selection_type" @if($this->isAdmin()) disabled @endif>
+                                <label class="btn btn-outline-primary" for="type_products">Manually Add Products</label>
+                            </div>
+                        </div>
+
+                        @if($selection_type === 'invoice')
+                        <!-- Invoice Selection Section -->
+                        <div class="p-3 rounded border bg-light mb-4">
+                            <label class="form-label fw-bold">Select Staff Invoice</label>
+                            <select class="form-select @error('invoice_no') is-invalid @enderror" wire:model.live="invoice_no" @if($this->isAdmin()) disabled @endif>
+                                <option value="">Choose an Invoice...</option>
+                                @foreach($staffInvoices as $invoice)
+                                    <option value="{{ $invoice->invoice_number }}">
+                                        {{ $invoice->invoice_number }} - {{ $invoice->customer->name ?? 'Walk-in' }} (Rs.{{ number_format($invoice->total_amount, 2) }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('invoice_no') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            
+                            @if($selectedInvoice)
+                            <div class="mt-3 p-3 bg-white rounded border border-info shadow-sm">
+                                <h6 class="fw-bold text-info border-bottom pb-2 mb-3">
+                                    <i class="bi bi-file-earmark-text me-2"></i> Invoice Details: {{ $selectedInvoice->invoice_number }}
+                                </h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Item</th>
+                                                <th class="text-center" style="width: 80px;">Qty</th>
+                                                <th class="text-end" style="width: 120px;">Price</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($selectedInvoice->items as $i)
+                                            <tr>
+                                                <td class="small">{{ $i->product_name }}</td>
+                                                <td class="text-center">{{ number_format($i->quantity, 0) }}</td>
+                                                <td class="text-end small">Rs.{{ number_format($i->unit_price, 2) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                        <tfoot class="table-light fw-bold">
+                                            <tr>
+                                                <td colspan="2" class="text-end">Total Distribution Value:</td>
+                                                <td class="text-end text-primary">Rs.{{ number_format($selectedInvoice->total_amount, 2) }}</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            @endif
+
+                            <div class="mt-2 small text-muted">
+                                <i class="bi bi-info-circle me-1"></i> Selection of an invoice will automatically link all products in that invoice to this distribution.
+                            </div>
+                        </div>
+                        @else
                         <!-- Products Section -->
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h6 class="fw-bold mb-0">Distributed Products</h6>
+                                @if($this->isStaff())
                                 <button type="button" class="btn btn-sm btn-outline-primary" wire:click="addProductRow">
                                     <i class="bi bi-plus-circle me-1"></i> Add Product
                                 </button>
+                                @endif
                             </div>
                             <div class="p-2 rounded border" style="overflow: visible;">
                                 <table class="table table-sm table-borderless mb-0">
@@ -239,6 +324,7 @@
                                                        class="form-control form-control-sm" 
                                                        wire:model="products.{{ $index }}.name" 
                                                        wire:input="searchProduct({{ $index }})"
+                                                       @if($this->isAdmin()) disabled @endif
                                                        placeholder="Search product name or model...">
                                                 
                                                 @if($active_product_index === $index && count($search_results) > 0)
@@ -271,11 +357,12 @@
                                                        step="0.01" 
                                                        class="form-control form-control-sm {{ $errors->has("products.$index.quantity") ? 'is-invalid' : '' }}" 
                                                        wire:model.blur="products.{{ $index }}.quantity" 
+                                                       @if($this->isAdmin()) disabled @endif
                                                        placeholder="Qty">
                                                 @error("products.$index.quantity") <div class="invalid-feedback x-small">{{ $message }}</div> @enderror
                                             </td>
                                             <td class="text-center">
-                                                @if(count($products) > 1)
+                                                @if(count($products) > 1 && $this->isStaff())
                                                 <button type="button" class="btn btn-sm text-danger" wire:click="removeProductRow({{ $index }})">
                                                     <i class="bi bi-x-circle"></i>
                                                 </button>
@@ -287,12 +374,15 @@
                                 </table>
                             </div>
                         </div>
+                        @endif
 
                         <div class="modal-footer px-0 pb-0 pt-3 border-top">
-                            <button type="button" class="btn btn-secondary" wire:click="$set('showFormModal', false)">Cancel</button>
+                            <button type="button" class="btn btn-secondary" wire:click="$set('showFormModal', false)">{{ $this->isAdmin() ? 'Close' : 'Cancel' }}</button>
+                            @if($this->isStaff())
                             <button type="submit" class="btn btn-primary px-4">
                                 <i class="bi bi-save me-1"></i> Save Record
                             </button>
+                            @endif
                         </div>
                     </form>
                 </div>

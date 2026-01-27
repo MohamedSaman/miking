@@ -118,7 +118,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="fw-bold mb-0">
-                    <i class="bi bi-list-ul text-primary me-2"></i> Admin Sales List
+                    <i class="bi bi-list-ul text-primary me-2"></i> Sales List
                 </h5>
                 <span class="badge bg-primary">{{ $sales->total() }} records</span>
             </div>
@@ -143,11 +143,9 @@
                         <tr>
                             <th class="ps-4">Invoice</th>
                             <th>Customer</th>
-                            <th>User</th>
                             <th class="text-center">Date</th>
                             <th class="text-center">Amount</th>
                             <th class="text-center">Payment Status</th>
-                            <th class="text-center">Sale Type</th>
                             <th class="text-end pe-4">Actions</th>
                         </tr>
                     </thead>
@@ -166,16 +164,6 @@
                                 <span class="text-muted">Walk-in Customer</span>
                                 @endif
                             </td>
-                            <td wire:click="viewSale({{ $sale->id }})">
-                                @if($sale->user)
-                                <div class="fw-medium">{{ $sale->user->name }}</div>
-                                <small class="badge {{ $sale->user->role === 'admin' ? 'bg-danger' : 'bg-warning' }}">
-                                    {{ ucfirst($sale->user->role) }}
-                                </small>
-                                @else
-                                <span class="text-muted">Unknown</span>
-                                @endif
-                            </td>
                             <td class="text-center" wire:click="viewSale({{ $sale->id }})">{{ $sale->created_at->format('M d, Y') }}</td>
                             <td class="text-center fw-bold" wire:click="viewSale({{ $sale->id }})">Rs.{{ number_format($sale->total_amount, 2) }}</td>
                             <td class="text-center" wire:click="viewSale({{ $sale->id }})">
@@ -183,7 +171,6 @@
                                     {{ ucfirst($sale->payment_status) }}
                                 </span>
                             </td>
-                            <td class="text-center" wire:click="viewSale({{ $sale->id }})"><span class="badge bg-warning">{{ strtoupper($sale->sale_type) }}</span></td>
                             <td class="text-end pe-4">
                                 <div class="dropdown">
                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
@@ -251,7 +238,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
+                            <td colspan="5" class="text-center text-muted py-4">
                                 <i class="bi bi-cart-x display-4 d-block mb-2"></i>
                                 No admin sales found.
                             </td>
@@ -322,14 +309,6 @@
                                 <tr>
                                     <td><strong>Date</strong></td>
                                     <td>{{ $selectedSale->created_at->format('M d, Y h:i A') }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Sale Type</strong></td>
-                                    <td><span class="badge bg-warning">{{ strtoupper($selectedSale->sale_type) }}</span></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Created By</strong></td>
-                                    <td>{{ $selectedSale->user->name ?? 'System' }}</td>
                                 </tr>
                             </table>
                         </div>

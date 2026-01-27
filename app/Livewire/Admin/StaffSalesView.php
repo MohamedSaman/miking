@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use App\Models\Sale;
 use App\Models\StaffSale;
 use App\Models\User;
@@ -25,10 +26,17 @@ class StaffSalesView extends Component
     public $selectedSale = null;
     public $perPage = 10;
 
+    #[Url]
+    public $view_sale_id = null;
+
     public function mount()
     {
         $this->loadStaffMembers();
         $this->loadStaffSales();
+
+        if ($this->view_sale_id) {
+            $this->viewSale($this->view_sale_id);
+        }
     }
 
     public function loadStaffMembers()

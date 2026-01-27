@@ -39,6 +39,9 @@ class SalesDistributionManagement extends Component
     public $status = 'pending';
     public $description;
     public $distribution_date;
+    public $selection_type = 'invoice'; // 'invoice' or 'products'
+    public $invoice_no;
+    public $selectedInvoice = null;
     public $products = []; // Array of products
 
     // Product search
@@ -168,6 +171,10 @@ class SalesDistributionManagement extends Component
 
     public function openAddModal()
     {
+        if ($this->isAdmin()) {
+            $this->js("swal.fire('Error!', 'Admins cannot create records.', 'error')");
+            return;
+        }
         $this->resetForm();
         $this->showFormModal = true;
         $this->isEdit = false;
@@ -181,7 +188,7 @@ class SalesDistributionManagement extends Component
     {
         $record = SalesDistribution::findOrFail($id);
         
-        // Authorization check for staff
+        // Authorization check for staff (Admins can view all)
         if ($this->isStaff() && $record->staff_id !== Auth::id()) {
             $this->js("swal.fire('Error!', 'You can only edit your own records.', 'error')");
             return;
@@ -197,6 +204,13 @@ class SalesDistributionManagement extends Component
         $this->status = $record->status;
         $this->description = $record->description;
         $this->distribution_date = $record->distribution_date->format('Y-m-d');
+        $this->selection_type = $record->selection_type ?: 'products';
+        $this->invoice_no = $record->invoice_no;
+        
+        if ($this->selection_type === 'invoice' && $this->invoice_no) {
+            $this->loadInvoiceDetails($this->invoice_no);
+        }
+        
         $this->products = $record->products ?: [['name' => '', 'quantity' => '']];
 
         $this->showFormModal = true;
@@ -207,16 +221,45 @@ class SalesDistributionManagement extends Component
     {
         $this->reset([
             'distributionId', 'dispatch_location', 'distance_km', 
-            'travel_expense', 'handover_to', 'status', 'description'
+            'travel_expense', 'handover_to', 'status', 'description',
+            'selection_type', 'invoice_no', 'selectedInvoice'
         ]);
         $this->distribution_date = date('Y-m-d');
         $this->status = 'pending';
+        $this->selection_type = 'invoice';
         $this->products = [['name' => '', 'quantity' => '']];
         $this->resetErrorBag();
     }
 
+    public function updatedInvoiceNo($value)
+    {
+        if ($value) {
+            $this->loadInvoiceDetails($value);
+        } else {
+            $this->selectedInvoice = null;
+        }
+    }
+
+    private function loadInvoiceDetails($invoiceNo)
+    {
+        $this->selectedInvoice = \App\Models\Sale::with(['items', 'customer'])
+            ->where('invoice_number', $invoiceNo)
+            ->first();
+        
+        if ($this->selectedInvoice) {
+            // Also sync dispatch location if empty
+            if (empty($this->dispatch_location) && $this->selectedInvoice->customer) {
+                $this->dispatch_location = $this->selectedInvoice->customer->address;
+            }
+        }
+    }
+
     public function save()
     {
+        if ($this->isAdmin()) {
+            return;
+        }
+
         $rules = [
             'staff_name' => 'required|string|max:255',
             'dispatch_location' => 'required|string|max:255',
@@ -224,19 +267,20 @@ class SalesDistributionManagement extends Component
             'travel_expense' => 'required|numeric|min:0',
             'handover_to' => 'required|string|max:255',
             'distribution_date' => 'required|date',
-            'products.*.name' => 'required|string',
-            'products.*.quantity' => 'required|numeric|min:0.01',
+            'selection_type' => 'required|in:invoice,products',
         ];
 
-        // Additional validation for max quantity
-        foreach ($this->products as $index => $product) {
-            if (isset($product['max_qty']) && $product['max_qty'] > 0) {
-                $rules["products.$index.quantity"] = "required|numeric|min:0.01|max:{$product['max_qty']}";
+        if ($this->selection_type === 'invoice') {
+            $rules['invoice_no'] = 'required|string';
+        } else {
+            $rules['products.*.name'] = 'required|string';
+            $rules['products.*.quantity'] = 'required|numeric|min:0.01';
+            
+            foreach ($this->products as $index => $product) {
+                if (isset($product['max_qty']) && $product['max_qty'] > 0) {
+                    $rules["products.$index.quantity"] = "required|numeric|min:0.01|max:{$product['max_qty']}";
+                }
             }
-        }
-
-        if ($this->isAdmin()) {
-            $rules['status'] = 'required|in:pending,completed,approved';
         }
 
         $this->validate($rules);
@@ -250,7 +294,9 @@ class SalesDistributionManagement extends Component
             'handover_to' => $this->handover_to,
             'description' => $this->description,
             'distribution_date' => $this->distribution_date,
-            'products' => $this->products,
+            'selection_type' => $this->selection_type,
+            'invoice_no' => $this->selection_type === 'invoice' ? $this->invoice_no : null,
+            'products' => $this->selection_type === 'products' ? $this->products : null,
             'created_by' => Auth::id(),
         ];
 
@@ -357,12 +403,23 @@ class SalesDistributionManagement extends Component
 
         $distributions = $query->latest('distribution_date')->paginate(10);
 
-        // For Admin staff list (if we want to allow admin to assign/select staff)
+        // For Admin staff list 
         $staffMembers = $this->isAdmin() ? User::where('role', 'staff')->get() : [];
+
+        // For Staff invoice list (Invoices created by this staff)
+        $staffInvoices = [];
+        if ($this->isStaff() || ($this->isAdmin() && $this->staff_id)) {
+            $targetStaffId = $this->isStaff() ? Auth::id() : $this->staff_id;
+            $staffInvoices = \App\Models\Sale::where('user_id', $targetStaffId)
+                ->latest()
+                ->limit(50)
+                ->get();
+        }
 
         return view('livewire.admin.sales-distribution-management', [
             'distributions' => $distributions,
-            'staffMembers' => $staffMembers
+            'staffMembers' => $staffMembers,
+            'staffInvoices' => $staffInvoices
         ])->layout($this->layout);
     }
 }

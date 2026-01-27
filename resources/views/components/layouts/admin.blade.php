@@ -921,7 +921,11 @@
                                     <i class="bi bi-shop"></i> <span>POS Sales</span>
                                 </a>
                             </li>
-
+                            <li class="nav-item">
+                                <a class="nav-link py-2" href="{{ route('admin.sales-distribution') }}">
+                                    <i class="bi bi-truck"></i> <span>Sales Distribution</span>
+                                </a>
+                            </li>
                             {{-- no need him  --}}
                             {{--
                             <li class="nav-item">
@@ -942,13 +946,6 @@
                             --}}
                         </ul>
                     </div>
-                </li>
-                
-                <!-- Sales Distribution - Standalone -->
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('admin.sales-distribution') ? 'active' : '' }}" href="{{ route('admin.sales-distribution') }}">
-                        <i class="bi bi-truck"></i> <span>Sales Distribution</span>
-                    </a>
                 </li>
                 
                 <li class="nav-item">
@@ -983,6 +980,31 @@
                                     <i class="bi bi-wallet2"></i> <span>Staff Salary</span>
                                 </a>
                             </li>
+                            <!-- <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-allocation-list') ? 'active' : '' }}" href="{{ route('admin.staff-allocation-list') }}">
+                                    <i class="bi bi-list-check"></i> <span>Staff Allocation List</span>
+                                </a>
+                            </li> -->
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-return-requests') ? 'active' : '' }}" href="{{ route('admin.staff-return-requests') }}">
+                                    <i class="bi bi-arrow-return-left"></i> <span>Staff Return Requests</span>
+                                </a>
+                            </li>
+                            <!-- <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-attendance') ? 'active' : '' }}" href="{{ route('admin.staff-attendance') }}">
+                                    <i class="bi bi-calendar-check"></i> <span>Staff Attendance</span>
+                                </a>
+                            </li> -->
+                            <!-- <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-salary') ? 'active' : '' }}" href="{{ route('admin.staff-salary') }}">
+                                    <i class="bi bi-cash"></i> <span>Staff Salary (Calc)</span>
+                                </a>
+                            </li> -->
+                            <!-- <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.loan-management') ? 'active' : '' }}" href="{{ route('admin.loan-management') }}">
+                                    <i class="bi bi-bank"></i> <span>Loan Management</span>
+                                </a>
+                            </li> -->
                         </ul>
                     </div>
                 </li>
@@ -1003,13 +1025,11 @@
                                     <i class="bi bi-card-list"></i> <span>List Quotation</span>
                                 </a>
                             </li>
-                            {{--
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('admin.Product-stock-details') }}">
-                                    <i class="bi bi-shield-lock"></i> <span>Product Stock</span>
+                                    <i class="bi bi-boxes"></i> <span>Stock Details</span>
                                 </a>
                             </li>
-                            --}}
                         </ul>
                     </div>
                 </li>
@@ -1047,7 +1067,12 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('admin.return-list') }}">
-                                    <i class="bi bi-list-check"></i> <span>List Customer Return</span>
+                                     <i class="bi bi-list-check"></i> <span>List Customer Return</span>
+                                 </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2" href="{{ route('admin.staff-customer-return') }}">
+                                    <i class="bi bi-person-badge"></i> <span>Staff Customer Return</span>
                                 </a>
                             </li>
 
@@ -1140,10 +1165,20 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('admin.list-supplier-receipt') }}">
-                                    <i class="bi bi-clipboard-data"></i> <span>List Supplier Payment</span>
-                                </a>
-                            </li>
-                        </ul>
+                                     <i class="bi bi-clipboard-data"></i> <span>List Supplier Payment</span>
+                                 </a>
+                             </li>
+                             <li class="nav-item">
+                                 <a class="nav-link py-2" href="{{ route('admin.due-payments') }}">
+                                     <i class="bi bi-hourglass-split"></i> <span>Due Payments</span>
+                                 </a>
+                             </li>
+                             <li class="nav-item">
+                                 <a class="nav-link py-2" href="{{ route('admin.view-payments') }}">
+                                     <i class="bi bi-eye"></i> <span>View Payments</span>
+                                 </a>
+                             </li>
+                         </ul>
                     </div>
                 </li>
                 {{-- // people management --}}
@@ -1166,17 +1201,22 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link py-2 " href="{{ route('admin.manage-staff') }}">
-                                    <i class="bi bi-person-badge"></i> <span>List Staff</span>
-                                </a>
-                            </li>
-                        </ul>
+                                     <i class="bi bi-person-badge"></i> <span>List Staff</span>
+                                 </a>
+                             </li>
+                             <li class="nav-item">
+                                 <a class="nav-link py-2" href="{{ route('admin.manage-admin') }}">
+                                     <i class="bi bi-person-check-fill"></i> <span>List Admin</span>
+                                 </a>
+                             </li>
+                         </ul>
                     </div>
                 </li>
-            {{--<li>
+                <li>
                     <a class="nav-link" href="{{ route('admin.store-billing') }}" target="_blank">
-                        <i class="bi bi-cash"></i> <span>POS</span>
+                        <i class="bi bi-cart-check"></i> <span>POS</span>
                     </a>
-                </li>--}}
+                </li>
                 <li>
                     <a class="nav-link" href="{{ route('admin.income') }}">
                         <i class="bi bi-file-earmark-bar-graph"></i> <span>Day Summary</span>

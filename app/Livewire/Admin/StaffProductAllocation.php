@@ -272,7 +272,7 @@ class StaffProductAllocation extends Component
                 throw new \Exception('Staff member not found.');
             }
 
-            // Create staff product allocations for each item
+            // Create or update staff product allocations for each item
             foreach ($this->cart as $item) {
                 // Calculate discount
                 $subtotal = $item['quantity'] * $item['unit_price'];
@@ -282,23 +282,53 @@ class StaffProductAllocation extends Component
                     $totalDiscount = $item['discount'];
                 }
 
-                // Create staff product record
-                $staffProduct = StaffProduct::create([
-                    'product_id' => $item['product_id'],
-                    'staff_id' => $this->staffId,
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'discount_per_unit' => $item['discount_type'] === 'percentage' ?
-                        ($item['unit_price'] * $item['discount']) / 100 : ($item['discount'] / $item['quantity']),
-                    'total_discount' => $totalDiscount,
-                    'total_value' => $subtotal - $totalDiscount,
-                    'sold_quantity' => 0,
-                    'sold_value' => 0,
-                    'status' => 'assigned',
-                ]);
+                // Check if this product is already allocated to this staff member
+                $existingAllocation = StaffProduct::where('product_id', $item['product_id'])
+                    ->where('staff_id', $this->staffId)
+                    ->first();
 
-                // Reduce stock using FIFO
-                $this->reduceProductStock($item['product_id'], $item['quantity']);
+                if ($existingAllocation) {
+                    // Update existing allocation - add to quantity
+                    $newQuantity = $existingAllocation->quantity + $item['quantity'];
+                    $newSubtotal = $newQuantity * $item['unit_price'];
+                    
+                    if ($item['discount_type'] === 'percentage') {
+                        $newTotalDiscount = ($newSubtotal * $item['discount']) / 100;
+                    } else {
+                        $newTotalDiscount = $existingAllocation->total_discount + $totalDiscount;
+                    }
+
+                    $existingAllocation->update([
+                        'quantity' => $newQuantity,
+                        'unit_price' => $item['unit_price'],
+                        'discount_per_unit' => $item['discount_type'] === 'percentage' ?
+                            ($item['unit_price'] * $item['discount']) / 100 : ($totalDiscount / $item['quantity']),
+                        'total_discount' => $newTotalDiscount,
+                        'total_value' => $newSubtotal - $newTotalDiscount,
+                    ]);
+                } else {
+                    // Create new staff product record
+                    StaffProduct::create([
+                        'product_id' => $item['product_id'],
+                        'staff_id' => $this->staffId,
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'discount_per_unit' => $item['discount_type'] === 'percentage' ?
+                            ($item['unit_price'] * $item['discount']) / 100 : ($item['discount'] / $item['quantity']),
+                        'total_discount' => $totalDiscount,
+                        'total_value' => $subtotal - $totalDiscount,
+                        'sold_quantity' => 0,
+                        'sold_value' => 0,
+                        'status' => 'assigned',
+                    ]);
+                }
+
+                // Reduce admin stock immediately using FIFO
+                try {
+                    \App\Services\FIFOStockService::deductStock($item['product_id'], $item['quantity']);
+                } catch (\Exception $e) {
+                    throw new \Exception("Failed to reduce admin stock for product {$item['product_name']}: " . $e->getMessage());
+                }
             }
 
             DB::commit();
@@ -320,29 +350,6 @@ class StaffProductAllocation extends Component
         }
     }
 
-    // Reduce product stock (FIFO method)
-    private function reduceProductStock($productId, $quantity)
-    {
-        // Get batches in FIFO order (oldest first)
-        $batches = ProductStock::where('product_id', $productId)
-            ->where('available_stock', '>', 0)
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        $remaining = $quantity;
-
-        foreach ($batches as $batch) {
-            if ($remaining <= 0) {
-                break;
-            }
-
-            $toReduce = min($batch->available_stock, $remaining);
-            $batch->available_stock -= $toReduce;
-            $batch->save();
-
-            $remaining -= $toReduce;
-        }
-    }
 
     public function render()
     {

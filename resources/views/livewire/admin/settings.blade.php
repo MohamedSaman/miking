@@ -36,7 +36,7 @@
                             <!-- Wholesale Section -->
                             <h6 class="text-primary border-bottom pb-2 mb-3">Wholesale Bonuses</h6>
                             <div class="row g-3 mb-4">
-                                <div class="col-md-5">
+                                <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Wholesale Cash Bonus</label>
                                     <div class="input-group">
                                         <select class="form-select bg-white" wire:model="bulkWholesaleCashBonusType">
@@ -46,7 +46,7 @@
                                         <input type="number" step="0.01" class="form-control" wire:model="bulkWholesaleCashBonusValue" placeholder="Value">
                                     </div>
                                 </div>
-                                <div class="col-md-5">
+                                <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Wholesale Credit Bonus</label>
                                     <div class="input-group">
                                         <select class="form-select bg-white" wire:model="bulkWholesaleCreditBonusType">
@@ -61,7 +61,7 @@
                             <!-- Retail Section -->
                             <h6 class="text-success border-bottom pb-2 mb-3">Retail Bonuses</h6>
                             <div class="row g-3">
-                                <div class="col-md-5">
+                                <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Retail Cash Bonus</label>
                                     <div class="input-group">
                                         <select class="form-select bg-white" wire:model="bulkRetailCashBonusType">
@@ -71,7 +71,7 @@
                                         <input type="number" step="0.01" class="form-control" wire:model="bulkRetailCashBonusValue" placeholder="Value">
                                     </div>
                                 </div>
-                                <div class="col-md-5">
+                                <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Retail Credit Bonus</label>
                                     <div class="input-group">
                                         <select class="form-select bg-white" wire:model="bulkRetailCreditBonusType">
@@ -81,13 +81,20 @@
                                         <input type="number" step="0.01" class="form-control" wire:model="bulkRetailCreditBonusValue" placeholder="Value">
                                     </div>
                                 </div>
-                                <div class="col-md-2 d-flex align-items-end">
-                                    <button class="btn btn-warning w-100 fw-semibold text-white" 
-                                            wire:click="confirmBulkUpdate"
-                                            wire:loading.attr="disabled">
-                                        Apply to All
-                                    </button>
-                                </div>
+                            </div>
+
+                            <!-- Action Button Row -->
+                            <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+                                <button class="btn btn-warning px-5 fw-bold text-white shadow-sm" 
+                                        wire:click="confirmBulkUpdate"
+                                        wire:loading.attr="disabled">
+                                    <span wire:loading.remove wire:target="applyBulkBonus">
+                                        <i class="bi bi-lightning-charge-fill me-2"></i>Apply Bonuses to All Products
+                                    </span>
+                                    <span wire:loading wire:target="applyBulkBonus">
+                                        <span class="spinner-border spinner-border-sm me-2"></span>Processing...
+                                    </span>
+                                </button>
                             </div>
                         </div>
                     </div>

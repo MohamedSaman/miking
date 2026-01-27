@@ -82,6 +82,12 @@ class User extends Authenticatable
         return $this->hasMany(StaffPermission::class, 'user_id', 'id');
     }
 
+    // Relationship: User has many staff products
+    public function staffProducts()
+    {
+        return $this->hasMany(StaffProduct::class, 'staff_id', 'id');
+    }
+
     /**
      * Check if user has a specific permission
      * Some pages are always accessible to staff without permission
@@ -95,10 +101,6 @@ class User extends Authenticatable
         // These permissions are always available to staff without admin approval
         $alwaysAllowedPermissions = [
             'menu_dashboard',      // Overview
-            'menu_sales_add',      // POS Sales / Billing
-            'menu_products',       // Products
-            'menu_products_list',  // Products List
-            'menu_customers',      // Customer Management
         ];
 
         if (in_array($permissionKey, $alwaysAllowedPermissions)) {

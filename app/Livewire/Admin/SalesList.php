@@ -495,13 +495,14 @@ class SalesList extends Component
     {
         $query = Sale::with(['customer', 'user', 'items', 'returns']);
 
-        // Filter by sale_type and user_id based on role
         if ($this->isStaff()) {
             // Staff sees only their own sales
             $query->where('user_id', Auth::id())
                 ->where('sale_type', 'staff');
+        } else {
+            // Admin sees only admin sales
+            $query->where('sale_type', 'admin');
         }
-        // Admin sees ALL sales (both admin and staff) - no filter needed
 
         return $query->when($this->search, function ($query) {
             $query->where(function ($q) {
@@ -537,9 +538,9 @@ class SalesList extends Component
             $baseSales = Sale::where('sale_type', 'staff')->where('user_id', Auth::id());
             $todaySales = Sale::where('sale_type', 'staff')->where('user_id', Auth::id())->whereDate('created_at', today());
         } else {
-            // Admin sees ALL sales stats (both admin and staff)
-            $baseSales = Sale::query();
-            $todaySales = Sale::whereDate('created_at', today());
+            // Admin sees only admin sales stats
+            $baseSales = Sale::where('sale_type', 'admin');
+            $todaySales = Sale::where('sale_type', 'admin')->whereDate('created_at', today());
         }
 
         return [
