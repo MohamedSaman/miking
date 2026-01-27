@@ -1189,7 +1189,7 @@
                                      <i class="bi bi-clipboard-data"></i> <span>List Supplier Payment</span>
                                  </a>
                              </li>
-                             <li class="nav-item">
+                             <!-- <li class="nav-item">
                                  <a class="nav-link py-2" href="{{ route('admin.due-payments') }}">
                                      <i class="bi bi-hourglass-split"></i> <span>Due Payments</span>
                                  </a>
@@ -1198,7 +1198,7 @@
                                  <a class="nav-link py-2" href="{{ route('admin.view-payments') }}">
                                      <i class="bi bi-eye"></i> <span>View Payments</span>
                                  </a>
-                             </li>
+                             </li> -->
                          </ul>
                     </div>
                 </li>
@@ -1220,7 +1220,7 @@
                                     <i class="bi bi-person-lines-fill"></i> <span>List Customer</span>
                                 </a>
                             </li>
-                            <li class="nav-item">
+                            <!-- <li class="nav-item">
                                 <a class="nav-link py-2 " href="{{ route('admin.manage-staff') }}">
                                      <i class="bi bi-person-badge"></i> <span>List Staff</span>
                                  </a>
@@ -1229,7 +1229,7 @@
                                  <a class="nav-link py-2" href="{{ route('admin.manage-admin') }}">
                                      <i class="bi bi-person-check-fill"></i> <span>List Admin</span>
                                  </a>
-                             </li>
+                             </li> -->
                          </ul>
                     </div>
                 </li>
