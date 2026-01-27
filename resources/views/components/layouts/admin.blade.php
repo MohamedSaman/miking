@@ -1072,7 +1072,7 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('admin.staff-customer-return') }}">
-                                    <i class="bi bi-person-badge"></i> <span>Staff Customer Return</span>
+                                    <i class="bi bi-person-badge"></i> <span>Customer Return List</span>
                                 </a>
                             </li>
 

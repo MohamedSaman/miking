@@ -4,7 +4,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fw-bold mb-0">
                 <i class="bi bi-person-badge text-primary me-2"></i>
-                Staff Customer Returns
+                Customer Returns List
             </h2>
         </div>
 

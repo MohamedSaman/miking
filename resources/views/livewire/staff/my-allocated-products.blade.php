@@ -4,7 +4,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fw-bold mb-0">
                 <i class="bi bi-person-check text-primary me-2"></i>
-                My Allocated Products
+                Allocated Products
             </h2>
             <button type="button" 
                 onclick="confirmReturn()"

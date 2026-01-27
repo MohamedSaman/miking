@@ -873,7 +873,7 @@
                              @if(auth()->user()->hasPermission('staff_my_allocated_products'))
                              <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('staff.allocated-products') }}">
-                                    <i class="bi bi-person-check"></i> <span>My Allocated Products</span>
+                                    <i class="bi bi-person-check"></i> <span>Allocated Products</span>
                                 </a>
                             </li>
                             @endif
@@ -992,7 +992,7 @@
                             @if(auth()->user()->hasPermission('menu_return_customer_list'))
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('staff.return-list') }}">
-                                     <i class="bi bi-list-check"></i> <span>Staff Customer Return</span>
+                                     <i class="bi bi-list-check"></i> <span>Customer Return List</span>
                                  </a>
                              </li>
                              @endif

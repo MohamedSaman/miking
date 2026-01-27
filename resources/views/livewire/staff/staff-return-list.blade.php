@@ -3,7 +3,7 @@
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
             <h3 class="fw-bold text-dark mb-2">
-                <i class="bi bi-list-check text-primary me-2"></i> My Returns History
+                <i class="bi bi-list-check text-primary me-2"></i>Returns History
             </h3>
             <p class="text-muted mb-0">Track and manage your submitted return requests</p>
         </div>
