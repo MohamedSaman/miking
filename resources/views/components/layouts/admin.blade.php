@@ -176,6 +176,27 @@
             font-size: 1.1rem !important;
         }
 
+        /* Live Timer Style */
+        .live-timer-container {
+            background: #ffffff;
+            padding: 4px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 110px;
+            height: 38px;
+        }
+        .live-timer-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #277dd9; /* orange-600 */
+            letter-spacing: 1px;
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
         /* Sidebar styles */
         .sidebar {
             width: 265px;
@@ -1256,6 +1277,11 @@
             <div class="flex-grow-1 d-none d-md-flex justify-content-center">
                 <h5 class="m-0 fw-bold" style="letter-spacing: -0.02em; color: #ffffff;">MI-KING</h5>
             </div>
+
+            <!-- Live Timer -->
+            <div class="live-timer-container me-3 d-none d-lg-flex">
+                <span id="live-timer" class="live-timer-text">00:00:00</span>
+            </div>
             @php
             use App\Models\CashInHand as CashModel;
             $cashInHand = CashModel::where('key', 'cash in hand')->value('value') ?? 0;
@@ -1435,6 +1461,21 @@
     @livewireScripts
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Live Timer Functionality
+            function updateLiveTimer() {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                const timeString = `${hours}:${minutes}:${seconds}`;
+                const timerElement = document.getElementById('live-timer');
+                if (timerElement) {
+                    timerElement.textContent = timeString;
+                }
+            }
+            setInterval(updateLiveTimer, 1000);
+            updateLiveTimer();
+
             // Define all elements once
             const sidebarToggler = document.getElementById('sidebarToggler');
             const sidebar = document.querySelector('.sidebar');

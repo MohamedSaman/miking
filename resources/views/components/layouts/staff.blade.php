@@ -173,6 +173,27 @@
             font-size: 1.1rem !important;
         }
 
+        /* Live Timer Style */
+        .live-timer-container {
+            background: #ffffff;
+            padding: 4px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 110px;
+            height: 38px;
+        }
+        .live-timer-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #277dd9; /* orange-600 */
+            letter-spacing: 1px;
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
         /* Sidebar styles */
         .sidebar {
             width: 265px;
@@ -250,7 +271,11 @@
         /* Navigation styles */
         .nav-item {
             margin: 2px 0;
-            /* Reduced from 5px to 2px */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-item:last-child {
+            border-bottom: none;
         }
 
         .nav-link {
@@ -340,11 +365,28 @@
             color: rgba(255, 255, 255, 0.4) !important;
         }
 
+        /* Toggler button border */
+        #sidebarToggler {
+            width: 42px;
+            height: 42px;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        #sidebarToggler:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: #ffffff !important;
+        }
+
         /* Top bar styles */
         .top-bar {
             height: 60px;
             background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);
-            border-bottom: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             padding: 0 20px;
             position: fixed;
             top: 0;
@@ -766,9 +808,14 @@
         /* Responsive styles */
         @media (max-width: 767.98px) {
             #sidebarToggler {
-                width: 50px !important;
-                height: 50px !important;
-                
+                width: 42px !important;
+                height: 42px !important;
+                border: 1px solid #ffffff !important;
+                border-radius: 6px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 0 !important;
             }
 
             #sidebarToggler i {
@@ -1167,9 +1214,14 @@
         <!-- Top Navigation Bar -->
         <nav class="top-bar">
             <!-- Add toggle button at the start of the navbar -->
-            <button id="sidebarToggler" class="btn btn-sm px-2 py-1 me-auto d-flex align-items-center" style="color:#ffffff; border-color:#ffffff;">
-                <i class="bi bi-list fs-5"></i>
+            <button id="sidebarToggler" class="btn btn-sm d-flex align-items-center justify-content-center me-auto" style="color:#ffffff;">
+                <i class="bi bi-list fs-4"></i>
             </button>
+
+            <!-- Live Timer -->
+            <div class="live-timer-container me-3 d-none d-lg-flex">
+                <span id="live-timer" class="live-timer-text">00:00:00</span>
+            </div>
 
             <div class="dropdown">
                 <div class="admin-info dropdown-toggle" id="adminDropdown" role="button" data-bs-toggle="dropdown"
@@ -1459,6 +1511,21 @@
                         }, 300);
                     });
                 });
+
+                // Live Timer Functionality
+                function updateLiveTimer() {
+                    const now = new Date();
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    const seconds = String(now.getSeconds()).padStart(2, '0');
+                    const timeString = `${hours}:${minutes}:${seconds}`;
+                    const timerElement = document.getElementById('live-timer');
+                    if (timerElement) {
+                        timerElement.textContent = timeString;
+                    }
+                }
+                setInterval(updateLiveTimer, 1000);
+                updateLiveTimer();
             }
         });
     </script>
