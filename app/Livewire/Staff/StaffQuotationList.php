@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Livewire\Concerns\WithDynamicLayout;
 
-#[\Livewire\Attributes\Title('My Quotations')]
+#[\Livewire\Attributes\Title('Quotations')]
 class StaffQuotationList extends Component
 {
     use WithDynamicLayout;

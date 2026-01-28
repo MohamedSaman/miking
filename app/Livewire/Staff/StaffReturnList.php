@@ -11,7 +11,7 @@ use App\Livewire\Concerns\WithDynamicLayout;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
 
-#[Title("My Returns")]
+#[Title("Returns")]
 class StaffReturnList extends Component
 {
     use WithDynamicLayout, WithPagination;
