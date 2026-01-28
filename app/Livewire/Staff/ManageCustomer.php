@@ -8,7 +8,7 @@ use App\Models\Customer;
 use Illuminate\Support\Facades\Auth;
 use App\Livewire\Concerns\WithDynamicLayout;
 
-#[\Livewire\Attributes\Title('My Customers')]
+#[\Livewire\Attributes\Title('Customers')]
 class ManageCustomer extends Component
 {
     use WithDynamicLayout;
