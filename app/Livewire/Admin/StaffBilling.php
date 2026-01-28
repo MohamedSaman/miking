@@ -138,6 +138,13 @@ class StaffBilling extends Component
             $customer = Customer::find($value);
             if ($customer) {
                 $this->selectedCustomer = $customer;
+                
+                // Auto update sale type based on customer type
+                if ($customer->type === 'wholesale') {
+                    $this->customerTypeSale = 'wholesale';
+                } else {
+                    $this->customerTypeSale = 'retail';
+                }
             }
         } else {
             $this->setDefaultCustomer();
@@ -190,6 +197,14 @@ class StaffBilling extends Component
             $this->loadCustomers();
             $this->customerId = $customer->id;
             $this->selectedCustomer = $customer;
+            
+            // Auto update sale type based on customer type
+            if ($customer->type === 'wholesale') {
+                $this->customerTypeSale = 'wholesale';
+            } else {
+                $this->customerTypeSale = 'retail';
+            }
+            
             $this->closeCustomerModal();
 
             $this->js("Swal.fire('success', 'Customer created successfully!', 'success')");

@@ -25,8 +25,16 @@ class ManageCustomer extends Component
         'type' => 'retail'
     ];
     public $showEditModal = false;
+    public $showCreateModal = false;
     public $showDeleteConfirm = false;
     public $deleteId = null;
+    public $newCustomerData = [
+        'name' => '',
+        'phone' => '',
+        'email' => '',
+        'address' => '',
+        'type' => 'retail'
+    ];
 
     public function mount()
     {
@@ -121,6 +129,48 @@ class ManageCustomer extends Component
     {
         $this->editingId = null;
         $this->editingData = [
+            'name' => '',
+            'phone' => '',
+            'email' => '',
+            'address' => '',
+            'type' => 'retail'
+        ];
+    }
+
+    public function openCreateModal()
+    {
+        $this->resetCreateForm();
+        $this->showCreateModal = true;
+    }
+
+    public function createCustomer()
+    {
+        $this->validate([
+            'newCustomerData.name' => 'required|string|max:255',
+            'newCustomerData.phone' => 'required|string|max:20',
+            'newCustomerData.email' => 'nullable|email',
+            'newCustomerData.address' => 'nullable|string',
+            'newCustomerData.type' => 'required|in:retail,wholesale'
+        ]);
+
+        Customer::create([
+            'name' => $this->newCustomerData['name'],
+            'phone' => $this->newCustomerData['phone'],
+            'email' => $this->newCustomerData['email'],
+            'address' => $this->newCustomerData['address'],
+            'type' => $this->newCustomerData['type'],
+            'user_id' => Auth::id(),
+            'created_by' => Auth::id(),
+        ]);
+
+        $this->showCreateModal = false;
+        $this->resetCreateForm();
+        $this->dispatch('show-success', 'Customer created successfully.');
+    }
+
+    public function resetCreateForm()
+    {
+        $this->newCustomerData = [
             'name' => '',
             'phone' => '',
             'email' => '',

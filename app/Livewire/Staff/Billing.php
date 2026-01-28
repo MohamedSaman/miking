@@ -202,6 +202,13 @@ class Billing extends Component
             $customer = Customer::find($value);
             if ($customer) {
                 $this->selectedCustomer = $customer;
+                
+                // Auto update sale type based on customer type
+                if ($customer->type === 'wholesale') {
+                    $this->customerTypeSale = 'wholesale';
+                } else {
+                    $this->customerTypeSale = 'retail';
+                }
             }
         } else {
             $this->setDefaultCustomer();
