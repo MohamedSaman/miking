@@ -164,7 +164,8 @@ class Billing extends Component
 
     public function getDueAmountProperty()
     {
-        if ($this->paymentMethod === 'credit') {
+        // Cash with 0 amount should be treated as credit
+        if ($this->paymentMethod === 'credit' || ($this->paymentMethod === 'cash' && $this->cashAmount <= 0)) {
             return floatval($this->grandTotal);
         }
         return max(0, floatval($this->grandTotal) - floatval($this->totalPaidAmount));
@@ -172,7 +173,8 @@ class Billing extends Component
 
     public function getPaymentStatusProperty()
     {
-        if ($this->paymentMethod === 'credit' || floatval($this->totalPaidAmount) <= 0) {
+        // Cash with 0 amount should be treated as credit (pending)
+        if ($this->paymentMethod === 'credit' || ($this->paymentMethod === 'cash' && $this->cashAmount <= 0) || floatval($this->totalPaidAmount) <= 0) {
             return 'pending';
         } elseif (floatval($this->totalPaidAmount) >= floatval($this->grandTotal)) {
             return 'paid';
@@ -183,7 +185,8 @@ class Billing extends Component
 
     public function getDatabasePaymentTypeProperty()
     {
-        if ($this->paymentMethod === 'credit') {
+        // Cash with 0 amount should be treated as credit (partial payment type)
+        if ($this->paymentMethod === 'credit' || ($this->paymentMethod === 'cash' && $this->cashAmount <= 0)) {
             return 'partial';
         }
         if (floatval($this->totalPaidAmount) >= floatval($this->grandTotal)) {
@@ -669,6 +672,10 @@ class Billing extends Component
             // Determine payment status based on payment
             $paymentStatus = $this->paymentStatus; // Uses computed property: paid/partial/pending
             
+            // Check if cash payment with 0 amount (treat as credit)
+            $isCashZeroForSale = ($this->paymentMethod === 'cash' && $this->cashAmount <= 0);
+            $salePaymentMethod = $isCashZeroForSale ? 'credit' : $this->paymentMethod;
+            
             $sale = Sale::create([
                 'sale_id' => Sale::generateSaleId(),
                 'invoice_number' => Sale::generateInvoiceNumber(),
@@ -678,7 +685,7 @@ class Billing extends Component
                 'discount_amount' => $this->totalDiscount + $this->additionalDiscountAmount,
                 'total_amount' => $this->grandTotal,
                 'payment_type' => $this->databasePaymentType,
-                'payment_method' => $this->paymentMethod, // Add payment method
+                'payment_method' => $salePaymentMethod, // Use adjusted payment method
                 'payment_status' => $paymentStatus, // Use computed status: paid/partial/pending
                 'due_amount' => $this->dueAmount,
                 'notes' => $this->notes,
@@ -705,18 +712,25 @@ class Billing extends Component
             }
 
             // Create Payment Record - completed if full payment, pending if credit/partial
-            if ($this->paymentMethod === 'credit' || $this->totalPaidAmount > 0) {
-                $paymentAmount = $this->paymentMethod === 'credit' ? 0 : $this->totalPaidAmount;
+            // Also create payment record if cash amount is 0 (treat as credit)
+            $isCashZero = ($this->paymentMethod === 'cash' && $this->cashAmount <= 0);
+            
+            if ($this->paymentMethod === 'credit' || $this->totalPaidAmount > 0 || $isCashZero) {
+                // For credit payments or cash with 0 amount, use the grand total as the amount (the full amount owed)
+                $paymentAmount = ($this->paymentMethod === 'credit' || $isCashZero) ? $this->grandTotal : $this->totalPaidAmount;
                 
                 // Determine if payment is completed (paid in full)
                 $isCompleted = ($paymentStatus === 'paid');
                 $paymentRecordStatus = $isCompleted ? 'approved' : 'pending';
+                
+                // Determine actual payment method for record (cash with 0 = credit)
+                $actualPaymentMethod = $isCashZero ? 'credit' : $this->paymentMethod;
 
                 $payment = Payment::create([
                     'customer_id' => $customer->id,
                     'sale_id' => $sale->id,
                     'amount' => $paymentAmount,
-                    'payment_method' => $this->paymentMethod,
+                    'payment_method' => $actualPaymentMethod,
                     'payment_date' => now(),
                     'is_completed' => $isCompleted, // Completed if full payment
                     'status' => $paymentRecordStatus, // approved if paid, pending if credit/partial
@@ -724,9 +738,13 @@ class Billing extends Component
                 ]);
 
             // Handle payment method specific data
-            if ($this->paymentMethod === 'cash') {
+            if ($this->paymentMethod === 'cash' && !$isCashZero) {
                     $payment->update([
                         'payment_reference' => 'STAFF-CASH-' . now()->format('YmdHis'),
+                    ]);
+                } elseif ($this->paymentMethod === 'credit' || $isCashZero) {
+                    $payment->update([
+                        'payment_reference' => 'STAFF-CREDIT-' . now()->format('YmdHis'),
                     ]);
                 } elseif ($this->paymentMethod === 'cheque') {
                     foreach ($this->cheques as $cheque) {
