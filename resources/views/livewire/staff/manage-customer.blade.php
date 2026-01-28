@@ -3,7 +3,7 @@
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
             <h3 class="fw-bold text-dark mb-2">
-                <i class="bi bi-people-fill text-success me-2"></i> My Customers
+                <i class="bi bi-people-fill text-success me-2"></i> Customers
             </h3>
             <p class="text-muted mb-0">Manage your customer information efficiently</p>
         </div>
@@ -302,29 +302,30 @@
     @endif
 </div>
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // Handle success messages
-    Livewire.on('show-success', (event) => {
-        const message = Array.isArray(event) ? event[0] : (typeof event === 'object' ? event.message : event);
-        Swal.fire({
-            icon: 'success',
-            title: 'Success',
-            text: message,
-            confirmButtonColor: '#198754',
-            timer: 3000,
-            showConfirmButton: false
+    document.addEventListener('livewire:initialized', () => {
+        // Handle success messages
+        Livewire.on('show-success', (event) => {
+            const message = Array.isArray(event) ? event[0] : (typeof event === 'object' ? event.message : event);
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: message,
+                confirmButtonColor: '#198754',
+                timer: 3000,
+                showConfirmButton: false
+            });
         });
-    });
 
-    // Handle error messages
-    Livewire.on('show-error', (event) => {
-        const message = Array.isArray(event) ? event[0] : (typeof event === 'object' ? event.message : event);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: message,
-            confirmButtonColor: '#dc3545'
+        // Handle error messages
+        Livewire.on('show-error', (event) => {
+            const message = Array.isArray(event) ? event[0] : (typeof event === 'object' ? event.message : event);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: message,
+                confirmButtonColor: '#dc3545'
+            });
         });
     });
 </script>
