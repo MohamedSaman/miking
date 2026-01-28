@@ -305,7 +305,8 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     // Handle success messages
-    Livewire.on('show-success', (message) => {
+    Livewire.on('show-success', (event) => {
+        const message = Array.isArray(event) ? event[0] : (typeof event === 'object' ? event.message : event);
         Swal.fire({
             icon: 'success',
             title: 'Success',
@@ -317,7 +318,8 @@
     });
 
     // Handle error messages
-    Livewire.on('show-error', (message) => {
+    Livewire.on('show-error', (event) => {
+        const message = Array.isArray(event) ? event[0] : (typeof event === 'object' ? event.message : event);
         Swal.fire({
             icon: 'error',
             title: 'Error',

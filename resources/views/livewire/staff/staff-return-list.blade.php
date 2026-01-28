@@ -18,8 +18,8 @@
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body p-3">
             <div class="row g-3 align-items-center">
-                <div class="col-md-6">
-                    <div class="input-group">
+                <div class="col-md-5">
+                    <div class="input-group shadow-sm">
                         <span class="input-group-text bg-white border-end-0">
                             <i class="bi bi-search text-muted"></i>
                         </span>
@@ -30,22 +30,24 @@
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select" wire:model.live="statusFilter">
+                    <select class="form-select shadow-sm" wire:model.live="statusFilter">
                         <option value="all">All Statuses</option>
                         <option value="pending">Pending Approval</option>
                         <option value="approved">Approved</option>
                         <option value="rejected">Rejected</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <div class="d-flex align-items-center justify-content-md-end gap-2 text-muted small">
-                        <span>Show</span>
-                        <select wire:model.live="perPage" class="form-select form-select-sm w-auto">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                        </select>
-                        <span>entries</span>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center justify-content-md-end gap-3 text-muted">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="small fw-medium">Show</span>
+                            <select wire:model.live="perPage" class="form-select form-select-sm shadow-sm" style="width: 80px;">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span class="small fw-medium">entries</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -145,7 +147,9 @@
         </div>
         @if($returns->hasPages())
         <div class="card-footer bg-white border-top-0 py-3">
-            {{ $returns->links() }}
+            <div class="d-flex justify-content-center">
+                {{ $returns->links('livewire.custom-pagination') }}
+            </div>
         </div>
         @endif
     </div>
