@@ -35,6 +35,10 @@ class StaffBonusList extends Component
     public $showBonusDetailModal = false;
     public $selectedSaleBonuses = [];
     public $selectedSaleInfo = null;
+    
+    // Sale Invoice Modal
+    public $showSaleInvoiceModal = false;
+    public $selectedSaleForInvoice = null;
 
     public function mount()
     {
@@ -125,6 +129,23 @@ class StaffBonusList extends Component
         $this->showBonusDetailModal = false;
         $this->selectedSaleBonuses = [];
         $this->selectedSaleInfo = null;
+    }
+
+    public function viewSaleInvoice($saleId)
+    {
+        $this->selectedSaleForInvoice = \App\Models\Sale::with([
+            'customer', 
+            'user', 
+            'items.product'
+        ])->find($saleId);
+        
+        $this->showSaleInvoiceModal = true;
+    }
+
+    public function closeSaleInvoiceModal()
+    {
+        $this->showSaleInvoiceModal = false;
+        $this->selectedSaleForInvoice = null;
     }
 
     public function getStaffBonusSummaryProperty()

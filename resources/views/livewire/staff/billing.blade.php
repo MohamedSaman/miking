@@ -501,7 +501,11 @@
                     </span>
                 </button>
                 <p class="text-muted small mt-2 mb-0">
-                    <i class="bi bi-shield-check me-1"></i>Payment will be pending admin approval
+                    @if($paymentMethod === 'credit' || ($paymentMethod === 'cash' && $cashAmount <= 0))
+                        <i class="bi bi-info-circle me-1"></i>Credit sale - no payment approval needed
+                    @else
+                        <i class="bi bi-shield-check me-1"></i>Payment will be pending admin approval
+                    @endif
                 </p>
             </div>
         </div>

@@ -114,25 +114,37 @@ class PaymentApprovals extends Component
             
             $payment = Payment::findOrFail($this->selectedPayment->id);
             
-            // Store the original due date string for the note
-            $originalDueDate = $payment->due_date->format('Y-m-d');
-            
-            // Calculate new due date (current due date + 3 days)
-            $newDueDate = $payment->due_date->copy()->addDays(3);
+            // Restore the due_amount on the sale since payment is rejected
+            if ($payment->sale) {
+                $sale = $payment->sale;
+                $newDueAmount = $sale->due_amount + $payment->amount;
+                
+                // Determine new payment status
+                $paymentStatus = 'pending';
+                if ($newDueAmount >= $sale->total_amount) {
+                    $paymentStatus = 'pending';
+                } elseif ($newDueAmount > 0) {
+                    $paymentStatus = 'partial';
+                }
+                
+                // Store the original due date string for the note
+                $originalDueDate = $payment->due_date ? $payment->due_date->format('Y-m-d') : now()->format('Y-m-d');
+                
+                // Calculate new due date (current due date + 3 days)
+                $newDueDate = $payment->due_date ? $payment->due_date->copy()->addDays(3) : now()->addDays(3);
+                
+                $sale->update([
+                    'due_amount' => $newDueAmount,
+                    'payment_status' => $paymentStatus,
+                    'notes' => ($sale->notes ? $sale->notes . "\n" : '') . 
+                        "Payment of Rs. " . number_format($payment->amount, 2) . " rejected on " . now()->format('Y-m-d H:i') . ". Reason: " . $this->rejectionReason . 
+                        "\nDue date extended from " . $originalDueDate . " to " . $newDueDate->format('Y-m-d') . " (3 days grace period).",
+                ]);
+            }
             
             $payment->update([
                 'status' => 'rejected',
-                'due_date' => $newDueDate, // Update with extended due date
-                // Keep is_completed as false since it wasn't completed
-            ]);
-            
-            // Add rejection reason and due date extension info to sale notes
-            $payment->sale->update([
-                'notes' => ($payment->sale->notes ? $payment->sale->notes . "\n" : '') . 
-                    "Payment rejected on " . now()->format('Y-m-d H:i') . ". Reason: " . $this->rejectionReason . 
-                    "\nDue date extended from " . $originalDueDate . " to " . $newDueDate->format('Y-m-d') . " (3 days grace period).",
-                'created_at' => now(), // Update created_at to reflect the change
-                'updated_at' => now(), // Update updated_at to reflect the change
+                'due_date' => $payment->due_date ? $payment->due_date->copy()->addDays(3) : now()->addDays(3),
             ]);
             
             DB::commit();
@@ -140,7 +152,7 @@ class PaymentApprovals extends Component
             $this->dispatch('closeModal', 'payment-approval-modal');
             $this->dispatch('showToast', [
                 'type' => 'info', 
-                'message' => 'Payment rejected and due date extended by 3 days'
+                'message' => 'Payment rejected, due amount restored and due date extended by 3 days'
             ]);
             
             $this->selectedPayment = null;

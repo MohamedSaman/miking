@@ -69,4 +69,9 @@ class Payment extends Model
     {
         return $this->hasMany(PaymentAllocation::class);
     }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 }

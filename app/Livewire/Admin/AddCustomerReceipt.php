@@ -565,6 +565,12 @@ class AddCustomerReceipt extends Component
             $totalProcessed = 0;
             $processedInvoices = [];
 
+            // Determine payment status based on user role
+            // Staff payments need admin approval (pending), Admin payments are directly approved (paid)
+            $isStaffUser = $this->isStaff();
+            $paymentStatus = $isStaffUser ? 'pending' : 'paid';
+            $isCompleted = $isStaffUser ? false : true;
+
             // Create a single payment record for customer (not tied to specific sale)
             $paymentData = [
                 'customer_id' => $this->selectedCustomer->id,
@@ -572,8 +578,8 @@ class AddCustomerReceipt extends Component
                 'payment_method' => $this->paymentData['payment_method'],
                 'payment_reference' => $this->paymentData['reference_number'] ?? null,
                 'payment_date' => $this->paymentData['payment_date'],
-                'status' => 'paid',
-                'is_completed' => 1,
+                'status' => $paymentStatus,
+                'is_completed' => $isCompleted,
                 'notes' => $this->paymentData['notes'] ?? null,
                 'created_by' => Auth::id(),
             ];
@@ -617,9 +623,10 @@ class AddCustomerReceipt extends Component
 
                 if ($paymentAmount <= 0) continue;
 
-                // Update sale with adjusted due amount
                 $saleModel = Sale::find($saleId);
                 if ($saleModel) {
+                    // Update sale amounts for both admin and staff
+                    // Only difference: staff payment status = 'pending', admin = 'paid'
                     $newDueAmount = $saleModel->due_amount - $paymentAmount;
                     $returnAmount = $this->calculateReturnAmount($saleId);
 
@@ -636,7 +643,7 @@ class AddCustomerReceipt extends Component
 
                     $saleModel->save();
 
-                    // Create payment allocation record
+                    // Create payment allocation record (needed for both admin and staff)
                     DB::table('payment_allocations')->insert([
                         'payment_id' => $payment->id,
                         'sale_id' => $saleId,
@@ -645,10 +652,10 @@ class AddCustomerReceipt extends Component
                         'updated_at' => now(),
                     ]);
 
-                    Log::info('Sale updated and allocation created', [
+                    Log::info('Sale allocation created', [
                         'sale_id' => $saleId,
                         'payment_amount' => $paymentAmount,
-                        'return_amount' => $returnAmount,
+                        'is_staff_payment' => $isStaffUser,
                         'new_due' => $saleModel->due_amount
                     ]);
                 }
@@ -662,19 +669,25 @@ class AddCustomerReceipt extends Component
             Log::info('Payment processed successfully', [
                 'total_processed' => $totalProcessed,
                 'invoices' => $processedInvoices,
-                'payment_id' => $payment->id
+                'payment_id' => $payment->id,
+                'is_staff' => $isStaffUser
             ]);
 
             $this->paymentSuccess = true;
             $this->showPaymentModal = false;
             $this->latestPayment = $payment;
 
+            // Show different message for staff (pending approval) vs admin (immediate)
+            $successMessage = $isStaffUser 
+                ? "Payment of Rs." . number_format($totalProcessed, 2) . " submitted! Awaiting admin approval."
+                : "Payment of Rs." . number_format($totalProcessed, 2) . " processed successfully!";
+
             $this->dispatch('show-toast', [
                 'type' => 'success',
-                'message' => "Payment of Rs." . number_format($totalProcessed, 2) . " processed successfully!"
+                'message' => $successMessage
             ]);
 
-            // Open receipt modal
+            // Open receipt modal for both admin and staff
             $this->openReceiptModal();
         } catch (\Exception $e) {
             DB::rollBack();

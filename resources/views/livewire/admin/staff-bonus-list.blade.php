@@ -270,7 +270,7 @@
         @if($bonuses->hasPages())
         <div class="card-footer bg-white">
             <div class="d-flex justify-content-center">
-                {{ $bonuses->links() }}
+                {{ $bonuses->links('livewire.custom-pagination') }}
             </div>
         </div>
         @endif
@@ -353,9 +353,130 @@
                 </div>
                 <div class="modal-footer bg-light border-0 py-3">
                     <button type="button" class="btn btn-secondary px-4" wire:click="closeBonusDetailModal">Close</button>
-                    <a href="{{ route('admin.staff-sales') }}?view_sale_id={{ $selectedSaleInfo->id }}" class="btn btn-primary px-4">
+                    <button type="button" class="btn btn-primary px-4" wire:click="viewSaleInvoice({{ $selectedSaleInfo->id }})">
                         <i class="bi bi-receipt me-1"></i> View Original Sale
-                    </a>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Sale Invoice Modal --}}
+    @if($showSaleInvoiceModal && $selectedSaleForInvoice)
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white py-3">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-receipt-cutoff me-2"></i>Invoice #{{ $selectedSaleForInvoice->invoice_number }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" wire:click="closeSaleInvoiceModal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <!-- Invoice Header -->
+                    <div class="invoice-header p-4 bg-light border-bottom">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4 class="mb-3">MI-KING</h4>
+                                <p class="mb-1"><strong>Invoice:</strong> {{ $selectedSaleForInvoice->invoice_number }}</p>
+                                <p class="mb-1"><strong>Sale ID:</strong> {{ $selectedSaleForInvoice->sale_id }}</p>
+                                <p class="mb-1"><strong>Date:</strong> {{ $selectedSaleForInvoice->created_at->format('d/m/Y H:i') }}</p>
+                                <p class="mb-1"><strong>Staff:</strong> {{ $selectedSaleForInvoice->user->name ?? 'N/A' }}</p>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <h6 class="text-muted mb-2">Customer Details</h6>
+                                <p class="mb-1"><strong>{{ $selectedSaleForInvoice->customer->name ?? 'Walk-in Customer' }}</strong></p>
+                                <p class="mb-1">{{ $selectedSaleForInvoice->customer->phone ?? 'N/A' }}</p>
+                                <p class="mb-1">{{ $selectedSaleForInvoice->customer->address ?? 'N/A' }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sale Items -->
+                    @if($selectedSaleForInvoice->items && $selectedSaleForInvoice->items->count() > 0)
+                    <div class="p-4">
+                        <h6 class="mb-3">Sale Items</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Product</th>
+                                        <th>Code</th>
+                                        <th class="text-center">Qty</th>
+                                        <th class="text-end">Unit Price</th>
+                                        <th class="text-end">Discount</th>
+                                        <th class="text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($selectedSaleForInvoice->items as $index => $item)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>{{ $item->product_name }}</td>
+                                        <td>{{ $item->product_code }}</td>
+                                        <td class="text-center">{{ $item->quantity }}</td>
+                                        <td class="text-end">Rs. {{ number_format($item->unit_price, 2) }}</td>
+                                        <td class="text-end">Rs. {{ number_format($item->discount_per_unit, 2) }}</td>
+                                        <td class="text-end">Rs. {{ number_format($item->total, 2) }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="6" class="text-end"><strong>Subtotal:</strong></td>
+                                        <td class="text-end"><strong>Rs. {{ number_format($selectedSaleForInvoice->subtotal, 2) }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="6" class="text-end"><strong>Discount:</strong></td>
+                                        <td class="text-end"><strong>Rs. {{ number_format($selectedSaleForInvoice->discount_amount ?? 0, 2) }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="6" class="text-end"><strong>Grand Total:</strong></td>
+                                        <td class="text-end"><strong>Rs. {{ number_format($selectedSaleForInvoice->total_amount, 2) }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="6" class="text-end"><strong>Due Amount:</strong></td>
+                                        <td class="text-end"><strong class="text-danger">Rs. {{ number_format($selectedSaleForInvoice->due_amount ?? 0, 2) }}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Sale Summary -->
+                    <div class="p-4 bg-light border-top">
+                        <h6 class="mb-3">Sale Summary</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Sale Type:</strong> {{ ucfirst($selectedSaleForInvoice->sale_type) }}</p>
+                                <p class="mb-1"><strong>Payment Method:</strong> {{ ucfirst($selectedSaleForInvoice->payment_method) }}</p>
+                                <p class="mb-1"><strong>Payment Status:</strong> 
+                                    @php
+                                        $statusBadge = match($selectedSaleForInvoice->payment_status) {
+                                            'pending' => ['class' => 'bg-warning', 'text' => 'Pending'],
+                                            'partial' => ['class' => 'bg-info', 'text' => 'Partial'],
+                                            'paid' => ['class' => 'bg-success', 'text' => 'Paid'],
+                                            default => ['class' => 'bg-secondary', 'text' => 'Unknown']
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $statusBadge['class'] }}">{{ $statusBadge['text'] }}</span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Total Items:</strong> {{ $selectedSaleForInvoice->items->sum('quantity') }}</p>
+                                <p class="mb-1"><strong>Created:</strong> {{ $selectedSaleForInvoice->created_at->format('d/m/Y H:i:s') }}</p>
+                                <p class="mb-1"><strong>Updated:</strong> {{ $selectedSaleForInvoice->updated_at->format('d/m/Y H:i:s') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top-0 py-3">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" wire:click="closeSaleInvoiceModal">
+                        <i class="bi bi-x"></i> Close
+                    </button>
                 </div>
             </div>
         </div>

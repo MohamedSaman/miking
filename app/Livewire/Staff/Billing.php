@@ -595,8 +595,9 @@ class Billing extends Component
 
         // Validate payment method specific fields
         if ($this->paymentMethod === 'cash') {
+            // Allow cash amount of 0 or greater (0 will be treated as credit)
             if ($this->cashAmount < 0) {
-                $this->js("Swal.fire('error', 'Please enter cash amount.', 'error')");
+                $this->js("Swal.fire('error', 'Cash amount cannot be negative.', 'error')");
                 return;
             }
         } elseif ($this->paymentMethod === 'cheque') {
@@ -617,8 +618,9 @@ class Billing extends Component
             }
         }
 
-        // Check if payment amount matches grand total (except for credit)
-        if ($this->paymentMethod !== 'credit') {
+        // Check if payment amount matches grand total (except for credit and cash with 0 amount)
+        $isCashZero = ($this->paymentMethod === 'cash' && $this->cashAmount <= 0);
+        if ($this->paymentMethod !== 'credit' && !$isCashZero) {
             if ($this->totalPaidAmount < $this->grandTotal) {
                 $this->pendingDueAmount = $this->grandTotal - $this->totalPaidAmount;
                 $this->showPaymentConfirmModal = true;
@@ -711,40 +713,27 @@ class Billing extends Component
                 ]);
             }
 
-            // Create Payment Record - completed if full payment, pending if credit/partial
-            // Also create payment record if cash amount is 0 (treat as credit)
+            // Create Payment Record ONLY for actual money payments (cash, cheque, bank_transfer)
+            // Skip payment record for credit sales - they're just debt records, no money involved
             $isCashZero = ($this->paymentMethod === 'cash' && $this->cashAmount <= 0);
             
-            if ($this->paymentMethod === 'credit' || $this->totalPaidAmount > 0 || $isCashZero) {
-                // For credit payments or cash with 0 amount, use the grand total as the amount (the full amount owed)
-                $paymentAmount = ($this->paymentMethod === 'credit' || $isCashZero) ? $this->grandTotal : $this->totalPaidAmount;
-                
-                // Determine if payment is completed (paid in full)
-                $isCompleted = ($paymentStatus === 'paid');
-                $paymentRecordStatus = $isCompleted ? 'approved' : 'pending';
-                
-                // Determine actual payment method for record (cash with 0 = credit)
-                $actualPaymentMethod = $isCashZero ? 'credit' : $this->paymentMethod;
-
+            // Only create payment records for actual money transactions
+            if ($this->totalPaidAmount > 0 && $this->paymentMethod !== 'credit' && !$isCashZero) {
                 $payment = Payment::create([
                     'customer_id' => $customer->id,
                     'sale_id' => $sale->id,
-                    'amount' => $paymentAmount,
-                    'payment_method' => $actualPaymentMethod,
+                    'amount' => $this->totalPaidAmount,
+                    'payment_method' => $this->paymentMethod,
                     'payment_date' => now(),
-                    'is_completed' => $isCompleted, // Completed if full payment
-                    'status' => $paymentRecordStatus, // approved if paid, pending if credit/partial
+                    'is_completed' => false, // Not completed until admin approval
+                    'status' => 'pending', // Pending admin approval
                     'created_by' => $staffId, // Track which staff made the payment
                 ]);
 
-            // Handle payment method specific data
-            if ($this->paymentMethod === 'cash' && !$isCashZero) {
+                // Handle payment method specific data (only for actual payment records)
+                if ($this->paymentMethod === 'cash') {
                     $payment->update([
                         'payment_reference' => 'STAFF-CASH-' . now()->format('YmdHis'),
-                    ]);
-                } elseif ($this->paymentMethod === 'credit' || $isCashZero) {
-                    $payment->update([
-                        'payment_reference' => 'STAFF-CREDIT-' . now()->format('YmdHis'),
                     ]);
                 } elseif ($this->paymentMethod === 'cheque') {
                     foreach ($this->cheques as $cheque) {
@@ -824,7 +813,13 @@ class Billing extends Component
             $this->notes = '';
             $this->setDefaultCustomer();
 
-            $this->js("Swal.fire('success', 'Sale created successfully! Payment status: pending admin approval.', 'success')");
+            // Different success message for credit vs payment sales
+            $isCreditSale = ($this->paymentMethod === 'credit' || ($this->paymentMethod === 'cash' && $this->cashAmount <= 0));
+            if ($isCreditSale) {
+                $this->js("Swal.fire('success', 'Credit sale created successfully! No payment approval needed.', 'success')");
+            } else {
+                $this->js("Swal.fire('success', 'Sale created successfully! Payment pending admin approval.', 'success')");
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Staff billing error: ' . $e->getMessage());
