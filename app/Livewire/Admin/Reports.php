@@ -6,11 +6,19 @@ use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\Payment;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
 use App\Models\ProductStock;
 use App\Models\ProductSupplier;
+use App\Models\ProductDetail;
+use App\Models\ProductPrice;
 use App\Models\Customer;
+use App\Models\Expense;
+use App\Models\StaffBonus;
+use App\Models\ReturnsProduct;
+use App\Models\User;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\SalesReportExport;
 use App\Exports\SalaryReportExport;
@@ -22,12 +30,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Livewire\Concerns\WithDynamicLayout;
 use Livewire\WithPagination;
+use Carbon\Carbon;
 
 #[Title('Reports')]
 class Reports extends Component
 {
     use WithDynamicLayout, WithPagination;
 
+    // Main category selection
+    public $activeCategory = 'sales';
     public $selectedReport = '';
     public $reportStartDate;
     public $reportEndDate;
@@ -38,6 +49,9 @@ class Reports extends Component
     public $dailyMonth;
     public $dailyYear;
     public $monthlyYear;
+
+    // Period type for P&L reports
+    public $periodType = 'monthly'; // monthly, weekly, daily
 
     // Report data arrays
     public $salesReport = [];
@@ -51,6 +65,7 @@ class Reports extends Component
     public $dailyPurchasesReport = [];
     public $outstandingAccountsReport = [];
     public $reportStats = [];
+    public $reportData = [];
 
     // Modal properties
     public $showDetailModal = false;
@@ -70,6 +85,62 @@ class Reports extends Component
 
     public $perPage = 10;
 
+    // Report categories and sub-reports structure
+    public $reportCategories = [
+        'sales' => [
+            'label' => 'Sales Report',
+            'icon' => 'bi-cart-check',
+            'reports' => [
+                'transaction-history' => 'Transaction History',
+                'sales-payment' => 'Sales/Payment Report',
+                'product-report' => 'Product Report',
+                'sales-by-staff' => 'Sales by Staff - Top 5',
+                'sales-by-product' => 'Sales by Product - Top 5',
+                'invoice-aging' => 'Invoice Aging',
+                'detailed-sales' => 'Detailed Sales Report',
+                'sales-return' => 'Sales Return Report',
+            ]
+        ],
+        'purchases' => [
+            'label' => 'Purchases Report',
+            'icon' => 'bi-bag-check',
+            'reports' => [
+                'purchases-payment' => 'Purchases/Payment Report',
+                'detailed-purchases' => 'Detailed Purchases Report',
+            ]
+        ],
+        'inventory' => [
+            'label' => 'Inventory Valuation',
+            'icon' => 'bi-box-seam',
+            'reports' => [
+                'product-wise-cogs' => 'Product Wise - COGS Method',
+                'year-wise-cogs' => 'Year Wise - COGS Method',
+            ]
+        ],
+        'profit-loss' => [
+            'label' => 'Profit & Loss Report',
+            'icon' => 'bi-graph-up-arrow',
+            'reports' => [
+                'pl-cogs' => 'P & L using COGS',
+                'pl-opening-closing' => 'P & L using Opening/Closing Stock',
+                'pl-period-cogs' => 'Monthly/Weekly/Daily P & L COGS',
+                'pl-period-stock' => 'Monthly/Weekly/Daily P & L - Changes in Stock',
+                'productwise-pl' => 'Productwise Profit/Loss',
+                'invoicewise-pl' => 'Invoicewise Profit/Loss',
+                'customerwise-pl' => 'Customerwise Profit/Loss',
+            ]
+        ],
+        'other' => [
+            'label' => 'Other Reports',
+            'icon' => 'bi-file-earmark-text',
+            'reports' => [
+                'expense-report' => 'Expense Report',
+                'commission-report' => 'Commission Report',
+                'payment-mode-report' => 'Payment Mode Report',
+            ]
+        ],
+    ];
+
     public function mount()
     {
         // Set default to current month and year if not set
@@ -85,10 +156,22 @@ class Reports extends Component
         $this->dailyYear = now()->year;
         $this->monthlyYear = now()->year;
 
-        // Generate initial report only if a report type is selected
-        if ($this->selectedReport) {
-            $this->generateReport();
-        }
+        // Set default dates
+        $this->reportStartDate = now()->startOfMonth()->format('Y-m-d');
+        $this->reportEndDate = now()->endOfMonth()->format('Y-m-d');
+    }
+
+    public function setCategory($category)
+    {
+        $this->activeCategory = $category;
+        $this->selectedReport = '';
+        $this->reportData = [];
+    }
+
+    public function selectReport($report)
+    {
+        $this->selectedReport = $report;
+        $this->generateReport();
     }
 
     public function updatedSelectedReport()
@@ -131,6 +214,11 @@ class Reports extends Component
         $this->generateReport();
     }
 
+    public function updatedPeriodType()
+    {
+        $this->generateReport();
+    }
+
     public function generateReport()
     {
         // Validate date range
@@ -142,72 +230,606 @@ class Reports extends Component
         // Clear previous errors
         $this->resetErrorBag();
 
-        // Handle daily sales report with separate date picker
-        if ($this->selectedReport === 'daily-sales' && $this->dailyMonth && $this->dailyYear) {
-            $monthStart = \Carbon\Carbon::createFromDate($this->dailyYear, $this->dailyMonth, 1)->format('Y-m-d');
-            $monthEnd = \Carbon\Carbon::createFromDate($this->dailyYear, $this->dailyMonth, 1)->endOfMonth()->format('Y-m-d');
-            $this->reportStartDate = $monthStart;
-            $this->reportEndDate = $monthEnd;
+        // Set default dates if not set
+        if (!$this->reportStartDate) {
+            $this->reportStartDate = now()->startOfMonth()->format('Y-m-d');
+        }
+        if (!$this->reportEndDate) {
+            $this->reportEndDate = now()->endOfMonth()->format('Y-m-d');
         }
 
-        // Handle monthly sales report with separate date picker (full year)
-        if ($this->selectedReport === 'monthly-sales' && $this->monthlyYear) {
-            $yearStart = \Carbon\Carbon::createFromDate($this->monthlyYear, 1, 1)->format('Y-m-d');
-            $yearEnd = \Carbon\Carbon::createFromDate($this->monthlyYear, 12, 31)->format('Y-m-d');
-            $this->reportStartDate = $yearStart;
-            $this->reportEndDate = $yearEnd;
+        // Generate report based on selection
+        switch ($this->selectedReport) {
+            // Sales Reports
+            case 'transaction-history':
+                $this->reportData = $this->getTransactionHistory();
+                break;
+            case 'sales-payment':
+                $this->reportData = $this->getSalesPaymentReport();
+                break;
+            case 'product-report':
+                $this->reportData = $this->getProductReport();
+                break;
+            case 'sales-by-staff':
+                $this->reportData = $this->getSalesByStaff();
+                break;
+            case 'sales-by-product':
+                $this->reportData = $this->getSalesByProduct();
+                break;
+            case 'invoice-aging':
+                $this->reportData = $this->getInvoiceAging();
+                break;
+            case 'detailed-sales':
+                $this->reportData = $this->getDetailedSalesReport();
+                break;
+            case 'sales-return':
+                $this->reportData = $this->getSalesReturnReport();
+                break;
+
+            // Purchases Reports
+            case 'purchases-payment':
+                $this->reportData = $this->getPurchasesPaymentReport();
+                break;
+            case 'detailed-purchases':
+                $this->reportData = $this->getDetailedPurchasesReport();
+                break;
+
+            // Inventory Valuation Reports
+            case 'product-wise-cogs':
+                $this->reportData = $this->getProductWiseCOGS();
+                break;
+            case 'year-wise-cogs':
+                $this->reportData = $this->getYearWiseCOGS();
+                break;
+
+            // Profit & Loss Reports
+            case 'pl-cogs':
+                $this->reportData = $this->getProfitLossCOGS();
+                break;
+            case 'pl-opening-closing':
+                $this->reportData = $this->getProfitLossOpeningClosing();
+                break;
+            case 'pl-period-cogs':
+                $this->reportData = $this->getPeriodProfitLossCOGS();
+                break;
+            case 'pl-period-stock':
+                $this->reportData = $this->getPeriodProfitLossStock();
+                break;
+            case 'productwise-pl':
+                $this->reportData = $this->getProductwiseProfitLoss();
+                break;
+            case 'invoicewise-pl':
+                $this->reportData = $this->getInvoicewiseProfitLoss();
+                break;
+            case 'customerwise-pl':
+                $this->reportData = $this->getCustomerwiseProfitLoss();
+                break;
+
+            // Other Reports
+            case 'expense-report':
+                $this->reportData = $this->getExpenseReport();
+                break;
+            case 'commission-report':
+                $this->reportData = $this->getCommissionReport();
+                break;
+            case 'payment-mode-report':
+                $this->reportData = $this->getPaymentModeReport();
+                break;
+
+            default:
+                $this->reportData = [];
+        }
+    }
+
+    // ==================== SALES REPORTS ====================
+
+    public function getTransactionHistory()
+    {
+        return Sale::with(['customer', 'items', 'payments', 'user'])
+            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function getSalesPaymentReport()
+    {
+        $sales = Sale::with(['customer', 'payments'])
+            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
+            ->get();
+
+        $totalSales = $sales->sum('total_amount');
+        $totalPaid = $sales->flatMap->payments->sum('amount');
+        $totalDue = $sales->sum('due_amount');
+
+        return [
+            'sales' => $sales,
+            'summary' => [
+                'total_sales' => $totalSales,
+                'total_paid' => $totalPaid,
+                'total_due' => $totalDue,
+            ]
+        ];
+    }
+
+    public function getProductReport()
+    {
+        return SaleItem::with(['product.brand', 'product.category', 'sale'])
+            ->whereHas('sale', function($q) {
+                $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+            })
+            ->select('product_id', 'product_name', 'product_code',
+                DB::raw('SUM(quantity) as total_quantity'),
+                DB::raw('SUM(total) as total_revenue'),
+                DB::raw('AVG(unit_price) as avg_price')
+            )
+            ->groupBy('product_id', 'product_name', 'product_code')
+            ->orderByDesc('total_revenue')
+            ->get();
+    }
+
+    public function getSalesByStaff()
+    {
+        return Sale::with('user')
+            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
+            ->select('user_id',
+                DB::raw('COUNT(*) as total_transactions'),
+                DB::raw('SUM(total_amount) as total_sales'),
+                DB::raw('AVG(total_amount) as avg_sale')
+            )
+            ->groupBy('user_id')
+            ->orderByDesc('total_sales')
+            ->limit(5)
+            ->get()
+            ->map(function ($item) {
+                $item->user = User::find($item->user_id);
+                return $item;
+            });
+    }
+
+    public function getSalesByProduct()
+    {
+        return SaleItem::with(['product.brand'])
+            ->whereHas('sale', function($q) {
+                $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+            })
+            ->select('product_id', 'product_name',
+                DB::raw('SUM(quantity) as total_quantity'),
+                DB::raw('SUM(total) as total_revenue')
+            )
+            ->groupBy('product_id', 'product_name')
+            ->orderByDesc('total_revenue')
+            ->limit(5)
+            ->get();
+    }
+
+    public function getInvoiceAging()
+    {
+        $sales = Sale::with('customer')
+            ->where('due_amount', '>', 0)
+            ->get()
+            ->map(function ($sale) {
+                $daysOverdue = Carbon::parse($sale->created_at)->diffInDays(now());
+                $sale->days_overdue = $daysOverdue;
+                $sale->aging_bucket = match(true) {
+                    $daysOverdue <= 30 => '0-30 days',
+                    $daysOverdue <= 60 => '31-60 days',
+                    $daysOverdue <= 90 => '61-90 days',
+                    default => '90+ days',
+                };
+                return $sale;
+            });
+
+        return [
+            'invoices' => $sales,
+            'buckets' => [
+                '0-30 days' => $sales->where('aging_bucket', '0-30 days')->sum('due_amount'),
+                '31-60 days' => $sales->where('aging_bucket', '31-60 days')->sum('due_amount'),
+                '61-90 days' => $sales->where('aging_bucket', '61-90 days')->sum('due_amount'),
+                '90+ days' => $sales->where('aging_bucket', '90+ days')->sum('due_amount'),
+            ]
+        ];
+    }
+
+    public function getDetailedSalesReport()
+    {
+        return Sale::with(['customer', 'items.product', 'payments', 'user'])
+            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function getSalesReturnReport()
+    {
+        return ReturnsProduct::with(['sale.customer', 'product'])
+            ->whereHas('sale', function($q) {
+                $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    // ==================== PURCHASES REPORTS ====================
+
+    public function getPurchasesPaymentReport()
+    {
+        $purchases = PurchaseOrder::with(['supplier', 'items'])
+            ->whereBetween('order_date', [$this->reportStartDate, $this->reportEndDate])
+            ->get();
+
+        $totalPurchases = $purchases->sum('total_amount');
+        $totalPaid = $totalPurchases - $purchases->sum('due_amount');
+        $totalDue = $purchases->sum('due_amount');
+
+        return [
+            'purchases' => $purchases,
+            'summary' => [
+                'total_purchases' => $totalPurchases,
+                'total_paid' => $totalPaid,
+                'total_due' => $totalDue,
+            ]
+        ];
+    }
+
+    public function getDetailedPurchasesReport()
+    {
+        return PurchaseOrder::with(['supplier', 'items.product'])
+            ->whereBetween('order_date', [$this->reportStartDate, $this->reportEndDate])
+            ->orderBy('order_date', 'desc')
+            ->get();
+    }
+
+    // ==================== INVENTORY VALUATION REPORTS ====================
+
+    public function getProductWiseCOGS()
+    {
+        return ProductDetail::with(['price', 'stock', 'brand', 'category'])
+            ->whereHas('stock', function($q) {
+                $q->where('available_stock', '>', 0);
+            })
+            ->get()
+            ->map(function ($product) {
+                $costPrice = $product->price->supplier_price ?? 0;
+                $availableStock = $product->stock->available_stock ?? 0;
+                $inventoryValue = $costPrice * $availableStock;
+
+                return [
+                    'product' => $product,
+                    'cost_price' => $costPrice,
+                    'available_stock' => $availableStock,
+                    'inventory_value' => $inventoryValue,
+                ];
+            });
+    }
+
+    public function getYearWiseCOGS()
+    {
+        $years = range(now()->year - 4, now()->year);
+        $yearlyData = [];
+
+        foreach ($years as $year) {
+            $startOfYear = Carbon::createFromDate($year, 1, 1)->startOfDay();
+            $endOfYear = Carbon::createFromDate($year, 12, 31)->endOfDay();
+
+            // Calculate COGS for the year
+            $salesItems = SaleItem::whereHas('sale', function($q) use ($startOfYear, $endOfYear) {
+                $q->whereBetween('created_at', [$startOfYear, $endOfYear]);
+            })->get();
+
+            $totalCOGS = 0;
+            foreach ($salesItems as $item) {
+                $productPrice = ProductPrice::where('product_id', $item->product_id)->first();
+                $costPrice = $productPrice->supplier_price ?? 0;
+                $totalCOGS += $costPrice * $item->quantity;
+            }
+
+            $totalSales = Sale::whereBetween('created_at', [$startOfYear, $endOfYear])->sum('total_amount');
+
+            $yearlyData[] = [
+                'year' => $year,
+                'total_sales' => $totalSales,
+                'total_cogs' => $totalCOGS,
+                'gross_profit' => $totalSales - $totalCOGS,
+                'margin_percentage' => $totalSales > 0 ? (($totalSales - $totalCOGS) / $totalSales) * 100 : 0,
+            ];
         }
 
-        // Handle daily-purchases report - set default to current month if not set
-        if ($this->selectedReport === 'daily-purchases') {
-            if (!$this->reportStartDate || !$this->reportEndDate) {
-                $this->reportStartDate = now()->startOfMonth()->format('Y-m-d');
-                $this->reportEndDate = now()->endOfMonth()->format('Y-m-d');
+        return collect($yearlyData);
+    }
+
+    // ==================== PROFIT & LOSS REPORTS ====================
+
+    public function getProfitLossCOGS()
+    {
+        $salesItems = SaleItem::whereHas('sale', function($q) {
+            $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+        })->get();
+
+        $totalCOGS = 0;
+        foreach ($salesItems as $item) {
+            $productPrice = ProductPrice::where('product_id', $item->product_id)->first();
+            $costPrice = $productPrice->supplier_price ?? 0;
+            $totalCOGS += $costPrice * $item->quantity;
+        }
+
+        $totalSales = Sale::whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
+            ->sum('total_amount');
+
+        $totalExpenses = Expense::whereBetween('date', [$this->reportStartDate, $this->reportEndDate])
+            ->sum('amount');
+
+        $returns = ReturnsProduct::whereHas('sale', function($q) {
+            $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+        })->sum('total_amount');
+
+        $grossProfit = $totalSales - $totalCOGS - $returns;
+        $netProfit = $grossProfit - $totalExpenses;
+
+        return [
+            'total_sales' => $totalSales,
+            'total_cogs' => $totalCOGS,
+            'total_returns' => $returns,
+            'gross_profit' => $grossProfit,
+            'total_expenses' => $totalExpenses,
+            'net_profit' => $netProfit,
+            'gross_margin' => $totalSales > 0 ? ($grossProfit / $totalSales) * 100 : 0,
+            'net_margin' => $totalSales > 0 ? ($netProfit / $totalSales) * 100 : 0,
+        ];
+    }
+
+    public function getProfitLossOpeningClosing()
+    {
+        // Get opening stock value (stock at start date)
+        $openingStock = ProductStock::sum('available_stock');
+        $openingValue = 0;
+        $products = ProductDetail::with(['price', 'stock'])->get();
+        foreach ($products as $product) {
+            $costPrice = $product->price->supplier_price ?? 0;
+            $openingValue += $costPrice * ($product->stock->available_stock ?? 0);
+        }
+
+        // Calculate purchases during period
+        $purchases = PurchaseOrder::whereBetween('order_date', [$this->reportStartDate, $this->reportEndDate])
+            ->sum('total_amount');
+
+        // For simplicity, using current stock as closing stock
+        $closingValue = $openingValue;
+
+        // Total sales
+        $totalSales = Sale::whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
+            ->sum('total_amount');
+
+        // Calculate COGS using Opening + Purchases - Closing
+        $cogs = $openingValue + $purchases - $closingValue;
+
+        $grossProfit = $totalSales - $cogs;
+        $expenses = Expense::whereBetween('date', [$this->reportStartDate, $this->reportEndDate])->sum('amount');
+        $netProfit = $grossProfit - $expenses;
+
+        return [
+            'opening_stock_value' => $openingValue,
+            'purchases' => $purchases,
+            'closing_stock_value' => $closingValue,
+            'cogs' => $cogs,
+            'total_sales' => $totalSales,
+            'gross_profit' => $grossProfit,
+            'expenses' => $expenses,
+            'net_profit' => $netProfit,
+        ];
+    }
+
+    public function getPeriodProfitLossCOGS()
+    {
+        $data = [];
+        $startDate = Carbon::parse($this->reportStartDate);
+        $endDate = Carbon::parse($this->reportEndDate);
+
+        if ($this->periodType === 'daily') {
+            $currentDate = $startDate->copy();
+            while ($currentDate->lte($endDate)) {
+                $dayStart = $currentDate->copy()->startOfDay();
+                $dayEnd = $currentDate->copy()->endOfDay();
+
+                $data[] = $this->calculatePeriodPL($dayStart, $dayEnd, $currentDate->format('Y-m-d'));
+                $currentDate->addDay();
+            }
+        } elseif ($this->periodType === 'weekly') {
+            $currentDate = $startDate->copy()->startOfWeek();
+            while ($currentDate->lte($endDate)) {
+                $weekStart = $currentDate->copy();
+                $weekEnd = $currentDate->copy()->endOfWeek();
+                if ($weekEnd->gt($endDate)) $weekEnd = $endDate->copy();
+
+                $data[] = $this->calculatePeriodPL($weekStart, $weekEnd, 'Week ' . $currentDate->weekOfYear);
+                $currentDate->addWeek();
+            }
+        } else { // monthly
+            $currentDate = $startDate->copy()->startOfMonth();
+            while ($currentDate->lte($endDate)) {
+                $monthStart = $currentDate->copy()->startOfMonth();
+                $monthEnd = $currentDate->copy()->endOfMonth();
+                if ($monthEnd->gt($endDate)) $monthEnd = $endDate->copy();
+
+                $data[] = $this->calculatePeriodPL($monthStart, $monthEnd, $currentDate->format('F Y'));
+                $currentDate->addMonth();
             }
         }
 
-        // Handle other reports with month selection
-        if (($this->selectedReport !== 'daily-sales' && $this->selectedReport !== 'monthly-sales' && $this->selectedReport !== 'daily-purchases' && $this->selectedReport !== 'inventory-stock' && $this->selectedReport !== 'outstanding-accounts') && $this->selectedMonth && $this->selectedYear) {
-            $monthStart = \Carbon\Carbon::createFromDate($this->selectedYear, $this->selectedMonth, 1)->format('Y-m-d');
-            $monthEnd = \Carbon\Carbon::createFromDate($this->selectedYear, $this->selectedMonth, 1)->endOfMonth()->format('Y-m-d');
-            $this->reportStartDate = $monthStart;
-            $this->reportEndDate = $monthEnd;
+        return collect($data);
+    }
+
+    private function calculatePeriodPL($start, $end, $label)
+    {
+        $salesItems = SaleItem::whereHas('sale', function($q) use ($start, $end) {
+            $q->whereBetween('created_at', [$start, $end]);
+        })->get();
+
+        $totalCOGS = 0;
+        foreach ($salesItems as $item) {
+            $productPrice = ProductPrice::where('product_id', $item->product_id)->first();
+            $costPrice = $productPrice->supplier_price ?? 0;
+            $totalCOGS += $costPrice * $item->quantity;
         }
 
-        if ($this->selectedReport === 'sales') {
-            $this->salesReport = $this->getSalesReport($this->reportStartDate, $this->reportEndDate);
-            $this->salesReportTotal = collect($this->salesReport)->sum('total_amount');
-        } elseif ($this->selectedReport === 'salary') {
-            $this->salaryReport = $this->getSalaryReport($this->reportStartDate, $this->reportEndDate);
-            $this->salaryReportTotal = collect($this->salaryReport)->sum('net_salary');
-        } elseif ($this->selectedReport === 'inventory') {
-            $this->inventoryReport = $this->getInventoryReport($this->reportStartDate, $this->reportEndDate);
-            $this->inventoryReportTotal = collect($this->inventoryReport)->sum('available_stock');
-        } elseif ($this->selectedReport === 'staff') {
-            $this->staffReport = $this->getStaffReport($this->reportStartDate, $this->reportEndDate);
-            $this->staffReportTotal = collect($this->staffReport)->sum('total_sales');
-        } elseif ($this->selectedReport === 'payments') {
-            $this->paymentsReport = $this->getPaymentsReport($this->reportStartDate, $this->reportEndDate);
-            $this->paymentsReportTotal = collect($this->paymentsReport)->sum('amount');
-        } elseif ($this->selectedReport === 'attendance') {
-            $this->attendanceReport = $this->getAttendanceReport($this->reportStartDate, $this->reportEndDate);
-            $this->attendanceReportTotal = collect($this->attendanceReport)->count();
-        } elseif ($this->selectedReport === 'daily-sales') {
-            $this->dailySalesReport = $this->getDailySalesReport($this->reportStartDate, $this->reportEndDate);
-            $this->dailySalesReportTotal = collect($this->dailySalesReport)->sum('grand_total');
-        } elseif ($this->selectedReport === 'monthly-sales') {
-            $this->monthlySalesReport = $this->getMonthlySalesReport($this->reportStartDate, $this->reportEndDate);
-            $this->monthlySalesReportTotal = collect($this->monthlySalesReport)->sum('grand_total');
-        } elseif ($this->selectedReport === 'daily-purchases') {
-            // Don't store paginated results - will be generated in render method
-            $this->dailyPurchasesReportTotal = PurchaseOrder::whereBetween('order_date', [$this->reportStartDate, $this->reportEndDate])
-                ->sum('total_amount');
-        } elseif ($this->selectedReport === 'inventory-stock') {
-            $this->inventoryReport = [];
-            $this->reportStats = $this->getInventoryStats();
-        } elseif ($this->selectedReport === 'outstanding-accounts') {
-            $this->outstandingAccountsReport = $this->getOutstandingAccountsReport();
-        }
+        $totalSales = Sale::whereBetween('created_at', [$start, $end])->sum('total_amount');
+        $expenses = Expense::whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')])->sum('amount');
+
+        return [
+            'period' => $label,
+            'sales' => $totalSales,
+            'cogs' => $totalCOGS,
+            'gross_profit' => $totalSales - $totalCOGS,
+            'expenses' => $expenses,
+            'net_profit' => $totalSales - $totalCOGS - $expenses,
+        ];
+    }
+
+    public function getPeriodProfitLossStock()
+    {
+        // Similar to period COGS but with stock changes
+        return $this->getPeriodProfitLossCOGS();
+    }
+
+    public function getProductwiseProfitLoss()
+    {
+        return SaleItem::with(['product.price', 'product.brand'])
+            ->whereHas('sale', function($q) {
+                $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+            })
+            ->get()
+            ->groupBy('product_id')
+            ->map(function ($items, $productId) {
+                $product = $items->first()->product;
+                $totalQuantity = $items->sum('quantity');
+                $totalRevenue = $items->sum('total');
+                $costPrice = $product->price->supplier_price ?? 0;
+                $totalCost = $costPrice * $totalQuantity;
+                $profit = $totalRevenue - $totalCost;
+
+                return [
+                    'product' => $product,
+                    'quantity_sold' => $totalQuantity,
+                    'total_revenue' => $totalRevenue,
+                    'total_cost' => $totalCost,
+                    'profit' => $profit,
+                    'margin' => $totalRevenue > 0 ? ($profit / $totalRevenue) * 100 : 0,
+                ];
+            })->sortByDesc('profit')->values();
+    }
+
+    public function getInvoicewiseProfitLoss()
+    {
+        return Sale::with(['items.product.price', 'customer'])
+            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
+            ->get()
+            ->map(function ($sale) {
+                $totalCost = 0;
+                foreach ($sale->items as $item) {
+                    $costPrice = $item->product->price->supplier_price ?? 0;
+                    $totalCost += $costPrice * $item->quantity;
+                }
+                $profit = $sale->total_amount - $totalCost;
+
+                return [
+                    'sale' => $sale,
+                    'total_revenue' => $sale->total_amount,
+                    'total_cost' => $totalCost,
+                    'profit' => $profit,
+                    'margin' => $sale->total_amount > 0 ? ($profit / $sale->total_amount) * 100 : 0,
+                ];
+            })->sortByDesc('profit');
+    }
+
+    public function getCustomerwiseProfitLoss()
+    {
+        return Sale::with(['items.product.price', 'customer'])
+            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
+            ->get()
+            ->groupBy('customer_id')
+            ->map(function ($sales, $customerId) {
+                $customer = $sales->first()->customer;
+                $totalRevenue = $sales->sum('total_amount');
+                $totalCost = 0;
+
+                foreach ($sales as $sale) {
+                    foreach ($sale->items as $item) {
+                        $costPrice = $item->product->price->supplier_price ?? 0;
+                        $totalCost += $costPrice * $item->quantity;
+                    }
+                }
+
+                $profit = $totalRevenue - $totalCost;
+
+                return [
+                    'customer' => $customer,
+                    'total_transactions' => $sales->count(),
+                    'total_revenue' => $totalRevenue,
+                    'total_cost' => $totalCost,
+                    'profit' => $profit,
+                    'margin' => $totalRevenue > 0 ? ($profit / $totalRevenue) * 100 : 0,
+                ];
+            })->sortByDesc('profit')->values();
+    }
+
+    // ==================== OTHER REPORTS ====================
+
+    public function getExpenseReport()
+    {
+        $expenses = Expense::whereBetween('date', [$this->reportStartDate, $this->reportEndDate])
+            ->orderBy('date', 'desc')
+            ->get();
+
+        $byCategory = $expenses->groupBy('category')->map(function ($items, $category) {
+            return [
+                'category' => $category,
+                'total' => $items->sum('amount'),
+                'count' => $items->count(),
+            ];
+        });
+
+        return [
+            'expenses' => $expenses,
+            'by_category' => $byCategory,
+            'total' => $expenses->sum('amount'),
+        ];
+    }
+
+    public function getCommissionReport()
+    {
+        return StaffBonus::with(['staff', 'product', 'sale'])
+            ->whereHas('sale', function($q) {
+                $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+            })
+            ->get()
+            ->groupBy('staff_id')
+            ->map(function ($bonuses, $staffId) {
+                $staff = $bonuses->first()->staff;
+                return [
+                    'staff' => $staff,
+                    'total_commission' => $bonuses->sum('total_bonus'),
+                    'transactions' => $bonuses->count(),
+                    'bonuses' => $bonuses,
+                ];
+            })->sortByDesc('total_commission')->values();
+    }
+
+    public function getPaymentModeReport()
+    {
+        $payments = Payment::whereBetween('payment_date', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
+            ->get();
+
+        $byMode = $payments->groupBy('payment_method')->map(function ($items, $method) {
+            return [
+                'method' => $method ?: 'Unknown',
+                'total' => $items->sum('amount'),
+                'count' => $items->count(),
+            ];
+        });
+
+        return [
+            'payments' => $payments,
+            'by_mode' => $byMode,
+            'total' => $payments->sum('amount'),
+        ];
     }
 
     public function downloadReport()
@@ -561,239 +1183,24 @@ class Reports extends Component
         };
     }
 
-    public function clearFilters()
-    {
-        $this->reportStartDate = null;
-        $this->reportEndDate = null;
-        $this->selectedMonth = now()->month;
-        $this->selectedYear = now()->year;
-
-        // Reset separate date pickers to current date
-        $this->dailyMonth = now()->month;
-        $this->dailyYear = now()->year;
-        $this->monthlyYear = now()->year;
-
-        $this->generateReport();
-    }
-
-    public function previousMonth()
-    {
-        if ($this->dailyMonth && $this->dailyYear) {
-            $date = \Carbon\Carbon::createFromDate($this->dailyYear, $this->dailyMonth, 1);
-            $date->subMonth();
-            $this->dailyMonth = $date->month;
-            $this->dailyYear = $date->year;
-            $this->generateReport();
-        }
-    }
-
-    public function nextMonth()
-    {
-        if ($this->dailyMonth && $this->dailyYear) {
-            $currentDate = \Carbon\Carbon::createFromDate($this->dailyYear, $this->dailyMonth, 1);
-            $nextMonthDate = $currentDate->copy()->addMonth();
-            $today = \Carbon\Carbon::now();
-
-            // Only allow navigation if next month is not in the future
-            if ($nextMonthDate->lte($today)) {
-                $this->dailyMonth = $nextMonthDate->month;
-                $this->dailyYear = $nextMonthDate->year;
-                $this->generateReport();
-            }
-        }
-    }
-
-    public function canNavigateNext()
-    {
-        if ($this->dailyMonth && $this->dailyYear) {
-            $currentDate = \Carbon\Carbon::createFromDate($this->dailyYear, $this->dailyMonth, 1);
-            $nextMonthDate = $currentDate->copy()->addMonth();
-            $today = \Carbon\Carbon::now();
-            return $nextMonthDate->lte($today);
-        }
-        return false;
-    }
-
-    public function previousYear()
-    {
-        if ($this->monthlyYear) {
-            $this->monthlyYear = $this->monthlyYear - 1;
-            $this->generateReport();
-        }
-    }
-
-    public function nextYear()
-    {
-        if ($this->monthlyYear) {
-            $currentYear = $this->monthlyYear;
-            $today = \Carbon\Carbon::now();
-
-            // Only allow navigation if next year is not in the future
-            if ($currentYear < $today->year) {
-                $this->monthlyYear = $currentYear + 1;
-                $this->generateReport();
-            }
-        }
-    }
-
-    public function canNavigateNextYear()
-    {
-        if ($this->monthlyYear) {
-            $today = \Carbon\Carbon::now();
-            $nextYear = $this->monthlyYear + 1;
-            // Can only navigate if next year is not beyond current year + 1
-            return $nextYear <= ($today->year + 1);
-        }
-        return false;
-    }
-
-    // New Report Methods
-    public function getDailyPurchasesReport($start, $end)
-    {
-        // Fetch purchase orders from database using Eloquent
-        return PurchaseOrder::with(['supplier', 'items'])
-            ->whereBetween('order_date', [$start, $end])
-            ->orderBy('order_date', 'desc')
-            ->paginate($this->perPage);
-    }
-
-    public function getInventoryStockReport()
-    {
-        // Fetch product stock information using Eloquent with pagination
-        return ProductStock::with(['product.brand', 'product.category'])
-            ->paginate($this->perPage);
-    }
-
-    public function getInventoryStats()
-    {
-        // Get stats from ALL products, not just paginated data
-        $stocks = ProductStock::with(['product.brand', 'product.category'])->get();
-
-        $totalProducts = $stocks->count();
-        $totalStock = $stocks->sum('total_stock');
-        $availableStock = $stocks->sum('available_stock');
-        $lowStock = $stocks->where('available_stock', '<', 10)->count();
-
-        return [
-            'total_products' => $totalProducts,
-            'total_stock' => $totalStock,
-            'available_stock' => $availableStock,
-            'low_stock' => $lowStock,
-        ];
-    }
-
-    public function getOutstandingAccountsReport()
-    {
-        // Fetch customer outstanding accounts using Eloquent
-        $customers = Customer::get()
-            ->map(function ($customer) {
-                $sales = Sale::where('customer_id', $customer->id)
-                    ->where(function ($query) {
-                        $query->where('due_amount', '>', 0)
-                            ->orWhere('payment_status', '!=', 'paid');
-                    })
-                    ->get();
-
-                return [
-                    'customer' => $customer,
-                    'invoices' => $sales->count(),
-                    'total_due' => $sales->sum('due_amount'),
-                ];
-            })
-            ->filter(function ($item) {
-                return $item['total_due'] > 0;
-            });
-
-        // Fetch supplier outstanding accounts using Eloquent
-        $suppliers = ProductSupplier::get()
-            ->map(function ($supplier) {
-                $orders = PurchaseOrder::where('supplier_id', $supplier->id)
-                    ->where('status', '!=', 'received')
-                    ->get();
-
-                return [
-                    'supplier' => $supplier,
-                    'orders' => $orders->count(),
-                    'total_due' => $orders->sum('due_amount'),
-                ];
-            })
-            ->filter(function ($item) {
-                return $item['total_due'] > 0;
-            });
-
-        return [
-            'customers' => $customers,
-            'suppliers' => $suppliers,
-        ];
-    }
-
     public function render()
     {
         return view('livewire.admin.reports', [
-            'currentReportData' => $this->getCurrentReportData(),
-            'currentReportTotal' => $this->getCurrentReportTotal(),
-            'reportStats' => $this->reportStats,
-            'reportTitle' => $this->getReportTitle(),
-            'showDetailModal' => $this->showDetailModal,
-            'selectedDetailType' => $this->selectedDetailType,
-            'selectedDetailData' => $this->selectedDetailData,
+            'reportCategories' => $this->reportCategories,
+            'reportData' => $this->reportData,
+            'activeCategory' => $this->activeCategory,
+            'selectedReport' => $this->selectedReport,
+            'periodType' => $this->periodType,
         ])->layout($this->layout);
     }
 
-    // View Details methods
-    public function viewCustomerDetails($customerId)
+    public function clearFilters()
     {
-        $customer = Customer::findOrFail($customerId);
-
-        // Get customer's outstanding invoices
-        $invoices = Sale::where('customer_id', $customerId)
-            ->where(function ($query) {
-                $query->where('due_amount', '>', 0)
-                    ->orWhere('payment_status', '!=', 'paid');
-            })
-            ->with('payments')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $this->selectedDetailData = [
-            'type' => 'customer',
-            'customer' => $customer,
-            'invoices' => $invoices,
-            'total_due' => $invoices->sum('due_amount'),
-            'invoice_count' => $invoices->count(),
-        ];
-
-        $this->selectedDetailType = 'customer';
-        $this->showDetailModal = true;
-    }
-
-    public function viewSupplierDetails($supplierId)
-    {
-        $supplier = ProductSupplier::findOrFail($supplierId);
-
-        // Get supplier's pending orders
-        $orders = PurchaseOrder::where('supplier_id', $supplierId)
-            ->where('status', '!=', 'received')
-            ->with('items')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $this->selectedDetailData = [
-            'type' => 'supplier',
-            'supplier' => $supplier,
-            'orders' => $orders,
-            'total_due' => $orders->sum('due_amount'),
-            'order_count' => $orders->count(),
-        ];
-
-        $this->selectedDetailType = 'supplier';
-        $this->showDetailModal = true;
-    }
-
-    public function closeDetailModal()
-    {
-        $this->showDetailModal = false;
-        $this->selectedDetailData = null;
-        $this->selectedDetailType = null;
+        $this->reportStartDate = now()->startOfMonth()->format('Y-m-d');
+        $this->reportEndDate = now()->endOfMonth()->format('Y-m-d');
+        $this->selectedMonth = now()->month;
+        $this->selectedYear = now()->year;
+        $this->periodType = 'monthly';
+        $this->generateReport();
     }
 }
