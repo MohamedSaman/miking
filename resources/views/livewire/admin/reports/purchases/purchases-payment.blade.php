@@ -49,7 +49,7 @@
                 <tr>
                     <td><span class="badge bg-light text-dark">{{ $purchase->order_code ?? 'PO-' . $purchase->id }}</span></td>
                     <td>{{ \Carbon\Carbon::parse($purchase->order_date)->format('d M Y') }}</td>
-                    <td>{{ $purchase->supplier->company_name ?? 'Unknown Supplier' }}</td>
+                    <td>{{ $purchase->supplier->businessname ?? $purchase->supplier->name ?? 'Unknown Supplier' }}</td>
                     <td class="fw-bold">Rs. {{ number_format($purchase->total_amount, 2) }}</td>
                     <td class="text-success">Rs. {{ number_format($paidAmount, 2) }}</td>
                     <td class="{{ $purchase->due_amount > 0 ? 'text-danger' : 'text-muted' }}">
