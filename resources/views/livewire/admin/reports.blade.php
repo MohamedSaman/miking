@@ -37,37 +37,33 @@
             margin-right: 12px;
         }
 
-        .sub-report-list {
-            background: #f7f8fb;
-            border-radius: 8px;
-            padding: 0;
-            margin-top: 10px;
+        .sub-reports-sidebar {
+            margin-left: 20px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border-left: 2px solid rgba(255, 255, 255, 0.2);
         }
 
-        .sub-report-item {
-            padding: 10px 15px;
+        .sub-report-sidebar-item {
+            padding: 8px 12px;
             cursor: pointer;
-            border-bottom: 1px solid #e2e8f0;
             transition: all 0.2s ease;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
             display: flex;
             align-items: center;
         }
 
-        .sub-report-item:last-child {
-            border-bottom: none;
+        .sub-report-sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
         }
 
-        .sub-report-item:hover {
-            background: #e3f2fd;
-        }
-
-        .sub-report-item.active {
-            background: #2a83df;
-            color: white;
-        }
-
-        .sub-report-item.active i {
-            color: white;
+        .sub-report-sidebar-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-left: 2px solid #198754;
+            margin-left: -2px;
         }
 
         .report-content {
@@ -234,6 +230,18 @@
                             <span>{{ $category['label'] }}</span>
                         </div>
                     </div>
+                    
+                    {{-- Sub-reports nested under active category --}}
+                    @if($activeCategory === $key)
+                    <div class="sub-reports-sidebar">
+                        @foreach($category['reports'] as $reportKey => $label)
+                        <div class="sub-report-sidebar-item {{ $selectedReport === $reportKey ? 'active' : '' }}"
+                             wire:click.stop="selectReport('{{ $reportKey }}')">
+                            <i class="bi bi-chevron-right me-2"></i>{{ $label }}
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
                     @endforeach
                 </div>
             </div>
@@ -241,28 +249,14 @@
             <!-- Main Content -->
             <div class="col-lg-9 col-md-8">
                 <div class="report-content p-4 shadow-sm">
-                    <!-- Sub-reports List -->
-                    @if($activeCategory && isset($reportCategories[$activeCategory]))
-                    <div class="mb-4">
-                        <h5 class="fw-bold mb-3">
-                            <i class="bi {{ $reportCategories[$activeCategory]['icon'] }} text-primary me-2"></i>
-                            {{ $reportCategories[$activeCategory]['label'] }}
-                        </h5>
-
-                        <div class="sub-report-list">
-                            @foreach($reportCategories[$activeCategory]['reports'] as $key => $label)
-                            <div class="sub-report-item {{ $selectedReport === $key ? 'active' : '' }}"
-                                 wire:click="selectReport('{{ $key }}')">
-                                <i class="bi bi-chevron-right me-2"></i>
-                                {{ $label }}
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-
                     <!-- Date Filters -->
                     @if($selectedReport)
+                    <div class="mb-3">
+                        <h5 class="fw-bold">
+                            <i class="bi {{ $reportCategories[$activeCategory]['icon'] }} text-primary me-2"></i>
+                            {{ $reportCategories[$activeCategory]['reports'][$selectedReport] ?? 'Report' }}
+                        </h5>
+                    </div>
                     <div class="date-filter-card">
                         <div class="row align-items-end">
                             <div class="col-md-3 mb-2 mb-md-0">
