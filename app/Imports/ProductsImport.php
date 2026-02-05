@@ -72,7 +72,7 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
     public function model(array $row)
     {
         // Check if product with same code already exists
-        $existingProduct = ProductDetail::where('code', $row['code'])->first();
+        $existingProduct = ProductDetail::where('code', $row['product_code'])->first();
         
         if ($existingProduct) {
             $this->skipCount++;
@@ -82,34 +82,52 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
         try {
             DB::beginTransaction();
 
-            // Create product detail with only CODE and NAME from Excel
-            // All other fields get default/null values
+            // Map 'Is Service' field to status
+            $isService = strtolower(trim($row['is_service_yes_no'] ?? 'no'));
+            $status = ($isService === 'yes' || $isService === 'service') ? 'inactive' : 'active';
+
+            // Map 'Unit' field - default to 'Piece' if not provided or invalid
+            $unit = ucfirst(strtolower(trim($row['unit'] ?? 'piece')));
+            if (!in_array($unit, ['Bundle', 'Dozen', 'Piece'])) {
+                $unit = 'Piece';
+            }
+
+            // Create product detail
             $product = ProductDetail::create([
-                'code' => $row['code'],
-                'name' => $row['name'],
-                'model' => null, // Default null
-                'image' => null, // Default null
-                'description' => null, // Default null
-                'barcode' => null, // Default null
-                'status' => 'active', // Default active status
-                'brand_id' => $this->defaultBrandId, // Default brand
-                'category_id' => $this->defaultCategoryId, // Default category
-                'supplier_id' => $this->defaultSupplierId, // Default supplier
+                'code' => $row['product_code'],                    // Product Code → code
+                'name' => $row['product_name'],                    // Product Name → name
+                'model' => null,
+                'image' => null,
+                'description' => $row['description'] ?? null,      // Description
+                'barcode' => null,
+                'status' => $status,                               // Is Service → status
+                'unit' => $unit,                                   // Unit (Bundle/Dozen/Piece)
+                'retail_cash_bonus' => $row['retail_cash_bonus'] ?? 0.00,
+                'retail_credit_bonus' => $row['retail_credit_bonus'] ?? 0.00,
+                'wholesale_cash_bonus' => $row['wholesale_cash_bonus'] ?? 0.00,
+                'wholesale_credit_bonus' => $row['wholesale_credit_bonus'] ?? 0.00,
+                'brand_id' => $this->defaultBrandId,
+                'category_id' => $this->defaultCategoryId,
+                'supplier_id' => $this->defaultSupplierId,
             ]);
 
-            // Create default price record
+            // Create price record
             ProductPrice::create([
                 'product_id' => $product->id,
-                'supplier_price' => 0.00, // Default 0
-                'selling_price' => 0.00, // Default 0
-                'discount_price' => 0.00, // Default 0
+                'supplier_price' => $row['buy_rate'] ?? 0.00,     // Buy Rate → supplier_price
+                'selling_price' => $row['rate'] ?? 0.00,          // Rate → selling_price
+                'retail_price' => $row['retail_price'] ?? null,   // Retail Price → retail_price
+                'wholesale_price' => $row['wholesale_price'] ?? null, // Wholesale Price → wholesale_price
+                'discount_price' => 0.00,
             ]);
 
-            // Create default stock record
+            // Create stock record
             ProductStock::create([
                 'product_id' => $product->id,
-                'available_stock' => 0, // Default 0
-                'damage_stock' => 0, // Default 0
+                'available_stock' => $row['opening_stock'] ?? 0,  // Opening Stock → available_stock
+                'opening_stock_rate' => $row['opening_stock_rate'] ?? 0.00, // Opening Stock Rate
+                'damage_stock' => 0,
+                'restocked_quantity' => $row['minimum_stock'] ?? 0, // Minimum Stock → restocked_quantity
             ]);
 
             DB::commit();
@@ -130,8 +148,22 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
     public function rules(): array
     {
         return [
-            'code' => 'required|string|max:255',
-            'name' => 'required|string|max:255',
+            'product_code' => 'required|string|max:255',
+            'product_name' => 'required|string|max:255',
+            'unit' => 'nullable|string|in:Bundle,Dozen,Piece,bundle,dozen,piece',
+            'description' => 'nullable|string',
+            'rate' => 'nullable|numeric|min:0',
+            'retail_price' => 'nullable|numeric|min:0',
+            'wholesale_price' => 'nullable|numeric|min:0',
+            'buy_rate' => 'nullable|numeric|min:0',
+            'retail_cash_bonus' => 'nullable|numeric|min:0',
+            'retail_credit_bonus' => 'nullable|numeric|min:0',
+            'wholesale_cash_bonus' => 'nullable|numeric|min:0',
+            'wholesale_credit_bonus' => 'nullable|numeric|min:0',
+            'opening_stock' => 'nullable|integer|min:0',
+            'opening_stock_rate' => 'nullable|numeric|min:0',
+            'minimum_stock' => 'nullable|integer|min:0',
+            'is_service_yes_no' => 'nullable|string',
         ];
     }
 
@@ -141,8 +173,20 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
     public function customValidationMessages()
     {
         return [
-            'code.required' => 'Product code is required',
-            'name.required' => 'Product name is required',
+            'product_code.required' => 'Product code is required',
+            'product_name.required' => 'Product name is required',
+            'unit.in' => 'Unit must be Bundle, Dozen, or Piece',
+            'rate.numeric' => 'Rate must be a valid number',
+            'retail_price.numeric' => 'Retail price must be a valid number',
+            'wholesale_price.numeric' => 'Wholesale price must be a valid number',
+            'buy_rate.numeric' => 'Buy rate must be a valid number',
+            'retail_cash_bonus.numeric' => 'Retail Cash bonus must be a valid number',
+            'retail_credit_bonus.numeric' => 'Retail Credit bonus must be a valid number',
+            'wholesale_cash_bonus.numeric' => 'Wholesale Cash bonus must be a valid number',
+            'wholesale_credit_bonus.numeric' => 'Wholesale Credit bonus must be a valid number',
+            'opening_stock.integer' => 'Opening stock must be a whole number',
+            'opening_stock_rate.numeric' => 'Opening stock rate must be a valid number',
+            'minimum_stock.integer' => 'Minimum stock must be a whole number',
         ];
     }
 

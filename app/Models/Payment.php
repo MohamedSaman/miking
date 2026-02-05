@@ -13,6 +13,7 @@ class Payment extends Model
         'sale_id',
         'amount',
         'payment_method',
+        'payment_type',
         'payment_reference',
         'card_number',
         'bank_name',
@@ -67,5 +68,10 @@ class Payment extends Model
     public function allocations()
     {
         return $this->hasMany(PaymentAllocation::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

@@ -42,10 +42,27 @@
                         </h5>
                         <p class="text-muted small mb-0">View and manage all quotations in your system</p>
                     </div>
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3" style="width: 60%; margin: auto">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3" style="width: 75%; margin: auto">
+                        <!-- 🔍 User Filter (Admin/Staff) -->
+                        @if(!$this->isStaff())
+                        <div class="user-filter" style="min-width: 200px;">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-person-badge text-muted"></i>
+                                </span>
+                                <select class="form-select border-start-0" wire:model.live="filterUser">
+                                    <option value="">All Users</option>
+                                    @foreach($staffUsers as $user)
+                                        <option value="{{ $user->id }}">{{ $user->name }} ({{ ucfirst($user->role) }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        @endif
+
                         <!-- 🔍 Search Bar -->
                         <div class="search-bar flex-grow-1">
-                            <div class="input-group">
+                            <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-light border-end-0">
                                     <i class="bi bi-search text-muted"></i>
                                 </span>
@@ -53,23 +70,22 @@
                                     placeholder="Search by quotation number, customer name or phone...">
                             </div>
                         </div>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="text-sm text-muted fw-medium">Show</label>
-                        <select wire:model.live="perPage" class="form-select form-select-sm" style="width: 80px;">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                            <option value="200">200</option>
-                            <option value="500">500</option>
-                        </select>
-                        <span class="text-sm text-muted">entries</span>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="text-xs text-muted fw-medium">Show</label>
+                            <select wire:model.live="perPage" class="form-select form-select-sm" style="width: 70px;">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span class="text-xs text-muted">items</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="card-body p-0 overflow-auto">
-                    <div class="table-responsive">
+                <div class="card-body p-0" style="overflow: visible;">
+                    <div class="table-responsive" style="overflow: visible;">
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
@@ -77,7 +93,9 @@
                                     <th class="ps-4">No</th>
                                     <th>Quotation No</th>
                                     <th>Customer</th>
+                                    @if(!$this->isStaff())
                                     <th>User</th>
+                                    @endif
                                     <th>Date</th>
                                     <th>Subtotal (Rs.)</th>
                                     <th>Discount (Rs.)</th>
@@ -98,6 +116,7 @@
                                         <strong class="fw-medium text-dark">{{ $quotation->customer_name }}</strong>
                                         <div class="text-muted small">{{ $quotation->customer_phone }}</div>
                                     </td>
+                                    @if(!$this->isStaff())
                                     <td wire:click="viewQuotation({{ $quotation->id }})">
                                         @if($quotation->user)
                                         <span class="fw-medium text-dark">{{ $quotation->user->name }}</span>
@@ -108,6 +127,7 @@
                                         <span class="text-muted">Unknown</span>
                                         @endif
                                     </td>
+                                    @endif
                                     <td wire:click="viewQuotation({{ $quotation->id }})">
                                         <span class="fw-medium text-dark">{{ $quotation->quotation_date->format('d/m/Y') }}</span>
                                     </td>
@@ -136,11 +156,12 @@
         <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
                 type="button"
                 data-bs-toggle="dropdown"
+                data-bs-boundary="viewport"
                 aria-expanded="false">
             <i class="bi bi-gear-fill"></i> Actions
         </button>
 
-        <ul class="dropdown-menu dropdown-menu-end">
+        <ul class="dropdown-menu dropdown-menu-end shadow">
 
             <!-- Create Sale (only if not converted) -->
             @if($quotation->status !== 'converted')
@@ -187,7 +208,7 @@
                                 @endforeach
                                 @else
                                 <tr>
-                                    <td colspan="7" class="text-center py-5">
+                                    <td colspan="{{ $this->isStaff() ? '8' : '9' }}" class="text-center py-5">
                                         <div class="alert alert-primary bg-opacity-10">
                                             <i class="bi bi-info-circle me-2"></i> No quotations found.
                                         </div>

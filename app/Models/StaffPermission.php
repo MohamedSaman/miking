@@ -44,7 +44,7 @@ class StaffPermission extends Model
 
             // Sales Menu
             'menu_sales' => 'Sales Menu',
-            'menu_sales_add' => 'Add Sales',
+            'menu_sales_add' => 'Staff POS Sale', // Updated description
             'menu_sales_list' => 'List Sales',
 
             // Quotation Menu
@@ -88,7 +88,7 @@ class StaffPermission extends Model
             // People Menu
             'menu_people' => 'People Menu',
             'menu_people_suppliers' => 'Manage Suppliers',
-            'menu_people_customers' => 'Manage Customers',
+            'menu_people_customers' => 'Customer Management', // Updated description
             'menu_people_staff' => 'List Staff',
 
             // Reports
@@ -96,6 +96,19 @@ class StaffPermission extends Model
 
             // Analytics
             'menu_analytics' => 'Analytics',
+
+            // Sales Distribution
+            'sales_distribution_access' => 'Sales Distribution Page Access',
+            
+            // Staff Product Management
+            'staff_product_return' => 'Return Allocated Products',
+            'staff_my_allocated_products' => 'Allocated Products',
+            // 'menu_staff_allocation_list' => 'Staff Allocation List',
+            // 'menu_staff_return_requests' => 'Staff Return Requests',
+            // // 'menu_staff_attendance' => 'Staff Attendance',
+            // // 'menu_staff_salary' => 'Staff Salary (Calculations)',
+            // 'menu_staff_salary_management' => 'Staff Salary Management',
+            // 'menu_loan_management' => 'Loan Management',
         ];
     }
 
@@ -166,6 +179,19 @@ class StaffPermission extends Model
             'Reports & Analytics' => [
                 'menu_reports',
                 'menu_analytics',
+            ],
+            'Distribution Management' => [
+                'sales_distribution_access',
+            ],
+            'Staff Product Management' => [
+                'staff_product_return',
+                'staff_my_allocated_products',
+                // 'menu_staff_allocation_list',
+                // 'menu_staff_return_requests',
+                // // 'menu_staff_attendance',
+                // // 'menu_staff_salary',
+                // 'menu_staff_salary_management',
+                // 'menu_loan_management',
             ],
         ];
     }

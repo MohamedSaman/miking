@@ -11,6 +11,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\POSSession;
 use App\Services\FIFOStockService;
+use App\Services\StaffBonusService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -46,6 +47,8 @@ class SalesSystem extends Component
 
     // Sale Properties
     public $notes = '';
+    public $customerTypeSale = 'retail'; // wholesale or retail
+    public $paymentMethod = 'credit'; // Always credit for Sales System
 
     // Discount Properties
     public $additionalDiscount = 0;
@@ -142,6 +145,24 @@ class SalesSystem extends Component
             // If customer is deselected, set back to walking customer
             $this->setDefaultCustomer();
         }
+    }
+
+    // When sale type changes, update prices in cart
+    public function updatedCustomerTypeSale($value)
+    {
+        $this->cart = collect($this->cart)->map(function ($item) use ($value) {
+            // Check if we have both prices stored
+            if (isset($item['wholesale_price']) && isset($item['retail_price'])) {
+                if ($value === 'wholesale' && $item['wholesale_price'] > 0) {
+                    $item['price'] = $item['wholesale_price'];
+                } else {
+                    $item['price'] = $item['retail_price'];
+                }
+                // Recalculate total
+                $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
+            }
+            return $item;
+        })->toArray();
     }
 
     // Reset customer fields
@@ -254,6 +275,8 @@ class SalesSystem extends Component
                             'code' => $product->code,
                             'model' => $product->model,
                             'price' => $product->price->selling_price ?? 0,
+                            'retail_price' => $product->price->retail_price ?? $product->price->selling_price ?? 0,
+                            'wholesale_price' => $product->price->wholesale_price ?? 0,
                             'stock' => $product->stock->available_stock ?? 0,
                             'sold' => $product->stock->sold_count ?? 0,
                             'image' => $product->image
@@ -297,16 +320,26 @@ class SalesSystem extends Component
         } else {
             $discountPrice = ProductDetail::find($product['id'])->price->discount_price ?? 0;
 
+            // Determine price based on current sale type
+            $retailPrice = $product['retail_price'] ?? $product['price'];
+            $wholesalePrice = $product['wholesale_price'] ?? 0;
+            
+            $finalPrice = ($this->customerTypeSale === 'wholesale' && $wholesalePrice > 0) 
+                          ? $wholesalePrice 
+                          : $retailPrice;
+
             $newItem = [
                 'key' => uniqid('cart_'),  // Add unique key to maintain state
                 'id' => $product['id'],
                 'name' => $product['name'],
                 'code' => $product['code'],
                 'model' => $product['model'],
-                'price' => $product['price'],
+                'price' => $finalPrice,
+                'retail_price' => $retailPrice,
+                'wholesale_price' => $wholesalePrice,
                 'quantity' => 1,
                 'discount' => $discountPrice,
-                'total' => $product['price'] - $discountPrice,
+                'total' => $finalPrice - $discountPrice,
                 'stock' => $product['stock']
             ];
 
@@ -469,10 +502,12 @@ class SalesSystem extends Component
                 'invoice_number' => Sale::generateInvoiceNumber(),
                 'customer_id' => $customer->id,
                 'customer_type' => $customer->type,
+                'customer_type_sale' => $this->customerTypeSale,
                 'subtotal' => $this->subtotal,
                 'discount_amount' => $this->additionalDiscountAmount,
                 'total_amount' => $this->grandTotal,
                 'payment_type' => 'full',
+                'payment_method' => $this->paymentMethod,
                 'payment_status' => 'pending',
                 'due_amount' => $this->grandTotal,
                 'notes' => $this->notes,
@@ -516,6 +551,9 @@ class SalesSystem extends Component
                     throw new \Exception("Failed to deduct stock for {$item['name']}: " . $e->getMessage());
                 }
             }
+
+            // Calculate and record staff bonuses
+            StaffBonusService::calculateBonusesForSale($sale);
 
             DB::commit();
 

@@ -339,10 +339,9 @@
                                 <th style="width: 120px;">Code</th>
                                 <th>Product Name</th>
                                 <th style="width: 120px;">Order Quantity</th>
-                                
                                 <th style="width: 150px;">Supplier Price</th>
                                 <th style="width: 150px;">Total Price</th>
-                                <th style="width: 80px;">Action</th>
+                                <th style="width: 220px;">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -376,11 +375,18 @@
                                     <strong class="text-success">Rs. {{ number_format($item['total_price'], 2) }}</strong>
                                 </td>
                                 <td class="text-center">
-                                    <button class="btn btn-sm btn-outline-danger"
-                                        wire:click="removeItem({{ $index }})"
-                                        title="Remove item">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <button class="btn btn-sm btn-primary d-flex align-items-center gap-1" 
+                                            wire:click="openBonusModal({{ $index }})"
+                                            title="Set Sales Bonus">
+                                            <i class="bi bi-gift-fill small"></i> Bonus
+                                        </button>
+                                        <button class="btn btn-sm btn-danger d-flex align-items-center gap-1"
+                                            wire:click="removeItem({{ $index }})"
+                                            title="Remove item">
+                                            <i class="bi bi-trash-fill small"></i> Delete
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             @empty
@@ -685,7 +691,15 @@
                         @endphp
                         <tr>
                             <td>{{ $item->product->code ?? 'N/A' }}</td>
-                            <td>{{ $item->product->name ?? 'N/A' }}</td>
+                            <td>
+                                <div><strong>{{ $item->product->name ?? 'N/A' }}</strong></div>
+                                <div class="mt-1 d-flex flex-wrap gap-1">
+                                    <span class="badge bg-light text-dark border small" title="Retail Cash Bonus">RC: {{ number_format($item->product->retail_cash_bonus ?? 0, 0) }}</span>
+                                    <span class="badge bg-light text-dark border small" title="Retail Credit Bonus">RCR: {{ number_format($item->product->retail_credit_bonus ?? 0, 0) }}</span>
+                                    <span class="badge bg-light text-dark border small" title="Wholesale Cash Bonus">WC: {{ number_format($item->product->wholesale_cash_bonus ?? 0, 0) }}</span>
+                                    <span class="badge bg-light text-dark border small" title="Wholesale Credit Bonus">WCR: {{ number_format($item->product->wholesale_credit_bonus ?? 0, 0) }}</span>
+                                </div>
+                            </td>
                             <td>
                                 @if($item->status == 'pending')
                                 <span class="badge bg-warning">Pending</span>
@@ -804,7 +818,7 @@
                             <th style="width: 120px;">Quantity</th>
                             <th style="width: 120px;">Unit Price</th>
                             <th style="width: 150px;">Total</th>
-                            <th style="width: 80px;">Action</th>
+                            <th style="width: 180px;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -837,11 +851,18 @@
                                 </strong>
                             </td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-danger"
-                                    wire:click="removeEditItem({{ $index }})"
-                                    title="Remove item">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button class="btn btn-sm btn-primary d-flex align-items-center gap-1" 
+                                        wire:click="openBonusModal({{ $index }}, 'edit')"
+                                        title="Set Sales Bonus">
+                                        <i class="bi bi-gift-fill small"></i> Bonus
+                                    </button>
+                                    <button class="btn btn-sm btn-danger d-flex align-items-center gap-1"
+                                        wire:click="removeEditItem({{ $index }})"
+                                        title="Remove item">
+                                        <i class="bi bi-trash-fill small"></i> Delete
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         @endforeach
@@ -880,6 +901,98 @@
 </div>
 </div>
 
+    {{-- Sales Bonus Modal --}}
+    <div wire:ignore.self class="modal fade" id="bonusModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-gift me-2"></i> Set Sales Bonus
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-4">
+                        <!-- Retail Cash Bonus -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary mb-2">Retail Cash Bonus</label>
+                            <div class="d-flex gap-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                    <input type="number" class="form-control" wire:model.live="bonusRetailCash" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" wire:model.live="bonusRetailCashPercentage" min="0" step="0.01" placeholder="0">
+                                    <span class="input-group-text bg-light text-muted">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Retail Credit Bonus -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary mb-2">Retail Credit Bonus</label>
+                            <div class="d-flex gap-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                    <input type="number" class="form-control" wire:model.live="bonusRetailCredit" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" wire:model.live="bonusRetailCreditPercentage" min="0" step="0.01" placeholder="0">
+                                    <span class="input-group-text bg-light text-muted">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Wholesale Cash Bonus -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary mb-2">Wholesale Cash Bonus</label>
+                            <div class="d-flex gap-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                    <input type="number" class="form-control" wire:model.live="bonusWholesaleCash" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" wire:model.live="bonusWholesaleCashPercentage" min="0" step="0.01" placeholder="0">
+                                    <span class="input-group-text bg-light text-muted">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Wholesale Credit Bonus -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary mb-2">Wholesale Credit Bonus</label>
+                            <div class="d-flex gap-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                    <input type="number" class="form-control" wire:model.live="bonusWholesaleCredit" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" wire:model.live="bonusWholesaleCreditPercentage" min="0" step="0.01" placeholder="0">
+                                    <span class="input-group-text bg-light text-muted">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-muted small bg-light p-2 rounded border">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="bi bi-info-circle me-1"></i> Retail Reference:</span>
+                            <span class="fw-bold">Rs. {{ number_format($itemRetailPrice, 2) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span><i class="bi bi-info-circle me-1"></i> Wholesale Reference:</span>
+                            <span class="fw-bold">Rs. {{ number_format($itemWholesalePrice, 2) }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary border-0" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" wire:click="saveBonusValues">
+                        <i class="bi bi-check-circle me-1"></i> Save Bonus
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @push('scripts')

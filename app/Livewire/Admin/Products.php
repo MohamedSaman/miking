@@ -42,16 +42,19 @@ class Products extends Component
     public $search = '';
 
     // Create form fields
-    public $code, $name, $model, $brand, $category, $image, $description, $barcode, $status, $supplier;
-    public $supplier_price, $selling_price, $discount_price, $available_stock, $damage_stock;
+    public $code, $name, $model, $brand, $category, $image, $description, $barcode, $status, $supplier, $unit;
+    public $retail_cash_bonus, $retail_credit_bonus, $wholesale_cash_bonus, $wholesale_credit_bonus;
+    public $supplier_price, $selling_price, $retail_price, $wholesale_price, $discount_price, $available_stock, $opening_stock_rate, $damage_stock;
 
     // Import file
     public $importFile;
 
     // Edit form fields
     public $editId, $editCode, $editName, $editModel, $editBrand, $editCategory, $editImage, $existingImage,
-        $editDescription, $editBarcode, $editStatus, $editSupplierPrice, $editSellingPrice,
-        $editDiscountPrice, $editDamageStock;
+        $editDescription, $editBarcode, $editStatus, $editUnit, 
+        $editRetailCashBonus, $editRetailCreditBonus, $editWholesaleCashBonus, $editWholesaleCreditBonus,
+        $editSupplierPrice, $editSellingPrice, $editRetailPrice, $editWholesalePrice, 
+        $editDiscountPrice, $editOpeningStockRate, $editDamageStock;
 
     // Stock Adjustment fields
     public $adjustmentProductId, $adjustmentProductName, $adjustmentAvailableStock, $adjustmentDamageStock,
@@ -139,13 +142,23 @@ class Products extends Component
         // Set default status
         $this->status = 'active';
 
+        // Set default unit
+        $this->unit = 'Piece';
+
+        // Set default sale bonuses
+        $this->cash_sale_bonus = 0;
+        $this->credit_sale_bonus = 0;
+
         // Set default stock values
         $this->available_stock = 0;
         $this->damage_stock = 0;
+        $this->opening_stock_rate = 0;
 
         // Set default prices
         $this->supplier_price = 0;
         $this->selling_price = 0;
+        $this->retail_price = 0;
+        $this->wholesale_price = 0;
         $this->discount_price = 0;
     }
 
@@ -325,6 +338,11 @@ class Products extends Component
                 'description' => $this->description,
                 'barcode' => $this->barcode,
                 'status' => 'active',
+                'unit' => $this->unit ?? 'Piece',
+                'retail_cash_bonus' => $this->retail_cash_bonus ?? 0,
+                'retail_credit_bonus' => $this->retail_credit_bonus ?? 0,
+                'wholesale_cash_bonus' => $this->wholesale_cash_bonus ?? 0,
+                'wholesale_credit_bonus' => $this->wholesale_credit_bonus ?? 0,
                 'brand_id' => $this->brand,
                 'category_id' => $this->category,
             ]);
@@ -333,12 +351,15 @@ class Products extends Component
                 'product_id' => $product->id,
                 'supplier_price' => $this->supplier_price,
                 'selling_price' => $this->selling_price,
+                'retail_price' => $this->retail_price,
+                'wholesale_price' => $this->wholesale_price,
                 'discount_price' => $this->discount_price,
             ]);
 
             ProductStock::create([
                 'product_id' => $product->id,
                 'available_stock' => $this->available_stock ?? 0,
+                'opening_stock_rate' => $this->opening_stock_rate ?? 0,
                 'damage_stock' => $this->damage_stock ?? 0,
                 'total_stock' => ($this->available_stock ?? 0) + ($this->damage_stock ?? 0),
                 'sold_count' => 0,
@@ -440,10 +461,18 @@ class Products extends Component
             'barcode',
             'status',
             'supplier',
+            'unit',
+            'retail_cash_bonus',
+            'retail_credit_bonus',
+            'wholesale_cash_bonus',
+            'wholesale_credit_bonus',
             'supplier_price',
             'selling_price',
+            'retail_price',
+            'wholesale_price',
             'discount_price',
             'available_stock',
+            'opening_stock_rate',
             'damage_stock'
         ]);
         $this->resetValidation();
@@ -464,9 +493,17 @@ class Products extends Component
         $this->editDescription = $product->description;
         $this->editBarcode = $product->barcode;
         $this->editStatus = $product->status;
+        $this->editUnit = $product->unit;
+        $this->editRetailCashBonus = $product->retail_cash_bonus;
+        $this->editRetailCreditBonus = $product->retail_credit_bonus;
+        $this->editWholesaleCashBonus = $product->wholesale_cash_bonus;
+        $this->editWholesaleCreditBonus = $product->wholesale_credit_bonus;
         $this->editSupplierPrice = $product->price->supplier_price ?? 0;
         $this->editSellingPrice = $product->price->selling_price ?? 0;
+        $this->editRetailPrice = $product->price->retail_price ?? 0;
+        $this->editWholesalePrice = $product->price->wholesale_price ?? 0;
         $this->editDiscountPrice = $product->price->discount_price ?? 0;
+        $this->editOpeningStockRate = $product->stock->opening_stock_rate ?? 0;
         $this->editDamageStock = $product->stock->damage_stock ?? 0;
 
         $this->resetValidation();
@@ -492,9 +529,17 @@ class Products extends Component
             'editDescription' => 'nullable|string|max:1000',
             'editBarcode' => 'nullable|string|max:255|unique:product_details,barcode,' . $this->editId,
             'editStatus' => 'required|in:active,inactive',
+            'editUnit' => 'nullable|in:Piece,Dozen,Bundle',
+            'editRetailCashBonus' => 'nullable|numeric|min:0',
+            'editRetailCreditBonus' => 'nullable|numeric|min:0',
+            'editWholesaleCashBonus' => 'nullable|numeric|min:0',
+            'editWholesaleCreditBonus' => 'nullable|numeric|min:0',
             'editSupplierPrice' => 'required|numeric|min:0',
             'editSellingPrice' => 'required|numeric|min:0|gte:editSupplierPrice',
+            'editRetailPrice' => 'nullable|numeric|min:0',
+            'editWholesalePrice' => 'nullable|numeric|min:0',
             'editDiscountPrice' => 'nullable|numeric|min:0|lte:editSellingPrice',
+            'editOpeningStockRate' => 'nullable|numeric|min:0',
             'editDamageStock' => 'required|integer|min:0',
         ];
     }
@@ -518,16 +563,24 @@ class Products extends Component
                 'description' => $this->editDescription,
                 'barcode' => $this->editBarcode,
                 'status' => $this->editStatus,
+                'unit' => $this->editUnit,
+                'retail_cash_bonus' => $this->editRetailCashBonus,
+                'retail_credit_bonus' => $this->editRetailCreditBonus,
+                'wholesale_cash_bonus' => $this->editWholesaleCashBonus,
+                'wholesale_credit_bonus' => $this->editWholesaleCreditBonus,
             ]);
 
             $product->price()->updateOrCreate([], [
                 'supplier_price' => $this->editSupplierPrice,
                 'selling_price' => $this->editSellingPrice,
+                'retail_price' => $this->editRetailPrice,
+                'wholesale_price' => $this->editWholesalePrice,
                 'discount_price' => $this->editDiscountPrice,
             ]);
 
             $product->stock()->updateOrCreate([], [
                 'damage_stock' => $this->editDamageStock,
+                'opening_stock_rate' => $this->editOpeningStockRate,
             ]);
 
             // Clear cache for client-side refresh
@@ -592,26 +645,36 @@ class Products extends Component
     // 🔹 View Product Details
     public function viewProductDetails($id)
     {
-        // For staff users, show only their allocated product details
+        // For staff users, show allocated product with full product details
         if ($this->isStaff()) {
-            $this->viewProduct = StaffProduct::where('staff_id', auth()->id())
+            // First check if product is allocated to this staff
+            $staffProduct = StaffProduct::where('staff_id', auth()->id())
                 ->where('product_id', $id)
-                ->leftJoin('product_details', 'staff_products.product_id', '=', 'product_details.id')
-                ->leftJoin('brand_lists', 'product_details.brand_id', '=', 'brand_lists.id')
-                ->select(
-                    'product_details.id',
-                    'product_details.name',
-                    'product_details.code',
-                    'product_details.model',
-                    'product_details.image',
-                    'product_details.status',
-                    'product_details.description',
-                    'staff_products.unit_price',
-                    'staff_products.quantity',
-                    'staff_products.sold_quantity',
-                    'brand_lists.brand_name as brand'
-                )
                 ->first();
+
+            if (!$staffProduct) {
+                $this->js("Swal.fire('Error!', 'Product not allocated to you.', 'error')");
+                return;
+            }
+
+            // Get full product details with price and stock
+            $this->viewProduct = ProductDetail::with(['price', 'stock'])
+                ->leftJoin('brand_lists', 'product_details.brand_id', '=', 'brand_lists.id')
+                ->leftJoin('category_lists', 'product_details.category_id', '=', 'category_lists.id')
+                ->select(
+                    'product_details.*',
+                    'brand_lists.brand_name as brand',
+                    'category_lists.category_name as category'
+                )
+                ->where('product_details.id', $id)
+                ->first();
+
+            // Add staff allocation info to viewProduct
+            if ($this->viewProduct) {
+                $this->viewProduct->staff_quantity = $staffProduct->quantity;
+                $this->viewProduct->staff_sold_quantity = $staffProduct->sold_quantity;
+                $this->viewProduct->staff_unit_price = $staffProduct->unit_price;
+            }
         } else {
             // For admin users, show full product details
             $this->viewProduct = ProductDetail::with(['price', 'stock'])

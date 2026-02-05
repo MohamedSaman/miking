@@ -20,6 +20,7 @@ class Quotation extends Model
         'customer_phone',
         'customer_email',
         'customer_address',
+        'sale_type',
         'quotation_date',
         'valid_until',
         'subtotal',

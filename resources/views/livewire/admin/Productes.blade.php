@@ -721,7 +721,7 @@
         <!-- View Product Modal -->
         <div wire:ignore.self class="modal fade" id="viewProductModal" tabindex="-1"
             aria-labelledby="viewProductModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered {{ $isStaff ? 'modal-md' : 'modal-xl' }}">
+            <div class="modal-dialog modal-dialog-centered modal-xl">
                 <div class="modal-content border-0 shadow-lg">
                     <div class="modal-header border-0 bg-gradient-primary text-white position-relative"
                         style="background: linear-gradient(135deg, #000000 0%, #000000 100%); padding: 1.5rem;">
@@ -737,111 +737,261 @@
                         @if($viewProduct)
                         <div class="row g-0">
                             @if ($isStaff)
-                            <!-- Staff View: Simplified layout -->
-                            <div class="col-12">
-                                <div class="p-4">
-                                    <!-- Product Image and Status -->
-                                    <div class="text-center mb-4">
-                                        <img src="{{ $viewProduct->image ? asset( $viewProduct->image) : asset('images/product.jpg') }}"
-                                            alt="Product Image" class="img-fluid rounded-3 shadow-sm"
-                                            style="width: 100%; max-width: 250px; height: 250px; object-fit: cover; border: 3px solid #f0f0f0;">
+                            <!-- Staff View: Full product details like admin -->
+                            <div class="col-lg-4 bg-light border-end">
+                                <div class="p-4 text-center">
+                                    <div class="product-image-container mb-4 position-relative">
+                                        <img src="{{ $viewProduct->image ? asset($viewProduct->image) : asset('images/product.jpg') }}"
+                                            alt="Product Image" class="img-fluid rounded-3 shadow-sm product-image"
+                                            style="width: 100%; max-width: 280px; height: 280px; object-fit: cover; border: 3px solid #fff;">
 
-                                        @if($viewProduct->status == 'active')
-                                        <div class="mt-3">
+                                        <div class="position-absolute top-0 end-0 m-3">
+                                            @if($viewProduct->status == 'active')
                                             <span class="badge bg-success shadow-sm px-3 py-2">
                                                 <i class="bi bi-check-circle me-1"></i>Active
                                             </span>
-                                        </div>
-                                        @else
-                                        <div class="mt-3">
+                                            @else
                                             <span class="badge bg-danger shadow-sm px-3 py-2">
                                                 <i class="bi bi-x-circle me-1"></i>Inactive
                                             </span>
+                                            @endif
                                         </div>
-                                        @endif
                                     </div>
 
-                                    <!-- Product Name and Code -->
-                                    <h4 class="fw-bold text-dark text-center mb-2">{{ $viewProduct->name }}</h4>
-                                    <p class="text-muted text-center mb-4">
+                                    <h4 class="fw-bold text-dark mb-1">{{ $viewProduct->name }}</h4>
+                                    <p class="text-muted mb-3">
                                         <i class="bi bi-upc-scan me-1"></i>
                                         <span class="font-monospace">{{ $viewProduct->code }}</span>
                                     </p>
 
-                                    <!-- Staff Allocated Stock Information -->
-                                    <div class="row g-3 mb-4">
-                                        <div class="col-md-6">
-                                            <div class="card border-0 shadow-sm bg-white h-100">
-                                                <div class="card-body p-3 text-center">
-                                                    <div class="text-success mb-2">
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <div class="card border-0 shadow-sm bg-white">
+                                                <div class="card-body p-3">
+                                                    <div class="text-primary mb-1">
                                                         <i class="bi bi-box-seam fs-4"></i>
                                                     </div>
-                                                    <h5 class="fw-bold mb-0">
-                                                        @php
-                                                        $availableStock = ($viewProduct->quantity ?? 0) - ($viewProduct->sold_quantity ?? 0);
-                                                        @endphp
-                                                        {{ $availableStock > 0 ? $availableStock : 0 }}
-                                                    </h5>
-                                                    <small class="text-muted">Available Stock</small>
-                                                    <div class="mt-2">
-                                                        @if($availableStock > 0)
-                                                        <span class="badge bg-success bg-opacity-25 text-success">In Stock</span>
-                                                        @else
-                                                        <span class="badge bg-danger bg-opacity-25 text-danger">Out of Stock</span>
-                                                        @endif
-                                                    </div>
+                                                    @php
+                                                        $staffAvailableStock = ($viewProduct->staff_quantity ?? 0) - ($viewProduct->staff_sold_quantity ?? 0);
+                                                    @endphp
+                                                    <h5 class="fw-bold mb-0">{{ $staffAvailableStock > 0 ? $staffAvailableStock : 0 }}</h5>
+                                                    <small class="text-muted">My Stock</small>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="card border-0 shadow-sm bg-white h-100">
-                                                <div class="card-body p-3 text-center">
-                                                    <div class="text-info mb-2">
+                                        <div class="col-6">
+                                            <div class="card border-0 shadow-sm bg-white">
+                                                <div class="card-body p-3">
+                                                    <div class="text-success mb-1">
                                                         <i class="bi bi-currency-dollar fs-4"></i>
                                                     </div>
-                                                    <h5 class="fw-bold mb-0">
-                                                        Rs.{{ number_format($viewProduct->unit_price ?? 0, 2) }}
-                                                    </h5>
-                                                    <small class="text-muted">Unit Price</small>
+                                                    <h5 class="fw-bold mb-0">Rs.{{ number_format($viewProduct->price->selling_price ?? 0, 2) }}</h5>
+                                                    <small class="text-muted">Selling Price</small>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- Product Details -->
-                                    <div class="card border-0 shadow-sm mb-3">
-                                        <div class="card-body p-3">
-                                            <h6 class="fw-bold text-dark mb-3">
-                                                <i class="bi bi-info-circle-fill text-primary me-2"></i>Product Information
-                                            </h6>
-                                            <div class="row g-2">
+                                    @if($staffAvailableStock > 0)
+                                    <div class="alert alert-success border-0 shadow-sm mb-0" role="alert">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        <strong>Available</strong> - Ready to sell
+                                    </div>
+                                    @else
+                                    <div class="alert alert-danger border-0 shadow-sm mb-0" role="alert">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        <strong>Out of Stock</strong>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-lg-8">
+                                <div class="p-4">
+                                    <!-- Basic Information -->
+                                    <div class="info-section mb-4">
+                                        <div class="section-header d-flex align-items-center mb-3">
+                                            <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-circle me-3"
+                                                style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-info-circle-fill"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0 text-dark">Basic Information</h6>
+                                        </div>
+                                        <div class="info-grid">
+                                            <div class="row g-3">
                                                 <div class="col-md-6">
-                                                    <small class="text-muted d-block mb-1">Product Code</small>
-                                                    <span class="fw-semibold text-dark">{{ $viewProduct->code }}</span>
+                                                    <div class="info-item p-3 bg-light rounded-3">
+                                                        <small class="text-muted d-block mb-1">Product Name</small>
+                                                        <span class="fw-semibold text-dark">{{ $viewProduct->name }}</span>
+                                                    </div>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <small class="text-muted d-block mb-1">Brand</small>
-                                                    <span class="fw-semibold text-dark">{{ $viewProduct->brand ?? '-' }}</span>
+                                                    <div class="info-item p-3 bg-light rounded-3">
+                                                        <small class="text-muted d-block mb-1">Product Code</small>
+                                                        <span class="fw-semibold text-dark font-monospace">{{ $viewProduct->code }}</span>
+                                                    </div>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <small class="text-muted d-block mb-1">Model</small>
-                                                    <span class="fw-semibold text-dark">{{ $viewProduct->model ?? '-' }}</span>
+                                                    <div class="info-item p-3 bg-light rounded-3">
+                                                        <small class="text-muted d-block mb-1">Model</small>
+                                                        <span class="fw-semibold text-dark">{{ $viewProduct->model ?? '-' }}</span>
+                                                    </div>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <small class="text-muted d-block mb-1">Total Allocated</small>
-                                                    <span class="fw-semibold text-dark">{{ $viewProduct->quantity ?? 0 }} units</span>
+                                                    <div class="info-item p-3 bg-light rounded-3">
+                                                        <small class="text-muted d-block mb-1">Brand</small>
+                                                        <span class="fw-semibold text-dark">{{ $viewProduct->brand ?? '-' }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <div class="info-item p-3 bg-light rounded-3">
+                                                        <small class="text-muted d-block mb-1">Category</small>
+                                                        <span class="fw-semibold text-dark">{{ $viewProduct->category ?? '-' }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Pricing Information -->
+                                    <div class="info-section mb-4">
+                                        <div class="section-header d-flex align-items-center mb-3">
+                                            <div class="icon-box bg-success bg-opacity-10 text-success rounded-circle me-3"
+                                                style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-currency-dollar"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0 text-dark">Pricing Information</h6>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-success rounded-3 bg-success bg-opacity-10 h-100">
+                                                    <small class="text-success d-block mb-2 fw-semibold">Selling Price</small>
+                                                    <h4 class="fw-bold text-success mb-0">
+                                                        Rs.{{ number_format($viewProduct->price->selling_price ?? 0, 2) }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border rounded-3 h-100">
+                                                    <small class="text-muted d-block mb-2">Discount Price</small>
+                                                    <h4 class="fw-bold text-danger mb-0">
+                                                        Rs.{{ number_format($viewProduct->price->discount_price ?? 0, 2) }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row g-3 mt-2">
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-info rounded-3 bg-info bg-opacity-10 h-100">
+                                                    <small class="text-info d-block mb-2 fw-semibold">Retail Price</small>
+                                                    <h4 class="fw-bold text-info mb-0">
+                                                        Rs.{{ number_format($viewProduct->price->retail_price ?? 0, 2) }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-warning rounded-3 bg-warning bg-opacity-10 h-100">
+                                                    <small class="text-warning d-block mb-2 fw-semibold">Wholesale Price</small>
+                                                    <h4 class="fw-bold text-warning mb-0">
+                                                        Rs.{{ number_format($viewProduct->price->wholesale_price ?? 0, 2) }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sales Bonus -->
+                                    <div class="info-section mb-4">
+                                        <div class="section-header d-flex align-items-center mb-3">
+                                            <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-circle me-3"
+                                                style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-gift"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0 text-dark">Sales Bonus</h6>
+                                        </div>
+                                        <div class="row g-3">
+                                            <!-- Wholesale -->
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-primary rounded-3 bg-primary bg-opacity-10 h-100">
+                                                    <small class="text-primary d-block mb-2 fw-semibold">Wholesale Cash Bonus</small>
+                                                    <h4 class="fw-bold text-primary mb-0">
+                                                        Rs.{{ number_format($viewProduct->wholesale_cash_bonus ?? 0, 2) }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-primary rounded-3 bg-primary bg-opacity-10 h-100">
+                                                    <small class="text-primary d-block mb-2 fw-semibold">Wholesale Credit Bonus</small>
+                                                    <h4 class="fw-bold text-primary mb-0">
+                                                        Rs.{{ number_format($viewProduct->wholesale_credit_bonus ?? 0, 2) }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                            <!-- Retail -->
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-success rounded-3 bg-success bg-opacity-10 h-100">
+                                                    <small class="text-success d-block mb-2 fw-semibold">Retail Cash Bonus</small>
+                                                    <h4 class="fw-bold text-success mb-0">
+                                                        Rs.{{ number_format($viewProduct->retail_cash_bonus ?? 0, 2) }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-success rounded-3 bg-success bg-opacity-10 h-100">
+                                                    <small class="text-success d-block mb-2 fw-semibold">Retail Credit Bonus</small>
+                                                    <h4 class="fw-bold text-success mb-0">
+                                                        Rs.{{ number_format($viewProduct->retail_credit_bonus ?? 0, 2) }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- My Allocation Info -->
+                                    <div class="info-section mb-4">
+                                        <div class="section-header d-flex align-items-center mb-3">
+                                            <div class="icon-box bg-warning bg-opacity-10 text-warning rounded-circle me-3"
+                                                style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-boxes"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0 text-dark">My Allocation</h6>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <div class="stock-card p-3 border rounded-3 text-center">
+                                                    <i class="bi bi-box-seam text-success fs-3 mb-2"></i>
+                                                    <h5 class="fw-bold mb-1">{{ $staffAvailableStock > 0 ? $staffAvailableStock : 0 }}</h5>
+                                                    <small class="text-muted">Available Stock</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="stock-card p-3 border rounded-3 text-center">
+                                                    <i class="bi bi-cart-check text-info fs-3 mb-2"></i>
+                                                    <h5 class="fw-bold mb-1">{{ $viewProduct->staff_sold_quantity ?? 0 }}</h5>
+                                                    <small class="text-muted">Sold Quantity</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="stock-card p-3 border rounded-3 text-center">
+                                                    <i class="bi bi-archive text-primary fs-3 mb-2"></i>
+                                                    <h5 class="fw-bold mb-1">{{ $viewProduct->staff_quantity ?? 0 }}</h5>
+                                                    <small class="text-muted">Total Allocated</small>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
                                     @if($viewProduct->description)
-                                    <div class="card border-0 shadow-sm">
-                                        <div class="card-body p-3">
-                                            <h6 class="fw-bold text-dark mb-2">
-                                                <i class="bi bi-card-text text-info me-2"></i>Description
-                                            </h6>
-                                            <p class="mb-0 text-muted small">{{ $viewProduct->description }}</p>
+                                    <div class="info-section">
+                                        <div class="section-header d-flex align-items-center mb-3">
+                                            <div class="icon-box bg-info bg-opacity-10 text-info rounded-circle me-3"
+                                                style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-card-text"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0 text-dark">Description</h6>
+                                        </div>
+                                        <div class="p-3 bg-light rounded-3">
+                                            <p class="mb-0 text-muted">{{ $viewProduct->description }}</p>
                                         </div>
                                     </div>
                                     @endif
@@ -1007,6 +1157,72 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="row g-3 mt-2">
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-info rounded-3 bg-info bg-opacity-10 h-100">
+                                                    <small class="text-info d-block mb-2 fw-semibold">Retail Price</small>
+                                                    <h4 class="fw-bold text-info mb-0">
+                                                        Rs.{{ number_format($viewProduct->price->retail_price ?? 0, 2)
+                                                        }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-warning rounded-3 bg-warning bg-opacity-10 h-100">
+                                                    <small class="text-warning d-block mb-2 fw-semibold">Wholesale Price</small>
+                                                    <h4 class="fw-bold text-warning mb-0">
+                                                        Rs.{{ number_format($viewProduct->price->wholesale_price ?? 0, 2)
+                                                        }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="info-section mb-4">
+                                        <div class="section-header d-flex align-items-center mb-3">
+                                            <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-circle me-3"
+                                                style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-gift"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0 text-dark">Sales Bonus</h6>
+                                        </div>
+                                        <div class="row g-3">
+                                            <!-- Wholesale -->
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-primary rounded-3 bg-primary bg-opacity-10 h-100">
+                                                    <small class="text-primary d-block mb-2 fw-semibold">Wholesale Cash Bonus</small>
+                                                    <h4 class="fw-bold text-primary mb-0">
+                                                        Rs.{{ number_format($viewProduct->wholesale_cash_bonus ?? 0, 2) }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-primary rounded-3 bg-primary bg-opacity-10 h-100">
+                                                    <small class="text-primary d-block mb-2 fw-semibold">Wholesale Credit Bonus</small>
+                                                    <h4 class="fw-bold text-primary mb-0">
+                                                        Rs.{{ number_format($viewProduct->wholesale_credit_bonus ?? 0, 2) }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                            <!-- Retail -->
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-success rounded-3 bg-success bg-opacity-10 h-100">
+                                                    <small class="text-success d-block mb-2 fw-semibold">Retail Cash Bonus</small>
+                                                    <h4 class="fw-bold text-success mb-0">
+                                                        Rs.{{ number_format($viewProduct->retail_cash_bonus ?? 0, 2) }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="price-card text-center p-3 border border-success rounded-3 bg-success bg-opacity-10 h-100">
+                                                    <small class="text-success d-block mb-2 fw-semibold">Retail Credit Bonus</small>
+                                                    <h4 class="fw-bold text-success mb-0">
+                                                        Rs.{{ number_format($viewProduct->retail_credit_bonus ?? 0, 2) }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div class="info-section mb-4">
@@ -1032,6 +1248,22 @@
                                                     <h5 class="fw-bold mb-1">{{ $viewProduct->stock->damage_stock ?? 0
                                                         }}</h5>
                                                     <small class="text-muted">Damaged Stock</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row g-3 mt-2">
+                                            <div class="col-md-6">
+                                                <div class="stock-card p-3 border rounded-3 text-center">
+                                                    <i class="bi bi-currency-dollar text-primary fs-3 mb-2"></i>
+                                                    <h5 class="fw-bold mb-1">Rs.{{ number_format($viewProduct->stock->opening_stock_rate ?? 0, 2) }}</h5>
+                                                    <small class="text-muted">Opening Stock Rate</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="stock-card p-3 border rounded-3 text-center">
+                                                    <i class="bi bi-box text-info fs-3 mb-2"></i>
+                                                    <h5 class="fw-bold mb-1">{{ $viewProduct->unit ?? 'Piece' }}</h5>
+                                                    <small class="text-muted">Unit</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -1225,6 +1457,91 @@
                         <div class="card mb-4">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
+                                    <i class="bi bi-gift text-primary me-2"></i> Sales Bonus
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <!-- Wholesale -->
+                                <h6 class="text-primary border-bottom pb-2 mb-3">Wholesale Bonuses</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold small text-primary mb-2">Wholesale Cash Bonus</label>
+                                            <div class="d-flex gap-2">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                                    <input type="number" class="form-control" wire:model.live="wholesale_cash_bonus" min="0" step="0.01">
+                                                </div>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" class="form-control" wire:model.live="wholesale_cash_bonus_percentage" min="0" step="0.01">
+                                                    <span class="input-group-text bg-light text-muted">%</span>
+                                                </div>
+                                            </div>
+                                            @error('wholesale_cash_bonus') <span class="text-danger small">* {{ $message }}</span> @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold small text-primary mb-2">Wholesale Credit Bonus</label>
+                                            <div class="d-flex gap-2">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                                    <input type="number" class="form-control" wire:model.live="wholesale_credit_bonus" min="0" step="0.01">
+                                                </div>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" class="form-control" wire:model.live="wholesale_credit_bonus_percentage" min="0" step="0.01">
+                                                    <span class="input-group-text bg-light text-muted">%</span>
+                                                </div>
+                                            </div>
+                                            @error('wholesale_credit_bonus') <span class="text-danger small">* {{ $message }}</span> @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Retail -->
+                                <h6 class="text-success border-bottom pb-2 mb-3">Retail Bonuses</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold small text-success mb-2">Retail Cash Bonus</label>
+                                            <div class="d-flex gap-2">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                                    <input type="number" class="form-control" wire:model.live="retail_cash_bonus" min="0" step="0.01">
+                                                </div>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" class="form-control" wire:model.live="retail_cash_bonus_percentage" min="0" step="0.01">
+                                                    <span class="input-group-text bg-light text-muted">%</span>
+                                                </div>
+                                            </div>
+                                            @error('retail_cash_bonus') <span class="text-danger small">* {{ $message }}</span> @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold small text-success mb-2">Retail Credit Bonus</label>
+                                            <div class="d-flex gap-2">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                                    <input type="number" class="form-control" wire:model.live="retail_credit_bonus" min="0" step="0.01">
+                                                </div>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" class="form-control" wire:model.live="retail_credit_bonus_percentage" min="0" step="0.01">
+                                                    <span class="input-group-text bg-light text-muted">%</span>
+                                                </div>
+                                            </div>
+                                            @error('retail_credit_bonus') <span class="text-danger small">* {{ $message }}</span> @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-muted small">
+                                    <i class="bi bi-info-circle me-1"></i> Retail bonuses use Retail/Selling Price as reference. Wholesale bonuses use Wholesale Price as reference.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
                                     <i class="bi bi-cash text-primary me-2"></i> Pricing and Inventory
                                 </h5>
                             </div>
@@ -1276,11 +1593,68 @@
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="mb-3">
+                                            <label for="retail_price" class="form-label fw-semibold">Retail
+                                                Price:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rs.</span>
+                                                <input type="number" step="0.01" class="form-control"
+                                                    id="retail_price" wire:model="retail_price">
+                                            </div>
+                                            @error('retail_price')
+                                            <span class="text-danger small">* {{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="wholesale_price" class="form-label fw-semibold">Wholesale
+                                                Price:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rs.</span>
+                                                <input type="number" step="0.01" class="form-control"
+                                                    id="wholesale_price" wire:model="wholesale_price">
+                                            </div>
+                                            @error('wholesale_price')
+                                            <span class="text-danger small">* {{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="unit" class="form-label fw-semibold">Unit:</label>
+                                            <select class="form-select" id="unit" wire:model="unit">
+                                                <option value="Piece">Piece</option>
+                                                <option value="Dozen">Dozen</option>
+                                                <option value="Bundle">Bundle</option>
+                                            </select>
+                                            @error('unit')
+                                            <span class="text-danger small">* {{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
                                             <label for="available_stock" class="form-label fw-semibold">Available
                                                 Stock:</label>
                                             <input type="number" class="form-control" id="available_stock"
                                                 wire:model="available_stock">
                                             @error('available_stock')
+                                            <span class="text-danger small">* {{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="opening_stock_rate" class="form-label fw-semibold">Opening Stock
+                                                Rate:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rs.</span>
+                                                <input type="number" step="0.01" class="form-control"
+                                                    id="opening_stock_rate" wire:model="opening_stock_rate">
+                                            </div>
+                                            @error('opening_stock_rate')
                                             <span class="text-danger small">* {{ $message }}</span>
                                             @enderror
                                         </div>
@@ -1577,6 +1951,64 @@
                         <div class="card mb-4">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
+                                    <i class="bi bi-gift text-primary me-2"></i> Sales Bonus
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <!-- Wholesale -->
+                                <h6 class="text-primary border-bottom pb-2 mb-3">Wholesale Bonuses</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Wholesale Cash Bonus:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rs.</span>
+                                                <input type="number" step="0.01" class="form-control" wire:model="editWholesaleCashBonus">
+                                            </div>
+                                            @error('editWholesaleCashBonus') <span class="text-danger small">* {{ $message }}</span> @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Wholesale Credit Bonus:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rs.</span>
+                                                <input type="number" step="0.01" class="form-control" wire:model="editWholesaleCreditBonus">
+                                            </div>
+                                            @error('editWholesaleCreditBonus') <span class="text-danger small">* {{ $message }}</span> @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Retail -->
+                                <h6 class="text-success border-bottom pb-2 mb-3">Retail Bonuses</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Retail Cash Bonus:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rs.</span>
+                                                <input type="number" step="0.01" class="form-control" wire:model="editRetailCashBonus">
+                                            </div>
+                                            @error('editRetailCashBonus') <span class="text-danger small">* {{ $message }}</span> @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Retail Credit Bonus:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rs.</span>
+                                                <input type="number" step="0.01" class="form-control" wire:model="editRetailCreditBonus">
+                                            </div>
+                                            @error('editRetailCreditBonus') <span class="text-danger small">* {{ $message }}</span> @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
                                     <i class="bi bi-cash text-primary me-2"></i> Pricing and Inventory
                                 </h5>
                             </div>
@@ -1584,8 +2016,7 @@
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="editSupplierPrice" class="form-label fw-semibold">Supplier
-                                                Price:</label>
+                                            <label for="editSupplierPrice" class="form-label fw-semibold">Supplier Price:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
                                                 <input type="number" step="0.01" class="form-control"
@@ -1598,8 +2029,7 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="editSellingPrice" class="form-label fw-semibold">Selling
-                                                Price:</label>
+                                            <label for="editSellingPrice" class="form-label fw-semibold">Selling Price:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
                                                 <input type="number" step="0.01" class="form-control"
@@ -1612,8 +2042,7 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="editDiscountPrice" class="form-label fw-semibold">Discount
-                                                Price:</label>
+                                            <label for="editDiscountPrice" class="form-label fw-semibold">Discount Price:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
                                                 <input type="number" step="0.01" class="form-control"
@@ -1626,7 +2055,48 @@
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="editRetailPrice" class="form-label fw-semibold">Retail Price:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rs.</span>
+                                                <input type="number" step="0.01" class="form-control"
+                                                    id="editRetailPrice" wire:model="editRetailPrice">
+                                            </div>
+                                            @error('editRetailPrice')
+                                            <span class="text-danger small">* {{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="editWholesalePrice" class="form-label fw-semibold">Wholesale Price:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rs.</span>
+                                                <input type="number" step="0.01" class="form-control"
+                                                    id="editWholesalePrice" wire:model="editWholesalePrice">
+                                            </div>
+                                            @error('editWholesalePrice')
+                                            <span class="text-danger small">* {{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="editUnit" class="form-label fw-semibold">Unit:</label>
+                                            <select class="form-select" id="editUnit" wire:model="editUnit">
+                                                <option value="Piece">Piece</option>
+                                                <option value="Dozen">Dozen</option>
+                                                <option value="Bundle">Bundle</option>
+                                            </select>
+                                            @error('editUnit')
+                                            <span class="text-danger small">* {{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="editStatus" class="form-label fw-semibold">Status:</label>
                                             <select class="form-select" id="editStatus" wire:model="editStatus">
@@ -1634,6 +2104,31 @@
                                                 <option value="inactive">Inactive</option>
                                             </select>
                                             @error('editStatus')
+                                            <span class="text-danger small">* {{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="editOpeningStockRate" class="form-label fw-semibold">Opening Stock Rate:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rs.</span>
+                                                <input type="number" step="0.01" class="form-control"
+                                                    id="editOpeningStockRate" wire:model="editOpeningStockRate">
+                                            </div>
+                                            @error('editOpeningStockRate')
+                                            <span class="text-danger small">* {{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="editDamageStock" class="form-label fw-semibold">Damage Stock:</label>
+                                            <input type="number" class="form-control" id="editDamageStock"
+                                                wire:model="editDamageStock">
+                                            @error('editDamageStock')
                                             <span class="text-danger small">* {{ $message }}</span>
                                             @enderror
                                         </div>

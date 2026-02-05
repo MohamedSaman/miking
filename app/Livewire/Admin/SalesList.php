@@ -75,11 +75,13 @@ class SalesList extends Component
             'returns' => function ($q) {
                 $q->with('product');
             }
-        ])->where('sale_type', $this->getSaleType());
+        ]);
 
         if ($this->isStaff()) {
-            $query->where('user_id', Auth::id());
+            $query->where('user_id', Auth::id())
+                  ->where('sale_type', 'staff');
         }
+        // Admin can view any sale
 
         $this->selectedSale = $query->find($saleId);
 
@@ -89,10 +91,12 @@ class SalesList extends Component
 
     public function editSale($saleId)
     {
-        $query = Sale::with(['customer'])->where('sale_type', $this->getSaleType());
+        $query = Sale::with(['customer']);
         if ($this->isStaff()) {
-            $query->where('user_id', Auth::id());
+            $query->where('user_id', Auth::id())
+                  ->where('sale_type', 'staff');
         }
+        // Admin can edit any sale
         $sale = $query->find($saleId);
 
         if ($sale) {
@@ -112,10 +116,12 @@ class SalesList extends Component
     // Return Product Functionality
     public function returnSale($saleId)
     {
-        $query = Sale::with(['items.product', 'customer'])->where('sale_type', $this->getSaleType());
+        $query = Sale::with(['items.product', 'customer']);
         if ($this->isStaff()) {
-            $query->where('user_id', Auth::id());
+            $query->where('user_id', Auth::id())
+                  ->where('sale_type', 'staff');
         }
+        // Admin can return any sale
         $this->selectedSale = $query->find($saleId);
 
         if ($this->selectedSale) {
@@ -358,10 +364,12 @@ class SalesList extends Component
 
     public function deleteSale($saleId)
     {
-        $query = Sale::where('sale_type', $this->getSaleType());
+        $query = Sale::query();
         if ($this->isStaff()) {
-            $query->where('user_id', Auth::id());
+            $query->where('user_id', Auth::id())
+                  ->where('sale_type', 'staff');
         }
+        // Admin can delete any sale
         $this->selectedSale = $query->find($saleId);
         $this->showDeleteModal = true;
         $this->dispatch('showModal', 'deleteModal');
@@ -419,11 +427,13 @@ class SalesList extends Component
     {
         $query = Sale::with(['customer', 'items', 'returns' => function ($q) {
             $q->with('product');
-        }])->where('sale_type', $this->getSaleType());
+        }]);
 
         if ($this->isStaff()) {
-            $query->where('user_id', Auth::id());
+            $query->where('user_id', Auth::id())
+                  ->where('sale_type', 'staff');
         }
+        // Admin can download invoice for any sale
 
         $sale = $query->find($saleId);
 
@@ -485,13 +495,12 @@ class SalesList extends Component
     {
         $query = Sale::with(['customer', 'user', 'items', 'returns']);
 
-        // Filter by sale_type and user_id based on role
         if ($this->isStaff()) {
             // Staff sees only their own sales
             $query->where('user_id', Auth::id())
                 ->where('sale_type', 'staff');
         } else {
-            // Admin sees admin sales
+            // Admin sees only admin sales
             $query->where('sale_type', 'admin');
         }
 
@@ -502,6 +511,9 @@ class SalesList extends Component
                     ->orWhereHas('customer', function ($customerQuery) {
                         $customerQuery->where('name', 'like', '%' . $this->search . '%')
                             ->orWhere('phone', 'like', '%' . $this->search . '%');
+                    })
+                    ->orWhereHas('user', function ($userQuery) {
+                        $userQuery->where('name', 'like', '%' . $this->search . '%');
                     });
             });
         })
@@ -526,6 +538,7 @@ class SalesList extends Component
             $baseSales = Sale::where('sale_type', 'staff')->where('user_id', Auth::id());
             $todaySales = Sale::where('sale_type', 'staff')->where('user_id', Auth::id())->whereDate('created_at', today());
         } else {
+            // Admin sees only admin sales stats
             $baseSales = Sale::where('sale_type', 'admin');
             $todaySales = Sale::where('sale_type', 'admin')->whereDate('created_at', today());
         }
@@ -549,10 +562,12 @@ class SalesList extends Component
     public function markAsPaid($saleId)
     {
         try {
-            $query = Sale::where('sale_type', $this->getSaleType());
+            $query = Sale::query();
             if ($this->isStaff()) {
-                $query->where('user_id', Auth::id());
+                $query->where('user_id', Auth::id())
+                      ->where('sale_type', 'staff');
             }
+            // Admin can update any sale
             $sale = $query->find($saleId);
 
             if ($sale) {
@@ -572,10 +587,12 @@ class SalesList extends Component
     public function markAsPending($saleId)
     {
         try {
-            $query = Sale::where('sale_type', $this->getSaleType());
+            $query = Sale::query();
             if ($this->isStaff()) {
-                $query->where('user_id', Auth::id());
+                $query->where('user_id', Auth::id())
+                      ->where('sale_type', 'staff');
             }
+            // Admin can update any sale
             $sale = $query->find($saleId);
 
             if ($sale) {

@@ -4,12 +4,16 @@ namespace App\Livewire\Admin;
 
 use Livewire\Component;
 use App\Models\ReturnsProduct;
+use App\Models\StaffReturn;
+use App\Models\ProductStock;
+use App\Models\Sale;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Livewire\Concerns\WithDynamicLayout;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 #[Title("Product Return")]
 class ReturnList extends Component
@@ -24,6 +28,7 @@ class ReturnList extends Component
     public $showReceiptModal = false;
     public $currentReturnId = null;
     public $perPage = 10;
+    public $activeTab = 'returns';
 
     public function mount()
     {
@@ -54,6 +59,12 @@ class ReturnList extends Component
             });
         }
         $this->returnsCount = $query->count();
+    }
+
+    public function setActiveTab($tab)
+    {
+        $this->activeTab = $tab;
+        $this->resetPage();
     }
 
     public function updatedReturnSearch()
@@ -145,6 +156,8 @@ class ReturnList extends Component
             if ($productStock->sold_count >= $return->return_quantity) {
                 $productStock->sold_count += $return->return_quantity;
             }
+            // Sync total stock
+            $productStock->total_stock = $productStock->available_stock + $productStock->damage_stock;
             $productStock->save();
         }
     }
@@ -159,8 +172,10 @@ class ReturnList extends Component
         $this->dispatch('hideModal', 'receiptModal');
     }
 
+
     public function render()
     {
+        // Regular returns query
         $query = ReturnsProduct::with(['sale', 'product'])->orderByDesc('created_at');
 
         // Filter by user for staff

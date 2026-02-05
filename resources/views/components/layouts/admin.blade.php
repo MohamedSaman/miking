@@ -176,6 +176,27 @@
             font-size: 1.1rem !important;
         }
 
+        /* Live Timer Style */
+        .live-timer-container {
+            background: #ffffff;
+            padding: 4px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 110px;
+            height: 38px;
+        }
+        .live-timer-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #277dd9; /* orange-600 */
+            letter-spacing: 1px;
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
         /* Sidebar styles */
         .sidebar {
             width: 265px;
@@ -921,6 +942,11 @@
                                     <i class="bi bi-shop"></i> <span>POS Sales</span>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2" href="{{ route('admin.sales-distribution') }}">
+                                    <i class="bi bi-truck"></i> <span>Sales Distribution</span>
+                                </a>
+                            </li>
                             {{-- no need him  --}}
                             {{--
                             <li class="nav-item">
@@ -965,6 +991,41 @@
                                     <i class="bi bi-credit-card"></i> <span>Payment Approvals</span>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-bonus') ? 'active' : '' }}" href="{{ route('admin.staff-bonus') }}">
+                                    <i class="bi bi-gift"></i> <span>Staff Bonus</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-salary-management') ? 'active' : '' }}" href="{{ route('admin.staff-salary-management') }}">
+                                    <i class="bi bi-wallet2"></i> <span>Staff Salary</span>
+                                </a>
+                            </li>
+                            <!-- <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-allocation-list') ? 'active' : '' }}" href="{{ route('admin.staff-allocation-list') }}">
+                                    <i class="bi bi-list-check"></i> <span>Staff Allocation List</span>
+                                </a>
+                            </li> -->
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-return-requests') ? 'active' : '' }}" href="{{ route('admin.staff-return-requests') }}">
+                                    <i class="bi bi-arrow-return-left"></i> <span>Staff Return Requests</span>
+                                </a>
+                            </li>
+                            <!-- <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-attendance') ? 'active' : '' }}" href="{{ route('admin.staff-attendance') }}">
+                                    <i class="bi bi-calendar-check"></i> <span>Staff Attendance</span>
+                                </a>
+                            </li> -->
+                            <!-- <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-salary') ? 'active' : '' }}" href="{{ route('admin.staff-salary') }}">
+                                    <i class="bi bi-cash"></i> <span>Staff Salary (Calc)</span>
+                                </a>
+                            </li> -->
+                            <!-- <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.loan-management') ? 'active' : '' }}" href="{{ route('admin.loan-management') }}">
+                                    <i class="bi bi-bank"></i> <span>Loan Management</span>
+                                </a>
+                            </li> -->
                         </ul>
                     </div>
                 </li>
@@ -985,13 +1046,11 @@
                                     <i class="bi bi-card-list"></i> <span>List Quotation</span>
                                 </a>
                             </li>
-                            {{--
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('admin.Product-stock-details') }}">
-                                    <i class="bi bi-shield-lock"></i> <span>Product Stock</span>
+                                    <i class="bi bi-boxes"></i> <span>Stock Details</span>
                                 </a>
                             </li>
-                            --}}
                         </ul>
                     </div>
                 </li>
@@ -1029,7 +1088,12 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('admin.return-list') }}">
-                                    <i class="bi bi-list-check"></i> <span>List Customer Return</span>
+                                     <i class="bi bi-list-check"></i> <span>List Customer Return</span>
+                                 </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2" href="{{ route('admin.staff-customer-return') }}">
+                                    <i class="bi bi-person-badge"></i> <span> Staff Customer Return</span>
                                 </a>
                             </li>
 
@@ -1122,10 +1186,20 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link py-2" href="{{ route('admin.list-supplier-receipt') }}">
-                                    <i class="bi bi-clipboard-data"></i> <span>List Supplier Payment</span>
-                                </a>
-                            </li>
-                        </ul>
+                                     <i class="bi bi-clipboard-data"></i> <span>List Supplier Payment</span>
+                                 </a>
+                             </li>
+                             <!-- <li class="nav-item">
+                                 <a class="nav-link py-2" href="{{ route('admin.due-payments') }}">
+                                     <i class="bi bi-hourglass-split"></i> <span>Due Payments</span>
+                                 </a>
+                             </li>
+                             <li class="nav-item">
+                                 <a class="nav-link py-2" href="{{ route('admin.view-payments') }}">
+                                     <i class="bi bi-eye"></i> <span>View Payments</span>
+                                 </a>
+                             </li> -->
+                         </ul>
                     </div>
                 </li>
                 {{-- // people management --}}
@@ -1146,19 +1220,24 @@
                                     <i class="bi bi-person-lines-fill"></i> <span>List Customer</span>
                                 </a>
                             </li>
-                            <li class="nav-item">
+                            <!-- <li class="nav-item">
                                 <a class="nav-link py-2 " href="{{ route('admin.manage-staff') }}">
-                                    <i class="bi bi-person-badge"></i> <span>List Staff</span>
-                                </a>
-                            </li>
-                        </ul>
+                                     <i class="bi bi-person-badge"></i> <span>List Staff</span>
+                                 </a>
+                             </li>
+                             <li class="nav-item">
+                                 <a class="nav-link py-2" href="{{ route('admin.manage-admin') }}">
+                                     <i class="bi bi-person-check-fill"></i> <span>List Admin</span>
+                                 </a>
+                             </li> -->
+                         </ul>
                     </div>
                 </li>
-            {{--<li>
+                <li>
                     <a class="nav-link" href="{{ route('admin.store-billing') }}" target="_blank">
-                        <i class="bi bi-cash"></i> <span>POS</span>
+                        <i class="bi bi-cart-check"></i> <span>POS</span>
                     </a>
-                </li>--}}
+                </li>
                 <li>
                     <a class="nav-link" href="{{ route('admin.income') }}">
                         <i class="bi bi-file-earmark-bar-graph"></i> <span>Day Summary</span>
@@ -1197,6 +1276,11 @@
             <!-- Centered Company Name (hidden on small screens) -->
             <div class="flex-grow-1 d-none d-md-flex justify-content-center">
                 <h5 class="m-0 fw-bold" style="letter-spacing: -0.02em; color: #ffffff;">MI-KING</h5>
+            </div>
+
+            <!-- Live Timer -->
+            <div class="live-timer-container me-3 d-none d-lg-flex">
+                <span id="live-timer" class="live-timer-text">00:00:00</span>
             </div>
             @php
             use App\Models\CashInHand as CashModel;
@@ -1377,6 +1461,21 @@
     @livewireScripts
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Live Timer Functionality
+            function updateLiveTimer() {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                const timeString = `${hours}:${minutes}:${seconds}`;
+                const timerElement = document.getElementById('live-timer');
+                if (timerElement) {
+                    timerElement.textContent = timeString;
+                }
+            }
+            setInterval(updateLiveTimer, 1000);
+            updateLiveTimer();
+
             // Define all elements once
             const sidebarToggler = document.getElementById('sidebarToggler');
             const sidebar = document.querySelector('.sidebar');

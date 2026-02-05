@@ -42,9 +42,14 @@ class QuotationList extends Component
     public $searchTerms = [];
     public $showSearchResults = [];
     public $perPage = 10;
+    public $filterUser = '';
+    public $staffUsers = [];
 
     public function mount()
     {
+        if (!$this->isStaff()) {
+            $this->staffUsers = \App\Models\User::all();
+        }
         // initial count only; the paginated list is returned from render()
         $this->loadQuotations();
     }
@@ -486,6 +491,7 @@ class QuotationList extends Component
                     'discount_amount' => $totalCombinedDiscount,
                     'total_amount' => $this->grandTotal,
                     'payment_type' => 'full',
+                    'payment_method' => 'cash',
                     'payment_status' => 'pending',
                     'due_amount' => $this->grandTotal,
                     'notes' => $this->saleData['notes'],
@@ -527,10 +533,10 @@ class QuotationList extends Component
 
                 $this->loadQuotations();
                 $this->dispatch('refreshPage');
-                // close model using js
+                // close model and redirect to sales list
 
                 $this->dispatch('close-modal.create-sale-modal');
-                $this->js('window.location.reload();');
+                $this->js('setTimeout(function() { window.location.href = "' . route('admin.sales-list') . '"; }, 1000);');
             });
         } catch (\Exception $e) {
             $this->dispatch('show-error', 'Failed to create sale: ' . $e->getMessage());
@@ -593,6 +599,10 @@ class QuotationList extends Component
                     ->orWhere('customer_name', 'like', '%' . $this->search . '%')
                     ->orWhere('customer_phone', 'like', '%' . $this->search . '%');
             });
+        }
+
+        if ($this->filterUser) {
+            $query->where('created_by', $this->filterUser);
         }
 
         $quotations = $query->orderBy('created_at', 'desc')->paginate($this->perPage);

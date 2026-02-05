@@ -1,19 +1,39 @@
     <div class="login-container">
         <style>
-            .login-form-overlay { background: rgba(0,0,0,0.45); padding:28px; border-radius:14px; backdrop-filter: blur(5px); }
-            .separator-line { height:1px; background:rgba(255,255,255,0.08); margin:10px 0; border-radius:2px; }
-            .connect-section { text-align:center; padding:15px 0 6px; }
-            .connect-title { color:#fff; font-weight:600; margin-bottom:12px; }
-            .connect-links { display:flex; gap:18px; justify-content:center; align-items:center; }
-            .connect-icon { width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; color:#fff; font-size:22px; box-shadow:0 8px 24px rgba(0,0,0,0.35); text-decoration:none; }
-            .connect-icon.email { background:#e84b3c; }
-            .connect-icon.whatsapp { background:#25d366; }
-            .connect-icon i { font-size:22px; }
-            /* Make remember label and forgot link white */
-            .form-options .form-check-label { color: #fff !important; }
-            .forgot-link { color: #fff !important; text-decoration: none; }
+            .login-form-overlay { 
+                background: rgba(0, 0, 0, 0.25); 
+                padding: 35px; 
+                border-radius: 20px; 
+                backdrop-filter: blur(6px); 
+                box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+                border: 1px solid rgba(255,255,255,0.15);
+            }
+            .separator-line { height:1px; background:rgba(255,255,255,0.1); margin:20px 0; border-radius:2px; }
+            .connect-section { text-align:center; padding-top: 5px; }
+            .connect-title { color:rgba(255,255,255,0.8); font-size: 0.9rem; font-weight:500; margin-bottom:15px; }
+            .connect-links { display:flex; gap:15px; justify-content:center; align-items:center; }
+            .connect-icon { width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; color:#fff; font-size:18px; transition: all 0.3s ease; text-decoration:none; }
+            .connect-icon:hover { transform: scale(1.1); filter: brightness(1.1); }
+            .connect-icon.email { background:#e84b3c; box-shadow:0 4px 12px rgba(232, 75, 60, 0.3); }
+            .connect-icon.whatsapp { background:#25d366; box-shadow:0 4px 12px rgba(37, 211, 102, 0.3); }
+            .form-options .form-check-label { color: rgba(255,255,255,0.9) !important; font-size: 0.85rem; }
+            .forgot-link { color: rgba(255,255,255,0.9) !important; text-decoration: none; font-size: 0.85rem; }
             .forgot-link:hover { color: #fff !important; text-decoration: underline; }
-            @media (max-width:420px){ .connect-icon{width:52px;height:52px} }
+            .form-control { background: rgba(255,255,255,1); border: none; height: 50px; }
+            .form-control:focus { box-shadow: 0 0 0 3px rgba(44, 74, 147, 0.3); }
+            .developed-by {
+                position: absolute;
+                bottom: 20px;
+                width: 100%;
+                text-align: center;
+                color: rgba(255, 255, 255, 0.6);
+                font-size: 0.8rem;
+                font-weight: 500;
+                letter-spacing: 1px;
+                z-index: 2;
+                pointer-events: none;
+            }
+            @media (max-width:420px){ .login-form-overlay { padding: 25px; } }
         </style>
         <!-- Full-screen background image -->
         <div class="background-image"></div>
@@ -85,5 +105,10 @@
                     </div>
                 </div>
             </form>
+        </div>
+
+        <!-- Developed by Webxkey text -->
+        <div class="developed-by">
+            Developed by Webxkey
         </div>
     </div>

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\StaffPermission;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\ProductDetail;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use App\Livewire\Concerns\WithDynamicLayout;
@@ -58,10 +59,36 @@ class Settings extends Component
     public $editingCategoryId = null;
     public $deleteCategoryTypeId = null;
 
+    // Sales Bonus Management
+    public $bulkRetailCashBonusType = 'percentage';
+    public $bulkRetailCashBonusValue = 0;
+    public $bulkRetailCreditBonusType = 'percentage';
+    public $bulkRetailCreditBonusValue = 0;
+
+    public $bulkWholesaleCashBonusType = 'percentage';
+    public $bulkWholesaleCashBonusValue = 0;
+    public $bulkWholesaleCreditBonusType = 'percentage';
+    public $bulkWholesaleCreditBonusValue = 0;
+    
+    public $bonusSearch = '';
+    public $bonusProducts = [];
+    public $editingBonusProductId = null;
+    
+    public $editBonusRetailCash = 0;
+    public $editBonusRetailCashType = 'fixed';
+    public $editBonusRetailCredit = 0;
+    public $editBonusRetailCreditType = 'fixed';
+    public $editBonusWholesaleCash = 0;
+    public $editBonusWholesaleCashType = 'fixed';
+    public $editBonusWholesaleCredit = 0;
+    public $editBonusWholesaleCreditType = 'fixed';
+    public $showBonusModal = false;
+
     protected $listeners = [
         'deleteConfirmed' => 'deleteConfiguration', 
         'deleteExpenseConfirmed' => 'deleteExpense',
-        'deleteCategoryTypeConfirmed' => 'deleteCategoryType'
+        'deleteCategoryTypeConfirmed' => 'deleteCategoryType',
+        'applyBulkBonusConfirmed' => 'applyBulkBonus'
     ];
 
     protected $rules = [
@@ -86,6 +113,24 @@ class Settings extends Component
         $this->availablePermissions = StaffPermission::availablePermissions();
         $this->permissionCategories = StaffPermission::permissionCategories();
         $this->expenseDate = now()->format('Y-m-d');
+        
+        // Load bulk bonus settings from database
+        $this->loadBulkBonusSettings();
+    }
+
+    public function loadBulkBonusSettings()
+    {
+        $this->bulkRetailCashBonusType = Setting::where('key', 'bulk_retail_cash_bonus_type')->value('value') ?? 'percentage';
+        $this->bulkRetailCashBonusValue = Setting::where('key', 'bulk_retail_cash_bonus_value')->value('value') ?? 0;
+        
+        $this->bulkRetailCreditBonusType = Setting::where('key', 'bulk_retail_credit_bonus_type')->value('value') ?? 'percentage';
+        $this->bulkRetailCreditBonusValue = Setting::where('key', 'bulk_retail_credit_bonus_value')->value('value') ?? 0;
+        
+        $this->bulkWholesaleCashBonusType = Setting::where('key', 'bulk_wholesale_cash_bonus_type')->value('value') ?? 'percentage';
+        $this->bulkWholesaleCashBonusValue = Setting::where('key', 'bulk_wholesale_cash_bonus_value')->value('value') ?? 0;
+        
+        $this->bulkWholesaleCreditBonusType = Setting::where('key', 'bulk_wholesale_credit_bonus_type')->value('value') ?? 'percentage';
+        $this->bulkWholesaleCreditBonusValue = Setting::where('key', 'bulk_wholesale_credit_bonus_value')->value('value') ?? 0;
     }
 
     public function loadExpenseCategories()
@@ -491,6 +536,213 @@ class Settings extends Component
         } catch (\Exception $e) {
             $this->js("Swal.fire('Error!', 'Unable to delete category/type. Please try again.', 'error')");
         }
+    }
+
+    // Sales Bonus Management Methods
+    public function updatedBonusSearch()
+    {
+        if (empty($this->bonusSearch)) {
+            $this->bonusProducts = [];
+            return;
+        }
+
+        $this->bonusProducts = ProductDetail::where('name', 'like', '%' . $this->bonusSearch . '%')
+            ->orWhere('code', 'like', '%' . $this->bonusSearch . '%')
+            ->take(10)
+            ->get();
+    }
+
+    public function confirmBulkUpdate()
+    {
+        $this->dispatch('swal:confirm-bulk-update');
+    }
+
+    public function applyBulkBonus()
+    {
+        try {
+            $this->validate([
+                'bulkRetailCashBonusValue' => 'required|numeric|min:0',
+                'bulkRetailCreditBonusValue' => 'required|numeric|min:0',
+                'bulkWholesaleCashBonusValue' => 'required|numeric|min:0',
+                'bulkWholesaleCreditBonusValue' => 'required|numeric|min:0',
+            ]);
+
+            // Save these as defaults first
+            $this->saveBulkDefaults();
+
+            $products = ProductDetail::with('price')->get();
+            $count = 0;
+
+            foreach ($products as $product) {
+                $sellingPrice = $product->price->selling_price ?? 0;
+
+                // Retail Cash Bonus
+                if ($this->bulkRetailCashBonusType === 'percentage') {
+                    $product->retail_cash_bonus = ($sellingPrice * $this->bulkRetailCashBonusValue) / 100;
+                } else {
+                    $product->retail_cash_bonus = $this->bulkRetailCashBonusValue;
+                }
+
+                // Retail Credit Bonus
+                if ($this->bulkRetailCreditBonusType === 'percentage') {
+                    $product->retail_credit_bonus = ($sellingPrice * $this->bulkRetailCreditBonusValue) / 100;
+                } else {
+                    $product->retail_credit_bonus = $this->bulkRetailCreditBonusValue;
+                }
+
+                // Wholesale Cash Bonus
+                if ($this->bulkWholesaleCashBonusType === 'percentage') {
+                    $product->wholesale_cash_bonus = ($sellingPrice * $this->bulkWholesaleCashBonusValue) / 100;
+                } else {
+                    $product->wholesale_cash_bonus = $this->bulkWholesaleCashBonusValue;
+                }
+
+                // Wholesale Credit Bonus
+                if ($this->bulkWholesaleCreditBonusType === 'percentage') {
+                    $product->wholesale_credit_bonus = ($sellingPrice * $this->bulkWholesaleCreditBonusValue) / 100;
+                } else {
+                    $product->wholesale_credit_bonus = $this->bulkWholesaleCreditBonusValue;
+                }
+
+                $product->save();
+                $count++;
+            }
+
+            $this->js("Swal.fire('Success!', 'Sales bonus updated for {$count} products.', 'success')");
+            
+            // Re-run search if active
+            $this->updatedBonusSearch();
+
+        } catch (\Exception $e) {
+            $this->js("Swal.fire('Error!', 'Unable to apply bulk bonus. Please check values.', 'error')");
+        }
+    }
+
+    public function saveBulkDefaults()
+    {
+        $settings = [
+            'bulk_retail_cash_bonus_type' => $this->bulkRetailCashBonusType,
+            'bulk_retail_cash_bonus_value' => $this->bulkRetailCashBonusValue,
+            'bulk_retail_credit_bonus_type' => $this->bulkRetailCreditBonusType,
+            'bulk_retail_credit_bonus_value' => $this->bulkRetailCreditBonusValue,
+            'bulk_wholesale_cash_bonus_type' => $this->bulkWholesaleCashBonusType,
+            'bulk_wholesale_cash_bonus_value' => $this->bulkWholesaleCashBonusValue,
+            'bulk_wholesale_credit_bonus_type' => $this->bulkWholesaleCreditBonusType,
+            'bulk_wholesale_credit_bonus_value' => $this->bulkWholesaleCreditBonusValue,
+        ];
+
+        foreach ($settings as $key => $value) {
+            Setting::updateOrCreate(
+                ['key' => $key],
+                ['value' => $value, 'date' => now()]
+            );
+        }
+        
+        $this->loadSettings(); // Refresh general settings list if visible
+    }
+
+    public function updateBonusDefaults()
+    {
+        try {
+            $this->validate([
+                'bulkRetailCashBonusValue' => 'required|numeric|min:0',
+                'bulkRetailCreditBonusValue' => 'required|numeric|min:0',
+                'bulkWholesaleCashBonusValue' => 'required|numeric|min:0',
+                'bulkWholesaleCreditBonusValue' => 'required|numeric|min:0',
+            ]);
+
+            $this->saveBulkDefaults();
+            $this->js("Swal.fire('Success!', 'Bonus defaults updated successfully.', 'success')");
+        } catch (\Exception $e) {
+            $this->js("Swal.fire('Error!', 'Unable to update defaults.', 'error')");
+        }
+    }
+
+    public function editProductBonus($id)
+    {
+        $product = ProductDetail::findOrFail($id);
+        $this->editingBonusProductId = $id;
+        $this->editBonusRetailCash = $product->retail_cash_bonus;
+        $this->editBonusRetailCredit = $product->retail_credit_bonus;
+        $this->editBonusWholesaleCash = $product->wholesale_cash_bonus;
+        $this->editBonusWholesaleCredit = $product->wholesale_credit_bonus;
+        
+        // Default to fixed when opening, as we don't store the type in DB
+        $this->editBonusRetailCashType = 'fixed';
+        $this->editBonusRetailCreditType = 'fixed';
+        $this->editBonusWholesaleCashType = 'fixed';
+        $this->editBonusWholesaleCreditType = 'fixed';
+        
+        $this->showBonusModal = true;
+    }
+
+    public function updateProductBonus()
+    {
+        try {
+            $this->validate([
+                'editBonusRetailCash' => 'required|numeric|min:0',
+                'editBonusRetailCredit' => 'required|numeric|min:0',
+                'editBonusWholesaleCash' => 'required|numeric|min:0',
+                'editBonusWholesaleCredit' => 'required|numeric|min:0',
+            ]);
+
+            $product = ProductDetail::with('price')->findOrFail($this->editingBonusProductId);
+            $sellingPrice = $product->price->selling_price ?? 0;
+
+            // Retail Cash
+            if ($this->editBonusRetailCashType === 'percentage') {
+                $product->retail_cash_bonus = ($sellingPrice * $this->editBonusRetailCash) / 100;
+            } else {
+                $product->retail_cash_bonus = $this->editBonusRetailCash;
+            }
+
+            // Retail Credit
+            if ($this->editBonusRetailCreditType === 'percentage') {
+                $product->retail_credit_bonus = ($sellingPrice * $this->editBonusRetailCredit) / 100;
+            } else {
+                $product->retail_credit_bonus = $this->editBonusRetailCredit;
+            }
+
+            // Wholesale Cash
+            if ($this->editBonusWholesaleCashType === 'percentage') {
+                $product->wholesale_cash_bonus = ($sellingPrice * $this->editBonusWholesaleCash) / 100;
+            } else {
+                $product->wholesale_cash_bonus = $this->editBonusWholesaleCash;
+            }
+
+            // Wholesale Credit
+            if ($this->editBonusWholesaleCreditType === 'percentage') {
+                $product->wholesale_credit_bonus = ($sellingPrice * $this->editBonusWholesaleCredit) / 100;
+            } else {
+                $product->wholesale_credit_bonus = $this->editBonusWholesaleCredit;
+            }
+
+            $product->save();
+
+            $this->closeBonusModal();
+            
+            // Update the list
+            $this->updatedBonusSearch();
+
+            $this->js("Swal.fire('Success!', 'Product bonus updated successfully.', 'success')");
+        } catch (\Exception $e) {
+            $this->js("Swal.fire('Error!', 'Unable to update product bonus. Error: {$e->getMessage()}', 'error')");
+        }
+    }
+
+    public function closeBonusModal()
+    {
+        $this->showBonusModal = false;
+        $this->editingBonusProductId = null;
+        $this->editBonusRetailCash = 0;
+        $this->editBonusRetailCredit = 0;
+        $this->editBonusWholesaleCash = 0;
+        $this->editBonusWholesaleCredit = 0;
+        
+        $this->editBonusRetailCashType = 'fixed';
+        $this->editBonusRetailCreditType = 'fixed';
+        $this->editBonusWholesaleCashType = 'fixed';
+        $this->editBonusWholesaleCreditType = 'fixed';
     }
 
     public function render()

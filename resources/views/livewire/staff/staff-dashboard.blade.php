@@ -544,16 +544,17 @@
         </style>
     @endpush
 
-    <!-- Navigation Tabs -->
-    <div class="content-tabs">
-        <div class="content-tab active" data-tab="overview">Overview</div>
-        <div class="content-tab" data-tab="analytics">Analytics</div>
-        <div class="content-tab" data-tab="reports">Reports</div>
-        <div class="content-tab" data-tab="notifications">Notifications</div>
+    <!-- Page Header -->
+    <div class="mb-4">
+        <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-speedometer2 text-primary me-2" style="font-size: 2rem;"></i>
+            <h3 class="fw-bold mb-0">Overview</h3>
+        </div>
+        <p class="text-muted mb-0">Get a complete view of your product performance and stock activity.</p>
     </div>
 
     <!-- Overview Content -->
-    <div id="overview" class="tab-content active">
+    <div>
         <!-- Stats Cards Row -->
         <div class="row g-2 g-md-3 mb-3 mb-md-4">
             <!-- Total Revenue Card -->
@@ -931,27 +932,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Analytics Content -->
-    <div id="analytics" class="tab-content">
-        <div class="alert alert-info">
-            Analytics content will appear here when this tab is selected.
-        </div>
-    </div>
-
-    <!-- Reports Content -->
-    <div id="reports" class="tab-content">
-        <div class="alert alert-info">
-            Reports content will appear here when this tab is selected.
-        </div>
-    </div>
-
-    <!-- Notifications Content -->
-    <div id="notifications" class="tab-content">
-        <div class="alert alert-info">
-            Notifications content will appear here when this tab is selected.
-        </div>
-    </div>
 </div>
 
 <script>
@@ -1021,22 +1001,6 @@
                 }
             }
         });
-
-        // Tab switching functionality
-        const tabs = document.querySelectorAll('.content-tab');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                tabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                });
-
-                const tabId = this.getAttribute('data-tab');
-                document.getElementById(tabId).classList.add('active');
-            });
-        });
         
         // Handle window resize for the chart
         window.addEventListener('resize', function() {
@@ -1047,3 +1011,4 @@
         });
     });
 </script>
+</div>

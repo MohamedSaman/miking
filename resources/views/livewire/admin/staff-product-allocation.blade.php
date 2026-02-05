@@ -1,7 +1,7 @@
 <div class="container-fluid py-3">
     {{-- Top Header with Staff Selection --}}
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0 fw-bold">Billing System</h5>
+        <h5 class="mb-0 fw-bold">Staff Product Allocation</h5>
         <div style="width: 280px;">
             <select class="form-select form-select-sm" wire:model.live="staffId">
                 <option value="">-- Choose Staff --</option>

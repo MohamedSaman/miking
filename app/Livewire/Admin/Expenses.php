@@ -69,8 +69,17 @@ class Expenses extends Component
     public function loadExpenses()
     {
         // Daily and Monthly lists
-        $this->dailyExpenses = Expense::where('expense_type', 'daily')->latest()->get();
-        $this->monthlyExpenses = Expense::where('expense_type', 'monthly')->latest()->get();
+        $queryDaily = Expense::where('expense_type', 'daily');
+        $queryMonthly = Expense::where('expense_type', 'monthly');
+        
+        // For staff, only show their own expenses
+        if ($this->isStaff()) {
+            $queryDaily->where('user_id', Auth::id());
+            $queryMonthly->where('user_id', Auth::id());
+        }
+        
+        $this->dailyExpenses = $queryDaily->latest()->get();
+        $this->monthlyExpenses = $queryMonthly->latest()->get();
 
         // Totals
         $this->todayTotal = Expense::whereDate('date', Carbon::today())->sum('amount');
@@ -93,6 +102,7 @@ class Expenses extends Component
             'description' => $this->description,
             'date' => now(),
             'expense_type' => 'daily',
+            'user_id' => Auth::id(),
         ]);
 
         // Update cash in hands - subtract expense amount
@@ -145,6 +155,7 @@ class Expenses extends Component
             'status' => $this->status,
             'description' => $this->description,
             'expense_type' => 'monthly',
+            'user_id' => Auth::id(),
         ]);
 
         // Update cash in hands - subtract expense amount

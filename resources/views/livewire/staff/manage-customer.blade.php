@@ -3,14 +3,14 @@
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
             <h3 class="fw-bold text-dark mb-2">
-                <i class="bi bi-people-fill text-success me-2"></i> My Customers
+                <i class="bi bi-people-fill text-success me-2"></i> Customers
             </h3>
             <p class="text-muted mb-0">Manage your customer information efficiently</p>
         </div>
         <div>
-            <a href="{{ route('staff.billing') }}" class="btn btn-primary">
+            <button wire:click="openCreateModal" class="btn btn-primary">
                 <i class="bi bi-plus-lg me-2"></i> Add New Customer
-            </a>
+            </button>
         </div>
     </div>
 
@@ -35,8 +35,8 @@
                 <span class="text-sm text-muted">entries</span>
             </div>
         </div>
-        <div class="card-body p-0 overflow-auto">
-            <div class="table-responsive">
+        <div class="card-body p-0" style="overflow: visible;">
+            <div class="table-responsive" style="overflow: visible;">
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
                         <tr>
@@ -53,7 +53,7 @@
                     <tbody>
                         @if($customers->count() > 0)
                             @foreach($customers as $customer)
-                                <tr>
+                                <tr wire:key="customer-{{ $customer->id }}">
                                     <td class="ps-4">{{ ($customers->currentPage() - 1) * $customers->perPage() + $loop->iteration }}</td>
                                     <td>
                                         <span class="fw-medium text-dark">{{ $customer->name }}</span>
@@ -79,43 +79,32 @@
                                     <td>
                                         <small class="text-muted">{{ $customer->created_at->format('d/m/Y') }}</small>
                                     </td>
-                                    <td class="text-end pe-2">
+                                    <td class="text-end pe-4">
                                         <div class="dropdown">
-                                            <button class="btn btn-outline-secondary dropdown-toggle"
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
                                                     type="button"
+                                                    id="actionBtn-{{ $customer->id }}"
                                                     data-bs-toggle="dropdown"
                                                     aria-expanded="false">
                                                 <i class="bi bi-gear-fill"></i> Actions
                                             </button>
 
-                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="actionBtn-{{ $customer->id }}">
                                                 <!-- Edit Customer -->
                                                 <li>
-                                                    <button class="dropdown-item"
+                                                    <button class="dropdown-item py-2"
                                                             wire:click="editCustomer({{ $customer->id }})"
-                                                            wire:loading.attr="disabled"
-                                                            title="Edit Customer">
-                                                        <span wire:loading wire:target="editCustomer({{ $customer->id }})">
-                                                            <i class="spinner-border spinner-border-sm me-2"></i> Loading...
-                                                        </span>
-                                                        <span wire:loading.remove wire:target="editCustomer({{ $customer->id }})">
-                                                            <i class="bi bi-pencil text-primary me-2"></i> Edit
-                                                        </span>
+                                                            wire:loading.attr="disabled">
+                                                        <i class="bi bi-pencil text-primary me-2"></i> Edit
                                                     </button>
                                                 </li>
 
                                                 <!-- Delete Customer -->
                                                 <li>
-                                                    <button class="dropdown-item"
+                                                    <button class="dropdown-item py-2"
                                                             wire:click="confirmDelete({{ $customer->id }})"
-                                                            wire:loading.attr="disabled"
-                                                            title="Delete Customer">
-                                                        <span wire:loading wire:target="confirmDelete({{ $customer->id }})">
-                                                            <i class="spinner-border spinner-border-sm me-2"></i> Loading...
-                                                        </span>
-                                                        <span wire:loading.remove wire:target="confirmDelete({{ $customer->id }})">
-                                                            <i class="bi bi-trash text-danger me-2"></i> Delete
-                                                        </span>
+                                                            wire:loading.attr="disabled">
+                                                        <i class="bi bi-trash text-danger me-2"></i> Delete
                                                     </button>
                                                 </li>
                                             </ul>
@@ -141,6 +130,75 @@
             </div>
         </div>
     </div>
+
+    <!-- Create Customer Modal -->
+    @if($showCreateModal)
+        <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); display: block;">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-plus-circle me-2"></i> Add New Customer
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" 
+                                wire:click="$set('showCreateModal', false)"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label fw-medium">Customer Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" 
+                                       wire:model="newCustomerData.name" placeholder="Enter customer name">
+                                @error('newCustomerData.name') <small class="text-danger d-block mt-1">{{ $message }}</small> @enderror
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Phone <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" 
+                                       wire:model="newCustomerData.phone" placeholder="Enter phone number">
+                                @error('newCustomerData.phone') <small class="text-danger d-block mt-1">{{ $message }}</small> @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Email</label>
+                                <input type="email" class="form-control" 
+                                       wire:model="newCustomerData.email" placeholder="Enter email (optional)">
+                                @error('newCustomerData.email') <small class="text-danger d-block mt-1">{{ $message }}</small> @enderror
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Type <span class="text-danger">*</span></label>
+                                <select class="form-select" wire:model="newCustomerData.type">
+                                    <option value="retail">Retail</option>
+                                    <option value="wholesale">Wholesale</option>
+                                </select>
+                                @error('newCustomerData.type') <small class="text-danger d-block mt-1">{{ $message }}</small> @enderror
+                            </div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label fw-medium">Address</label>
+                            <textarea class="form-control" wire:model="newCustomerData.address" 
+                                      rows="2" placeholder="Enter address (optional)"></textarea>
+                            @error('newCustomerData.address') <small class="text-danger d-block mt-1">{{ $message }}</small> @enderror
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" 
+                                wire:click="$set('showCreateModal', false)">
+                            <i class="bi bi-x-circle me-1"></i> Cancel
+                        </button>
+                        <button type="button" class="btn btn-success" wire:click="createCustomer">
+                            <i class="bi bi-check-circle me-1"></i> Create Customer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <!-- Edit Modal -->
     @if($showEditModal)
@@ -243,3 +301,32 @@
         </div>
     @endif
 </div>
+@push('scripts')
+<script>
+    document.addEventListener('livewire:initialized', () => {
+        // Handle success messages
+        Livewire.on('show-success', (event) => {
+            const message = Array.isArray(event) ? event[0] : (typeof event === 'object' ? event.message : event);
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: message,
+                confirmButtonColor: '#198754',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        });
+
+        // Handle error messages
+        Livewire.on('show-error', (event) => {
+            const message = Array.isArray(event) ? event[0] : (typeof event === 'object' ? event.message : event);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: message,
+                confirmButtonColor: '#dc3545'
+            });
+        });
+    });
+</script>
+@endpush

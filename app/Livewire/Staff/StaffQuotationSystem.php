@@ -42,6 +42,7 @@ class StaffQuotationSystem extends Component
 
     // Quotation Properties
     public $notes = '';
+    public $saleType = 'retail'; // retail or wholesale
     public $termsConditions = "1. This quotation is valid for 30 days.\n2. Prices are subject to change.";
 
     // Discount Properties
@@ -70,12 +71,23 @@ class StaffQuotationSystem extends Component
     {
         $this->validUntil = now()->addDays(30)->format('Y-m-d');
         $this->loadCustomers();
+        
+        // Default to Walking Customer (ID 1) if available
+        $walkingCustomer = Customer::where('name', 'Walking Customer')->first();
+        if ($walkingCustomer) {
+            $this->customerId = $walkingCustomer->id;
+            $this->selectedCustomer = $walkingCustomer;
+        }
     }
 
     // Load customers for dropdown - filtered by staff's user_id
     public function loadCustomers()
     {
-        $this->customers = Customer::where('user_id', Auth::id())
+        $this->customers = Customer::where(function($query) {
+                $query->where('user_id', Auth::id())
+                      ->orWhereNull('user_id')
+                      ->orWhere('name', 'Walking Customer');
+            })
             ->orderBy('name')
             ->get();
     }
@@ -116,6 +128,24 @@ class StaffQuotationSystem extends Component
     public function getGrandTotalProperty()
     {
         return $this->subtotalAfterItemDiscounts - $this->additionalDiscountAmount;
+    }
+
+    // When sale type changes, update prices in cart
+    public function updatedSaleType($value)
+    {
+        $this->cart = collect($this->cart)->map(function ($item) use ($value) {
+            // Check if we have both prices stored
+            if (isset($item['wholesale_price']) && isset($item['retail_price'])) {
+                if ($value === 'wholesale' && $item['wholesale_price'] > 0) {
+                    $item['price'] = $item['wholesale_price'];
+                } else {
+                    $item['price'] = $item['retail_price'];
+                }
+                // Recalculate total
+                $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
+            }
+            return $item;
+        })->toArray();
     }
 
     // When customer is selected from dropdown
@@ -215,12 +245,19 @@ class StaffQuotationSystem extends Component
                 ->take(10)
                 ->get()
                 ->map(function ($product) {
+                    // Fetch full product with price relation for wholesale/retail prices
+                    $fullProduct = ProductDetail::with('price')->find($product->id);
+                    $retailPrice = $fullProduct->price->retail_price ?? $product->price;
+                    $wholesalePrice = $fullProduct->price->wholesale_price ?? 0;
+
                     return [
                         'id' => $product->id,
                         'name' => $product->name,
                         'code' => $product->code,
                         'model' => $product->model,
                         'price' => $product->price,
+                        'retail_price' => $retailPrice,
+                        'wholesale_price' => $wholesalePrice,
                         'stock' => ($product->quantity - $product->sold_quantity),
                         'image' => $product->image
                     ];
@@ -246,17 +283,28 @@ class StaffQuotationSystem extends Component
             })->toArray();
         } else {
             // Add new item - use discount_price if available, otherwise 0
-            $discountPrice = ProductDetail::find($product['id'])->price->discount_price ?? 0;
+            $productDetail = ProductDetail::with('price')->find($product['id']);
+            $discountPrice = $productDetail->price->discount_price ?? 0;
+            
+            // Determine price based on current sale type
+            $retailPrice = $product['retail_price'] ?? $product['price'];
+            $wholesalePrice = $product['wholesale_price'] ?? 0;
+            
+            $finalPrice = ($this->saleType === 'wholesale' && $wholesalePrice > 0) 
+                          ? $wholesalePrice 
+                          : $retailPrice;
 
             $this->cart[] = [
                 'id' => $product['id'],
                 'name' => $product['name'],
                 'code' => $product['code'],
                 'model' => $product['model'],
-                'price' => $product['price'], // Unit price from selling_price
+                'price' => $finalPrice,
+                'retail_price' => $retailPrice,
+                'wholesale_price' => $wholesalePrice,
                 'quantity' => 1,
-                'discount' => $discountPrice, // Pre-fill with discount_price from database
-                'total' => $product['price'] - $discountPrice // Initial total with discount applied
+                'discount' => $discountPrice,
+                'total' => $finalPrice - $discountPrice
             ];
         }
 
@@ -454,20 +502,10 @@ class StaffQuotationSystem extends Component
                 'terms_conditions' => $this->termsConditions,
                 'notes' => $this->notes,
                 'status' => 'draft',
+                'sale_type' => $this->saleType,
                 'created_by' => Auth::id(),
                 'user_id' => Auth::id(),
             ]);
-
-            // Update sold_quantity in staff_products for each item in the quotation
-            foreach ($this->cart as $cartItem) {
-                $staffProduct = \App\Models\StaffProduct::where('staff_id', Auth::id())
-                    ->where('product_id', $cartItem['id'])
-                    ->first();
-
-                if ($staffProduct) {
-                    $staffProduct->increment('sold_quantity', $cartItem['quantity']);
-                }
-            }
 
             DB::commit();
 
@@ -532,14 +570,13 @@ class StaffQuotationSystem extends Component
         $this->showQuotationModal = false;
         $this->lastQuotationId = null;
         $this->createdQuotation = null;
+        $this->js('window.location.reload()');
     }
 
     // Continue creating new quotation (reset everything)
     public function createNewQuotation()
     {
-        $this->resetExcept(['customers', 'validUntil']);
-        $this->validUntil = now()->addDays(30)->format('Y-m-d');
-        $this->showQuotationModal = false;
+        $this->js('window.location.reload()');
     }
 
     public function render()

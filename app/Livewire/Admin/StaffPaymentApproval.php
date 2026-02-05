@@ -24,6 +24,10 @@ class StaffPaymentApproval extends Component
     public $filterStatus = 'pending'; // pending, approved, rejected
     public $filterPaymentMethod = 'all'; // all, cash, cheque, bank_transfer, credit
     public $perPage = 15;
+    
+    // Invoice Modal Properties
+    public $showInvoiceModal = false;
+    public $selectedPayment = null;
 
     public function mount()
     {
@@ -33,8 +37,12 @@ class StaffPaymentApproval extends Component
     public function getPaymentsProperty()
     {
         // Get all payments with pending, approved, rejected statuses
-        $query = Payment::with(['sale.customer', 'sale.user'])
-            ->where('sale_id', '!=', null);
+        // Include payments with sale_id OR payments with allocations (from AddCustomerReceipt)
+        $query = Payment::with(['sale.customer', 'sale.user', 'customer', 'allocations'])
+            ->where(function ($q) {
+                $q->whereNotNull('sale_id')
+                  ->orWhereHas('allocations'); // Include payments with allocations
+            });
 
         // Filter by status
         if ($this->filterStatus !== 'all') {
@@ -56,6 +64,9 @@ class StaffPaymentApproval extends Component
                     })
                     ->orWhereHas('sale.customer', function ($q) {
                         $q->where('name', 'like', '%' . $this->searchTerm . '%');
+                    })
+                    ->orWhereHas('customer', function ($q) {
+                        $q->where('name', 'like', '%' . $this->searchTerm . '%');
                     });
             });
         }
@@ -65,10 +76,17 @@ class StaffPaymentApproval extends Component
 
     private function updateCounts()
     {
-        // Get counts
-        $this->pendingCount = Payment::where('status', 'pending')->where('sale_id', '!=', null)->count();
-        $this->approvedCount = Payment::where('status', 'approved')->where('sale_id', '!=', null)->count();
-        $this->rejectedCount = Payment::where('status', 'rejected')->where('sale_id', '!=', null)->count();
+        // Get counts - include payments with sale_id OR allocations
+        $baseQuery = function () {
+            return Payment::where(function ($q) {
+                $q->whereNotNull('sale_id')
+                  ->orWhereHas('allocations');
+            });
+        };
+        
+        $this->pendingCount = $baseQuery()->where('status', 'pending')->count();
+        $this->approvedCount = $baseQuery()->where('status', 'approved')->count();
+        $this->rejectedCount = $baseQuery()->where('status', 'rejected')->count();
     }
 
     public function updatedSearchTerm()
@@ -100,6 +118,8 @@ class StaffPaymentApproval extends Component
             DB::beginTransaction();
 
             $payment = Payment::findOrFail($paymentId);
+            
+            // Simply update payment status - sale's due_amount was already reduced when staff made the payment
             $payment->update([
                 'status' => 'approved',
                 'is_completed' => true,
@@ -112,21 +132,12 @@ class StaffPaymentApproval extends Component
                 ]);
             }
 
-            // Update sale payment status
-            if ($payment->sale) {
-                $totalPaid = Payment::where('sale_id', $payment->sale_id)
-                    ->where('status', 'approved')
-                    ->sum('amount');
-
-                $sale = $payment->sale;
-                if ($totalPaid >= $sale->total_amount) {
-                    $sale->update(['payment_status' => 'paid']);
-                } else {
-                    $sale->update(['payment_status' => 'partial']);
-                }
-            }
-
             DB::commit();
+
+            // Calculate and record staff bonuses
+            if ($payment->sale) {
+                \App\Services\StaffBonusService::calculateBonusesForSale($payment->sale);
+            }
 
             $this->js("Swal.fire('success', 'Payment approved successfully!', 'success')");
             $this->updateCounts();
@@ -143,6 +154,59 @@ class StaffPaymentApproval extends Component
             DB::beginTransaction();
 
             $payment = Payment::findOrFail($paymentId);
+            
+            // Check if this payment has allocations (from AddCustomerReceipt)
+            $allocations = DB::table('payment_allocations')
+                ->where('payment_id', $paymentId)
+                ->get();
+
+            if ($allocations->count() > 0) {
+                // Restore due_amount for each allocated sale
+                foreach ($allocations as $allocation) {
+                    $sale = \App\Models\Sale::find($allocation->sale_id);
+                    if ($sale) {
+                        $newDueAmount = $sale->due_amount + $allocation->allocated_amount;
+                        
+                        // Determine new payment status
+                        $paymentStatus = 'pending';
+                        if ($newDueAmount >= $sale->total_amount) {
+                            $paymentStatus = 'pending';
+                        } elseif ($newDueAmount > 0) {
+                            $paymentStatus = 'partial';
+                        }
+                        
+                        $sale->update([
+                            'due_amount' => $newDueAmount,
+                            'payment_status' => $paymentStatus,
+                            'notes' => ($sale->notes ? $sale->notes . "\n" : '') . 
+                                "Payment of Rs. " . number_format($allocation->allocated_amount, 2) . " rejected on " . now()->format('Y-m-d H:i') . ".",
+                        ]);
+                    }
+                }
+                
+                // Delete the allocations since payment is rejected
+                DB::table('payment_allocations')->where('payment_id', $paymentId)->delete();
+            } elseif ($payment->sale) {
+                // Handle direct sale payments - restore due_amount
+                $sale = $payment->sale;
+                $newDueAmount = $sale->due_amount + $payment->amount;
+                
+                // Determine new payment status
+                $paymentStatus = 'pending';
+                if ($newDueAmount >= $sale->total_amount) {
+                    $paymentStatus = 'pending';
+                } elseif ($newDueAmount > 0) {
+                    $paymentStatus = 'partial';
+                }
+                
+                $sale->update([
+                    'due_amount' => $newDueAmount,
+                    'payment_status' => $paymentStatus,
+                    'notes' => ($sale->notes ? $sale->notes . "\n" : '') . 
+                        "Payment of Rs. " . number_format($payment->amount, 2) . " rejected on " . now()->format('Y-m-d H:i') . ".",
+                ]);
+            }
+            
             $payment->update([
                 'status' => 'rejected',
                 'is_completed' => false,
@@ -186,6 +250,31 @@ class StaffPaymentApproval extends Component
             'paid' => ['class' => 'bg-success', 'text' => 'Paid'],
             default => ['class' => 'bg-secondary', 'text' => 'Unknown']
         };
+    }
+
+    public function viewInvoice($paymentId)
+    {
+        try {
+            $this->selectedPayment = Payment::with([
+                'sale.customer',
+                'sale.user',
+                'sale.items',
+                'customer',
+                'allocations',
+                'creator'
+            ])->findOrFail($paymentId);
+            
+            $this->showInvoiceModal = true;
+        } catch (\Exception $e) {
+            Log::error('Error loading invoice details: ' . $e->getMessage());
+            $this->js("Swal.fire('error', 'Failed to load invoice details: " . $e->getMessage() . "', 'error')");
+        }
+    }
+
+    public function closeInvoiceModal()
+    {
+        $this->showInvoiceModal = false;
+        $this->selectedPayment = null;
     }
 
     public function render()

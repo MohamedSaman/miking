@@ -11,6 +11,13 @@
         <!-- Scripts -->
         <style>
             /* Login page styling */
+            body, html {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                overflow: hidden;
+            }
+
             .login-container {
                 height: 100vh;
                 width: 100vw;
@@ -27,21 +34,23 @@
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background-image: url('{{ asset('/images/bgproduct.png') }}');
+                background-image: url('{{ asset('/images/by.png') }}');
                 background-size: cover;
                 background-position: center;
                 z-index: 0;
             }
 
             .login-form-overlay {
-                background: rgba(255, 255, 255, 0.308);
-                backdrop-filter: blur(10px);
-                border-radius: 10px;
-                padding: 30px;
+                background: rgba(0, 0, 0, 0.25);
+                backdrop-filter: blur(6px) saturate(180%);
+                -webkit-backdrop-filter: blur(6px) saturate(180%);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 20px;
+                padding: 40px;
                 width: 100%;
-                max-width: 400px;
+                max-width: 420px;
                 z-index: 1;
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
             }
 
             .user-icon-container {
@@ -51,15 +60,17 @@
             }
 
             .user-icon-container i {
-                font-size: 3rem;
-                color: #304b8a;
-                background: #f0f0f0;
+                font-size: 3.5rem;
+                color: #ffffff;
+                background: #2c4a93;
                 border-radius: 50%;
-                width: 70px;
-                height: 70px;
+                width: 85px;
+                height: 85px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                border: 4px solid #ffffff;
             }
 
             .form-group {
@@ -104,11 +115,21 @@
             .login-btn {
                 width: 100%;
                 border-radius: 25px;
-                padding: 10px;
-                background-color: #304b8a;
+                padding: 12px;
+                background: linear-gradient(135deg, #2c4a93 0%, #1e3670 100%);
                 border: none;
+                color: white;
                 font-weight: 600;
                 margin-bottom: 20px;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(44, 74, 147, 0.3);
+            }
+
+            .login-btn:hover {
+                background: linear-gradient(135deg, #375bb4 0%, #2c4a93 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 6px 20px rgba(44, 74, 147, 0.4);
+                color: white;
             }
 
             .divider {

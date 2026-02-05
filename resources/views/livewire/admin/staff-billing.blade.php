@@ -48,6 +48,20 @@
                                 </button>
                             </div>
                         </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold small text-muted">Sale Type</label>
+                                <select class="form-select" wire:model.live="customerTypeSale">
+                                    <option value="retail">Retail Sale</option>
+                                    <option value="wholesale">Wholesale Sale</option>
+                                </select>
+                                <div class="form-text small">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Determines price & bonus rates
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -21,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Increase execution time for large operations
+        set_time_limit(0);
+
         // Register custom Blade directive for permission checking
         Blade::if('permission', function ($permission) {
             if (!auth()->check()) {

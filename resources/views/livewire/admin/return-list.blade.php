@@ -9,7 +9,8 @@
         </div>
     </div>
 
-    <!-- Returns Table -->
+
+    <div>
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
@@ -122,6 +123,8 @@
             @endif
         </div>
     </div>
+    </div><!-- End Direct Returns Table -->
+
     
 
     <!-- Receipt Modal (Bill Style) -->
@@ -278,6 +281,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- Toast Container -->
     <div class="toast-container position-fixed top-0 end-0 p-3">
