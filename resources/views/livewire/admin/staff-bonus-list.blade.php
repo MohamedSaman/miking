@@ -3,9 +3,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-dark mb-2">
-                <i class="bi bi-gift text-success me-2"></i> Staff Bonus Management
+                <i class="bi bi-gift text-success me-2"></i> Staff Commission Management
             </h3>
-            <p class="text-muted mb-0">Track and manage staff sales bonuses by sale type and payment method</p>
+            <p class="text-muted mb-0">Track and manage staff sales commissions by payment method</p>
         </div>
     </div>
 
@@ -18,7 +18,7 @@
                         <i class="bi bi-cash-stack fs-3"></i>
                     </div>
                     <h4 class="fw-bold text-primary mb-1">Rs.{{ number_format($totalStats->total ?? 0, 2) }}</h4>
-                    <small class="text-muted">Total Bonus</small>
+                    <small class="text-muted">Total Commission</small>
                 </div>
             </div>
         </div>
@@ -26,10 +26,10 @@
             <div class="card border-0 shadow-sm h-100 bg-success bg-opacity-10">
                 <div class="card-body text-center">
                     <div class="text-success mb-2">
-                        <i class="bi bi-box-seam fs-3"></i>
+                        <i class="bi bi-cash-stack fs-3"></i>
                     </div>
-                    <h5 class="fw-bold text-success mb-1">Rs.{{ number_format($totalStats->wholesale_cash ?? 0, 2) }}</h5>
-                    <small class="text-muted">Wholesale Cash</small>
+                    <h5 class="fw-bold text-success mb-1">Rs.{{ number_format($totalStats->cash_commission ?? 0, 2) }}</h5>
+                    <small class="text-muted">Cash Sales</small>
                 </div>
             </div>
         </div>
@@ -39,30 +39,8 @@
                     <div class="text-info mb-2">
                         <i class="bi bi-credit-card fs-3"></i>
                     </div>
-                    <h5 class="fw-bold text-info mb-1">Rs.{{ number_format($totalStats->wholesale_credit ?? 0, 2) }}</h5>
-                    <small class="text-muted">Wholesale Credit</small>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="card border-0 shadow-sm h-100 bg-warning bg-opacity-10">
-                <div class="card-body text-center">
-                    <div class="text-warning mb-2">
-                        <i class="bi bi-shop fs-3"></i>
-                    </div>
-                    <h5 class="fw-bold text-warning mb-1">Rs.{{ number_format($totalStats->retail_cash ?? 0, 2) }}</h5>
-                    <small class="text-muted">Retail Cash</small>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="card border-0 shadow-sm h-100 bg-danger bg-opacity-10">
-                <div class="card-body text-center">
-                    <div class="text-danger mb-2">
-                        <i class="bi bi-wallet2 fs-3"></i>
-                    </div>
-                    <h5 class="fw-bold text-danger mb-1">Rs.{{ number_format($totalStats->retail_credit ?? 0, 2) }}</h5>
-                    <small class="text-muted">Retail Credit</small>
+                    <h5 class="fw-bold text-info mb-1">Rs.{{ number_format($totalStats->credit_commission ?? 0, 2) }}</h5>
+                    <small class="text-muted">Credit Sales</small>
                 </div>
             </div>
         </div>
@@ -73,7 +51,7 @@
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white py-3">
             <h5 class="mb-0 fw-bold">
-                <i class="bi bi-people text-primary me-2"></i>Staff Bonus Summary
+                <i class="bi bi-people text-primary me-2"></i>Staff Commission Summary
             </h5>
         </div>
         <div class="card-body p-0">
@@ -82,12 +60,10 @@
                     <thead class="table-light">
                         <tr>
                             <th>Staff Name</th>
-                            <th class="text-center">Wholesale Cash</th>
-                            <th class="text-center">Wholesale Credit</th>
-                            <th class="text-center">Retail Cash</th>
-                            <th class="text-center">Retail Credit</th>
+                            <th class="text-center">Cash Commission</th>
+                            <th class="text-center">Credit Commission</th>
                             <th class="text-center">Total Sales</th>
-                            <th class="text-end">Total Bonus</th>
+                            <th class="text-end">Total Commission</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -102,21 +78,15 @@
                                 </div>
                             </td>
                             <td class="text-center">
-                                <span class="badge bg-success bg-opacity-25 text-success">Rs.{{ number_format($summary->wholesale_cash, 2) }}</span>
+                                <span class="badge bg-success bg-opacity-25 text-success">Rs.{{ number_format($summary->cash_commission, 2) }}</span>
                             </td>
                             <td class="text-center">
-                                <span class="badge bg-info bg-opacity-25 text-info">Rs.{{ number_format($summary->wholesale_credit, 2) }}</span>
-                            </td>
-                            <td class="text-center">
-                                <span class="badge bg-warning bg-opacity-25 text-warning">Rs.{{ number_format($summary->retail_cash, 2) }}</span>
-                            </td>
-                            <td class="text-center">
-                                <span class="badge bg-danger bg-opacity-25 text-danger">Rs.{{ number_format($summary->retail_credit, 2) }}</span>
+                                <span class="badge bg-info bg-opacity-25 text-info">Rs.{{ number_format($summary->credit_commission, 2) }}</span>
                             </td>
                             <td class="text-center">
                                 <span class="badge bg-secondary">{{ $summary->total_sales }}</span>
                             </td>
-                            <td class="text-end fw-bold text-primary">Rs.{{ number_format($summary->total_bonus, 2) }}</td>
+                            <td class="text-end fw-bold text-primary">Rs.{{ number_format($summary->total_commission, 2) }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -141,14 +111,6 @@
                         @foreach($staffList as $staff)
                         <option value="{{ $staff->id }}">{{ $staff->name }}</option>
                         @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small fw-semibold">Sale Type</label>
-                    <select class="form-select" wire:model.live="saleTypeFilter">
-                        <option value="">All Types</option>
-                        <option value="wholesale">Wholesale</option>
-                        <option value="retail">Retail</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -180,7 +142,7 @@
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
             <h5 class="mb-0 fw-bold">
-                <i class="bi bi-list-check text-primary me-2"></i>Sale-wise Bonus Details
+                <i class="bi bi-list-check text-primary me-2"></i>Sale-wise Commission Details
             </h5>
             <div class="d-flex align-items-center gap-2">
                 <label class="text-muted small">Show</label>
@@ -203,9 +165,8 @@
                             <th>Invoice</th>
                             <th>Staff</th>
                             <th>Items</th>
-                            <th>Sale Type</th>
                             <th>Payment</th>
-                            <th class="text-end">Total Sale Bonus</th>
+                            <th class="text-end">Total Commission</th>
                             <th class="text-center">Actions</th>
                         </tr>
                     </thead>
@@ -233,33 +194,26 @@
                                 <span class="badge bg-secondary rounded-pill">{{ $bonus->items_count }} products</span>
                             </td>
                             <td>
-                                @if($bonus->sale_type === 'wholesale')
-                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Wholesale</span>
-                                @else
-                                <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">Retail</span>
-                                @endif
-                            </td>
-                            <td>
                                 @if($bonus->payment_method === 'cash')
-                                <span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25">Cash</span>
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"><i class="bi bi-cash-stack me-1"></i>Cash</span>
                                 @else
-                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Credit</span>
+                                <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25"><i class="bi bi-credit-card me-1"></i>Credit</span>
                                 @endif
                             </td>
                             <td class="text-end">
-                                <span class="fw-bold text-success fs-6">Rs.{{ number_format($bonus->total_sale_bonus, 2) }}</span>
+                                <span class="fw-bold text-success fs-6">Rs.{{ number_format($bonus->total_sale_commission, 2) }}</span>
                             </td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3" wire:click="viewSaleBonus({{ $bonus->sale_id }})">
+                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3" wire:click="viewSaleCommission({{ $bonus->sale_id }})">
                                     <i class="bi bi-eye me-1"></i> View
                                 </button>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="9" class="text-center py-5">
+                            <td colspan="8" class="text-center py-5">
                                 <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
-                                <p class="text-muted mb-0">No bonus records found</p>
+                                <p class="text-muted mb-0">No commission records found</p>
                             </td>
                         </tr>
                         @endforelse
@@ -283,9 +237,9 @@
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-primary text-white py-3">
                     <h5 class="modal-title fw-bold">
-                        <i class="bi bi-info-circle me-2"></i>Bonus Breakdown for Invoice #{{ $selectedSaleInfo->invoice_number }}
+                        <i class="bi bi-info-circle me-2"></i>Commission Breakdown for Invoice #{{ $selectedSaleInfo->invoice_number }}
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" wire:click="closeBonusDetailModal"></button>
+                    <button type="button" class="btn-close btn-close-white" wire:click="closeCommissionDetailModal"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="row mb-4">
@@ -321,31 +275,31 @@
                                 <tr>
                                     <th>Product Details</th>
                                     <th class="text-center">Qty</th>
-                                    <th class="text-end">Bonus/Unit</th>
-                                    <th class="text-end">Total Bonus</th>
+                                    <th class="text-end">Commission/Unit</th>
+                                    <th class="text-end">Total Commission</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @php $totalModalBonus = 0; @endphp
-                                @foreach($selectedSaleBonuses as $bonus)
-                                @php $totalModalBonus += $bonus->total_bonus; @endphp
+                                @php $totalModalCommission = 0; @endphp
+                                @foreach($selectedSaleCommissions as $commission)
+                                @php $totalModalCommission += $commission->total_commission; @endphp
                                 <tr>
                                     <td>
                                         <div class="fw-bold">{{ $bonus->product->name ?? 'N/A' }}</div>
                                         <small class="text-muted">{{ $bonus->product->code ?? '' }}</small>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-secondary rounded-pill">{{ $bonus->quantity }}</span>
+                                        <span class="badge bg-secondary rounded-pill">{{ $commission->quantity }}</span>
                                     </td>
-                                    <td class="text-end">Rs.{{ number_format($bonus->bonus_per_unit, 2) }}</td>
-                                    <td class="text-end fw-bold text-success">Rs.{{ number_format($bonus->total_bonus, 2) }}</td>
+                                    <td class="text-end">Rs.{{ number_format($commission->commission_per_unit, 2) }}</td>
+                                    <td class="text-end fw-bold text-success">Rs.{{ number_format($commission->total_commission, 2) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
                             <tfoot class="table-light">
                                 <tr>
-                                    <td colspan="3" class="text-end fw-bold">Grand Total Bonus:</td>
-                                    <td class="text-end fw-bold text-primary fs-5">Rs.{{ number_format($totalModalBonus, 2) }}</td>
+                                    <td colspan="3" class="text-end fw-bold">Grand Total Commission:</td>
+                                    <td class="text-end fw-bold text-primary fs-5">Rs.{{ number_format($totalModalCommission, 2) }}</td>
                                 </tr>
                             </tfoot>
                         </table>

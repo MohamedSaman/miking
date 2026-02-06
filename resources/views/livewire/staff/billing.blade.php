@@ -59,16 +59,22 @@
                             </div>
                         </div>
 
+                        <!-- Sale Price Type Selection -->
                         <div class="col-md-12">
-                            <label class="form-label fw-semibold" style="color:#2a83df;">Sale Type</label>
-                            <select class="form-select rounded-0 border" wire:model.live="customerTypeSale">
-                                <option value="retail">Retail Sale</option>
-                                <option value="wholesale">Wholesale Sale</option>
+                            <label class="form-label fw-semibold" style="color:#2a83df;">Sale Price Type *</label>
+                            <select class="form-select rounded-0 border" wire:model.live="salePriceType">
+                                <option value="cash">Cash Price</option>
+                                <option value="cash_credit">Cash & Credit Price (Partial)</option>
+                                <option value="credit">Credit Price</option>
                             </select>
-                            <div class="form-text small">
-                                Determines price & bonus rates
+                            <div class="form-text">
+                                <span class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i> Select price type for calculation (not payment method)
+                                </span>
                             </div>
                         </div>
+
+                        <!-- Sale type selection removed - all sales are wholesale -->
                     </div>
                 </div>
             </div>

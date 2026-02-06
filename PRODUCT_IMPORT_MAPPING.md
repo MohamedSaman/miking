@@ -7,16 +7,18 @@ This document describes how Excel columns are mapped to database fields when imp
 
 | Excel Column Name | Database Table | Database Column | Data Type | Default Value | Notes |
 |-------------------|----------------|-----------------|-----------|---------------|-------|
+| Product Code * | product_details | code | string | - | Required, must be unique |
 | Product Name * | product_details | name | string | - | Required field |
+| Category | product_details | category_id | relation | Default Category | Auto-creates category if doesn't exist |
 | Unit | product_details | unit | enum | Piece | Values: Piece, Dozen, Bundle |
 | Description | product_details | description | text | null | Optional |
-| Rate | product_prices | selling_price | decimal | 0.00 | Selling price |
-| Retail Price | product_prices | retail_price | decimal | null | Retail customer price |
-| Wholesale Price | product_prices | wholesale_price | decimal | null | Wholesale customer price |
-| Buy Rate | product_prices | supplier_price | decimal | 0.00 | Purchase cost |
-| Cash Sale Bonus | product_details | cash_sale_bonus | decimal | 0.00 | Bonus for cash sales |
-| Credit Sale Bonus | product_details | credit_sale_bonus | decimal | 0.00 | Bonus for credit sales |
-| Product Code * | product_details | code | string | - | Required, must be unique |
+| Selling Price | product_prices | selling_price | decimal | 0.00 | Base selling price |
+| Cash Price | product_prices | cash_price | decimal | null | Price for cash transactions |
+| Credit Price | product_prices | credit_price | decimal | null | Price for credit transactions |
+| Cash & Credit Price | product_prices | cash_credit_price | decimal | null | Price for partial payment buyers |
+| Supplier Price | product_prices | supplier_price | decimal | 0.00 | Purchase cost from supplier |
+| Cash Sale Commission | product_details | cash_sale_commission | decimal | 0.00 | Staff commission for cash sales |
+| Credit Sale Commission | product_details | credit_sale_commission | decimal | 0.00 | Staff commission for credit sales |
 | Opening Stock | product_stocks | available_stock | integer | 0 | Initial stock quantity |
 | Opening Stock Rate | product_stocks | opening_stock_rate | decimal | 0.00 | Initial stock cost |
 | Minimum Stock | product_stocks | restocked_quantity | integer | 0 | Restock threshold |
@@ -33,7 +35,9 @@ This document describes how Excel columns are mapped to database fields when imp
 - **supplier_id**: Default Supplier (auto-created)
 
 ### Product Prices (product_prices)
-- **discount_price**: 0.00
+- **cash_price**: null (optional - for cash transactions)
+- **credit_price**: null (optional - for credit transactions)
+- **cash_credit_price**: null (optional - for partial payment buyers)
 
 ### Product Stocks (product_stocks)
 - **damage_stock**: 0
@@ -45,7 +49,7 @@ This document describes how Excel columns are mapped to database fields when imp
 The Excel file should have the following columns in the first row (header row):
 
 ```
-| Product Name * | Unit | Description | Rate | Retail Price | Wholesale Price | Buy Rate | Product Code * | Opening Stock | Opening Stock Rate | Minimum Stock | Is Service (Yes / No) |
+| Product Code * | Product Name * | Category | Unit | Description | Selling Price | Cash Price | Credit Price | Cash & Credit Price | Supplier Price | Cash Sale Commission | Credit Sale Commission | Opening Stock | Opening Stock Rate | Minimum Stock | Is Service (Yes / No) |
 ```
 
 **Note:** Columns marked with * are required.
@@ -53,14 +57,18 @@ The Excel file should have the following columns in the first row (header row):
 ## Sample Data
 
 ```
+Product Code: USN0001
 Product Name: Flasher Musical 12 V
+Category: Electronics
 Unit: Piece
 Description: High quality musical flasher
-Rate: 150.00
-Retail Price: 160.00
-Wholesale Price: 170.00
-Buy Rate: 120.00
-Product Code: USN0001
+Selling Price: 150.00
+Cash Price: 145.00
+Credit Price: 155.00
+Cash & Credit Price: 148.00
+Supplier Price: 120.00
+Cash Sale Commission: 5.00
+Credit Sale Commission: 3.00
 Opening Stock: 100
 Opening Stock Rate: 115.00
 Minimum Stock: 20

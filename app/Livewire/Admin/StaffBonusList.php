@@ -19,21 +19,18 @@ class StaffBonusList extends Component
     public $search = '';
     public $perPage = 10;
     public $staffFilter = '';
-    public $saleTypeFilter = '';
     public $paymentMethodFilter = '';
     public $dateFrom = '';
     public $dateTo = '';
 
     // Summary data
-    public $totalBonus = 0;
-    public $wholesaleCashBonus = 0;
-    public $wholesaleCreditBonus = 0;
-    public $retailCashBonus = 0;
-    public $retailCreditBonus = 0;
+    public $totalCommission = 0;
+    public $cashCommission = 0;
+    public $creditCommission = 0;
     
     // Modal properties
     public $showBonusDetailModal = false;
-    public $selectedSaleBonuses = [];
+    public $selectedSaleCommissions = [];
     public $selectedSaleInfo = null;
     
     // Sale Invoice Modal
@@ -56,11 +53,6 @@ class StaffBonusList extends Component
         $this->resetPage();
     }
 
-    public function updatingSaleTypeFilter()
-    {
-        $this->resetPage();
-    }
-
     public function updatingPaymentMethodFilter()
     {
         $this->resetPage();
@@ -76,10 +68,9 @@ class StaffBonusList extends Component
         $query = StaffBonus::select(
                 'sale_id',
                 'staff_id',
-                'sale_type',
                 'payment_method',
                 'created_at',
-                DB::raw('SUM(total_bonus) as total_sale_bonus'),
+                DB::raw('SUM(total_bonus) as total_sale_commission'),
                 DB::raw('COUNT(*) as items_count')
             )
             ->with(['staff', 'sale'])
@@ -96,9 +87,6 @@ class StaffBonusList extends Component
             ->when($this->staffFilter, function ($q) {
                 $q->where('staff_id', $this->staffFilter);
             })
-            ->when($this->saleTypeFilter, function ($q) {
-                $q->where('sale_type', $this->saleTypeFilter);
-            })
             ->when($this->paymentMethodFilter, function ($q) {
                 $q->where('payment_method', $this->paymentMethodFilter);
             })
@@ -108,23 +96,23 @@ class StaffBonusList extends Component
             ->when($this->dateTo, function ($q) {
                 $q->whereDate('created_at', '<=', $this->dateTo);
             })
-            ->groupBy('sale_id', 'staff_id', 'sale_type', 'payment_method', 'created_at')
+            ->groupBy('sale_id', 'staff_id', 'payment_method', 'created_at')
             ->orderBy('created_at', 'desc');
 
         return $query->paginate($this->perPage);
     }
 
-    public function viewSaleBonus($saleId)
+    public function viewSaleCommission($saleId)
     {
         $this->selectedSaleInfo = \App\Models\Sale::with(['customer', 'user'])->find($saleId);
-        $this->selectedSaleBonuses = StaffBonus::with(['product'])
+        $this->selectedSaleCommissions = StaffBonus::with(['product'])
             ->where('sale_id', $saleId)
             ->get();
         
         $this->showBonusDetailModal = true;
     }
 
-    public function closeBonusDetailModal()
+    public function closeCommissionDetailModal()
     {
         $this->showBonusDetailModal = false;
         $this->selectedSaleBonuses = [];
@@ -154,9 +142,6 @@ class StaffBonusList extends Component
             ->when($this->staffFilter, function ($q) {
                 $q->where('staff_id', $this->staffFilter);
             })
-            ->when($this->saleTypeFilter, function ($q) {
-                $q->where('sale_type', $this->saleTypeFilter);
-            })
             ->when($this->paymentMethodFilter, function ($q) {
                 $q->where('payment_method', $this->paymentMethodFilter);
             })
@@ -167,14 +152,12 @@ class StaffBonusList extends Component
                 $q->whereDate('created_at', '<=', $this->dateTo);
             });
 
-        // Get summary by staff
+        // Get summary by staff - cash-based includes: cash, bank_transfer, cheque
         return StaffBonus::select(
                 'staff_id',
-                DB::raw('SUM(total_bonus) as total_bonus'),
-                DB::raw('SUM(CASE WHEN sale_type = "wholesale" AND payment_method = "cash" THEN total_bonus ELSE 0 END) as wholesale_cash'),
-                DB::raw('SUM(CASE WHEN sale_type = "wholesale" AND payment_method = "credit" THEN total_bonus ELSE 0 END) as wholesale_credit'),
-                DB::raw('SUM(CASE WHEN sale_type = "retail" AND payment_method = "cash" THEN total_bonus ELSE 0 END) as retail_cash'),
-                DB::raw('SUM(CASE WHEN sale_type = "retail" AND payment_method = "credit" THEN total_bonus ELSE 0 END) as retail_credit'),
+                DB::raw('SUM(total_bonus) as total_commission'),
+                DB::raw('SUM(CASE WHEN payment_method IN ("cash", "bank_transfer", "cheque") THEN total_bonus ELSE 0 END) as cash_commission'),
+                DB::raw('SUM(CASE WHEN payment_method = "credit" THEN total_bonus ELSE 0 END) as credit_commission'),
                 DB::raw('COUNT(*) as total_sales')
             )
             ->with('staff')
@@ -183,9 +166,6 @@ class StaffBonusList extends Component
             })
             ->when($this->staffFilter, function ($q) {
                 $q->where('staff_id', $this->staffFilter);
-            })
-            ->when($this->saleTypeFilter, function ($q) {
-                $q->where('sale_type', $this->saleTypeFilter);
             })
             ->when($this->paymentMethodFilter, function ($q) {
                 $q->where('payment_method', $this->paymentMethodFilter);
@@ -209,9 +189,6 @@ class StaffBonusList extends Component
             ->when($this->staffFilter, function ($q) {
                 $q->where('staff_id', $this->staffFilter);
             })
-            ->when($this->saleTypeFilter, function ($q) {
-                $q->where('sale_type', $this->saleTypeFilter);
-            })
             ->when($this->paymentMethodFilter, function ($q) {
                 $q->where('payment_method', $this->paymentMethodFilter);
             })
@@ -223,10 +200,8 @@ class StaffBonusList extends Component
             })
             ->select(
                 DB::raw('SUM(total_bonus) as total'),
-                DB::raw('SUM(CASE WHEN sale_type = "wholesale" AND payment_method = "cash" THEN total_bonus ELSE 0 END) as wholesale_cash'),
-                DB::raw('SUM(CASE WHEN sale_type = "wholesale" AND payment_method = "credit" THEN total_bonus ELSE 0 END) as wholesale_credit'),
-                DB::raw('SUM(CASE WHEN sale_type = "retail" AND payment_method = "cash" THEN total_bonus ELSE 0 END) as retail_cash'),
-                DB::raw('SUM(CASE WHEN sale_type = "retail" AND payment_method = "credit" THEN total_bonus ELSE 0 END) as retail_credit')
+                DB::raw('SUM(CASE WHEN payment_method IN ("cash", "bank_transfer", "cheque") THEN total_bonus ELSE 0 END) as cash_commission'),
+                DB::raw('SUM(CASE WHEN payment_method = "credit" THEN total_bonus ELSE 0 END) as credit_commission')
             )
             ->first();
     }
@@ -235,7 +210,6 @@ class StaffBonusList extends Component
     {
         $this->search = '';
         $this->staffFilter = '';
-        $this->saleTypeFilter = '';
         $this->paymentMethodFilter = '';
         $this->dateFrom = now()->startOfMonth()->format('Y-m-d');
         $this->dateTo = now()->format('Y-m-d');

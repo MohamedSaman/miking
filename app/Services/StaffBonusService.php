@@ -19,15 +19,14 @@ class StaffBonusService
     public static function calculateBonusesForSale(Sale $sale)
     {
         try {
-            // Get sale type (wholesale/retail) and payment method (cash/credit)
-            $saleType = $sale->customer_type_sale ?? 'retail';
+            // All sales are wholesale - only payment method matters
             $paymentMethod = $sale->payment_method ?? 'cash';
             $staffId = $sale->user_id;
             
             // Check if the user is a staff member. Admins do not get bonuses.
             $user = \App\Models\User::find($staffId);
             if (!$user || $user->role !== 'staff') {
-                Log::info("Staff Bonus skipped: User is not staff or not found.", ['user_id' => $staffId]);
+                Log::info("Staff Commission skipped: User is not staff or not found.", ['user_id' => $staffId]);
                 return;
             }
 
@@ -35,70 +34,68 @@ class StaffBonusService
             $saleItems = $sale->items;
 
             foreach ($saleItems as $item) {
-                // Get product details with bonus information
+                // Get product details with commission information
                 $product = ProductDetail::find($item->product_id);
                 
                 if (!$product) {
                     continue;
                 }
 
-                // Determine which bonus field to use based on sale type and payment method
-                $bonusPerUnit = self::getBonusAmount($product, $saleType, $paymentMethod);
+                // Determine which commission field to use based on payment method
+                $commissionPerUnit = self::getCommissionAmount($product, $paymentMethod);
                 
-                // Calculate total bonus for this item
-                $totalBonus = $bonusPerUnit * $item->quantity;
+                // Calculate total commission for this item
+                $totalCommission = $commissionPerUnit * $item->quantity;
 
-                // Record the staff bonus
+                // Record the staff commission (bonus)
                 StaffBonus::create([
                     'sale_id' => $sale->id,
                     'staff_id' => $staffId,
                     'product_id' => $product->id,
                     'quantity' => $item->quantity,
-                    'sale_type' => $saleType,
+                    'sale_type' => 'wholesale', // All sales are wholesale
                     'payment_method' => $paymentMethod,
-                    'bonus_per_unit' => $bonusPerUnit,
-                    'total_bonus' => $totalBonus,
+                    'bonus_per_unit' => $commissionPerUnit,
+                    'total_bonus' => $totalCommission,
                 ]);
 
-                Log::info("Staff Bonus Recorded", [
+                Log::info("Staff Commission Recorded", [
                     'sale_id' => $sale->id,
                     'staff_id' => $staffId,
                     'product_id' => $product->id,
-                    'sale_type' => $saleType,
                     'payment_method' => $paymentMethod,
-                    'bonus_per_unit' => $bonusPerUnit,
-                    'total_bonus' => $totalBonus,
+                    'commission_per_unit' => $commissionPerUnit,
+                    'total_commission' => $totalCommission,
                 ]);
             }
 
         } catch (\Exception $e) {
-            Log::error("Failed to calculate staff bonuses for sale {$sale->id}: " . $e->getMessage());
+            Log::error("Failed to calculate staff commissions for sale {$sale->id}: " . $e->getMessage());
         }
     }
 
     /**
-     * Get the appropriate bonus amount based on sale type and payment method
+     * Get the appropriate commission amount based on payment method
+     * Cash-based: cash, bank_transfer, cheque → use cash_sale_commission
+     * Credit-based: credit → use credit_sale_commission
+     * 
+     * For sale_price_type = 'cash_credit', we use cash commission (same as cash)
      *
      * @param ProductDetail $product
-     * @param string $saleType (wholesale/retail)
-     * @param string $paymentMethod (cash/credit)
+     * @param string $paymentMethod (cash/bank_transfer/cheque/credit)
      * @return float
      */
-    private static function getBonusAmount(ProductDetail $product, string $saleType, string $paymentMethod): float
+    private static function getCommissionAmount(ProductDetail $product, string $paymentMethod): float
     {
-        // Map sale type and payment method to the correct bonus field
-        if ($saleType === 'wholesale') {
-            if ($paymentMethod === 'cash') {
-                return $product->wholesale_cash_bonus ?? 0;
-            } else {
-                return $product->wholesale_credit_bonus ?? 0;
-            }
-        } else { // retail
-            if ($paymentMethod === 'cash') {
-                return $product->retail_cash_bonus ?? 0;
-            } else {
-                return $product->retail_credit_bonus ?? 0;
-            }
+        // Cash-based payment methods: cash, bank_transfer, cheque
+        // Note: cash_credit price type is treated as cash for commission purposes
+        $cashBasedMethods = ['cash', 'bank_transfer', 'cheque'];
+        
+        if (in_array($paymentMethod, $cashBasedMethods)) {
+            return $product->cash_sale_commission ?? 0;
+        } else {
+            // Credit-based payment
+            return $product->credit_sale_commission ?? 0;
         }
     }
 
@@ -126,7 +123,8 @@ class StaffBonusService
     }
 
     /**
-     * Get bonus breakdown by sale type and payment method for a staff member
+     * Get bonus breakdown by payment method for a staff member
+     * Note: All sales are wholesale
      *
      * @param int $staffId
      * @param string|null $startDate
@@ -148,10 +146,8 @@ class StaffBonusService
         $bonuses = $query->get();
 
         return [
-            'wholesale_cash' => $bonuses->where('sale_type', 'wholesale')->where('payment_method', 'cash')->sum('total_bonus'),
-            'wholesale_credit' => $bonuses->where('sale_type', 'wholesale')->where('payment_method', 'credit')->sum('total_bonus'),
-            'retail_cash' => $bonuses->where('sale_type', 'retail')->where('payment_method', 'cash')->sum('total_bonus'),
-            'retail_credit' => $bonuses->where('sale_type', 'retail')->where('payment_method', 'credit')->sum('total_bonus'),
+            'cash_commission' => $bonuses->where('payment_method', 'cash')->sum('total_bonus'),
+            'credit_commission' => $bonuses->where('payment_method', 'credit')->sum('total_bonus'),
             'total' => $bonuses->sum('total_bonus'),
         ];
     }

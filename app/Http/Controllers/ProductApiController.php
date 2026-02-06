@@ -34,7 +34,7 @@ class ProductApiController extends Controller
                     'product_details.status',
                     'product_prices.supplier_price',
                     'product_prices.selling_price',
-                    'product_prices.discount_price',
+                    'product_prices.cash_credit_price',
                     'product_stocks.available_stock',
                     'product_stocks.damage_stock',
                     'product_stocks.total_stock',

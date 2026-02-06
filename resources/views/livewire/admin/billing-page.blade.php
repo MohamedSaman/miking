@@ -375,23 +375,6 @@
                                                                     </small>
                                                                 @endif
                                                             </div>
-                                                            @if ($ProductDetails->discount_price > 0)
-                                                                <div class="position-relative">
-                                                                    <div
-                                                                        class="position-absolute top-0 start-50 translate-middle">
-                                                                        <span
-                                                                            class="badge bg-danger p-2 rounded-pill">SPECIAL
-                                                                            OFFER</span>
-                                                                    </div>
-                                                                    <div class="border border-success rounded-3 p-2 text-center mt-3"
-                                                                        style="background-color: rgba(25, 135, 84, 0.1);">
-                                                                        <span class="text-success fw-bold fs-5">
-                                                                            SAVE Rs.
-                                                                            {{ number_format($ProductDetails->discount_price, 2) }}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            @endif
                                                         </div>
                                                     </div>
                                                 </div>
@@ -712,42 +695,6 @@
                                                             </div>
                                                         </div>
 
-                                                        @if ($ProductDetails->discount_price > 0)
-                                                            <div class="card border-success bg-success bg-opacity-10">
-                                                                <div
-                                                                    class="card-header bg-success bg-opacity-25 border-success">
-                                                                    <h6 class="text-success mb-0 fw-bold">
-                                                                        SPECIAL DISCOUNT
-                                                                    </h6>
-                                                                </div>
-                                                                <div class="card-body">
-                                                                    <div
-                                                                        class="d-flex justify-content-between align-items-center">
-                                                                        <p class="card-text fw-bold text-success">
-                                                                            Discount
-                                                                            Amount</p>
-                                                                        <h5 class="card-title text-success">
-                                                                            Rs.
-                                                                            {{ number_format($ProductDetails->discount_price, 2) }}
-                                                                        </h5>
-                                                                    </div>
-                                                                    <div class="progress mt-2" style="height: 10px;">
-                                                                        <div class="progress-bar bg-success"
-                                                                            role="progressbar"
-                                                                            style="width: {{ min(($ProductDetails->discount_price / $ProductDetails->selling_price) * 100, 100) }}%"
-                                                                            aria-valuenow="{{ ($ProductDetails->discount_price / $ProductDetails->selling_price) * 100 }}"
-                                                                            aria-valuemin="0" aria-valuemax="100">
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="d-flex justify-content-between mt-1">
-                                                                        <small class="text-muted">0%</small>
-                                                                        <small class="text-muted">Save
-                                                                            {{ number_format(($ProductDetails->discount_price / $ProductDetails->selling_price) * 100, 0) }}%</small>
-                                                                        <small class="text-muted">100%</small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>

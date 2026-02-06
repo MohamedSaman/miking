@@ -160,7 +160,7 @@
                                                         <h6 class="mb-0">{{ $ProductData['Product']->name }}</h6>
                                                         <small class="text-muted d-block">{{ $ProductData['Product']->code }}</small>
                                                         <div class="mt-1">
-                                                            <span class="badge bg-light text-dark">{{ $ProductData['Product']->brand }}</span>
+                                                            <span class="badge bg-light text-dark">{{ $ProductData['Product']->brand->brand_name ?? 'N/A' }}</span>
                                                             @if($ProductData['Product']->type)
                                                                 <span class="badge bg-light text-dark">{{ $ProductData['Product']->type }}</span>
                                                             @endif
@@ -331,7 +331,7 @@
                                                         <div>
                                                             <h6 class="mb-0">{{ $product->Product->name ?? 'Unknown Product' }}</h6>
                                                             <small class="text-muted">{{ $product->Product->code ?? 'No Code' }}</small><br>
-                                                            <small class="text-muted">{{ $product->Product->brand ?? '' }}</small>
+                                                            <small class="text-muted">{{ $product->Product->brand->brand_name ?? 'N/A' }}</small>
                                                         </div>
                                                     </div>
                                                 </td>

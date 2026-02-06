@@ -12,7 +12,7 @@
     {{-- Accordion --}}
     <div class="accordion" id="settingsAccordion">
         
-        {{-- Product Sales Bonus Management Accordion --}}
+        {{-- Sales Commission Management Accordion --}}
         <div class="accordion-item border-0 mb-4 shadow-sm rounded-4">
             <h2 class="accordion-header" id="headingBonusManagement">
                 <button class="accordion-button fw-semibold bg-white text-dark rounded-4 collapsed"
@@ -20,7 +20,7 @@
                     data-bs-target="#collapseBonusManagement" aria-expanded="false"
                     aria-controls="collapseBonusManagement">
                     <i class="bi bi-gift fs-5 me-3 text-warning"></i>
-                    Product Sales Bonus Management
+                     Sales Commission Management
                 </button>
             </h2>
             <div id="collapseBonusManagement" class="accordion-collapse collapse" wire:ignore.self
@@ -33,52 +33,26 @@
                             <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-lightning-charge me-2"></i>Bulk Update All Products</h6>
                         </div>
                         <div class="card-body">
-                            <!-- Wholesale Section -->
-                            <h6 class="text-primary border-bottom pb-2 mb-3">Wholesale Bonuses</h6>
-                            <div class="row g-3 mb-4">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Wholesale Cash Bonus</label>
-                                    <div class="input-group">
-                                        <select class="form-select bg-white" wire:model="bulkWholesaleCashBonusType">
-                                            <option value="percentage">Percentage (%)</option>
-                                            <option value="fixed">Fixed Amount</option>
-                                        </select>
-                                        <input type="number" step="0.01" class="form-control" wire:model="bulkWholesaleCashBonusValue" placeholder="Value">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Wholesale Credit Bonus</label>
-                                    <div class="input-group">
-                                        <select class="form-select bg-white" wire:model="bulkWholesaleCreditBonusType">
-                                            <option value="percentage">Percentage (%)</option>
-                                            <option value="fixed">Fixed Amount</option>
-                                        </select>
-                                        <input type="number" step="0.01" class="form-control" wire:model="bulkWholesaleCreditBonusValue" placeholder="Value">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Retail Section -->
-                            <h6 class="text-success border-bottom pb-2 mb-3">Retail Bonuses</h6>
+                            <h6 class="text-primary border-bottom pb-2 mb-3">Sales Commission</h6>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Retail Cash Bonus</label>
+                                    <label class="form-label fw-semibold small">Cash Sale Commission</label>
                                     <div class="input-group">
-                                        <select class="form-select bg-white" wire:model="bulkRetailCashBonusType">
+                                        <select class="form-select bg-white" wire:model="bulkCashCommissionType">
                                             <option value="percentage">Percentage (%)</option>
                                             <option value="fixed">Fixed Amount</option>
                                         </select>
-                                        <input type="number" step="0.01" class="form-control" wire:model="bulkRetailCashBonusValue" placeholder="Value">
+                                        <input type="number" step="0.01" class="form-control" wire:model="bulkCashCommissionValue" placeholder="Value">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Retail Credit Bonus</label>
+                                    <label class="form-label fw-semibold small">Credit Sale Commission</label>
                                     <div class="input-group">
-                                        <select class="form-select bg-white" wire:model="bulkRetailCreditBonusType">
+                                        <select class="form-select bg-white" wire:model="bulkCreditCommissionType">
                                             <option value="percentage">Percentage (%)</option>
                                             <option value="fixed">Fixed Amount</option>
                                         </select>
-                                        <input type="number" step="0.01" class="form-control" wire:model="bulkRetailCreditBonusValue" placeholder="Value">
+                                        <input type="number" step="0.01" class="form-control" wire:model="bulkCreditCommissionValue" placeholder="Value">
                                     </div>
                                 </div>
                             </div>
@@ -88,10 +62,10 @@
                                 <button class="btn btn-warning px-5 fw-bold text-white shadow-sm" 
                                         wire:click="confirmBulkUpdate"
                                         wire:loading.attr="disabled">
-                                    <span wire:loading.remove wire:target="applyBulkBonus">
-                                        <i class="bi bi-lightning-charge-fill me-2"></i>Apply Bonuses to All Products
+                                    <span wire:loading.remove wire:target="applyBulkCommission">
+                                        <i class="bi bi-lightning-charge-fill me-2"></i>Apply Commissions to All Products
                                     </span>
-                                    <span wire:loading wire:target="applyBulkBonus">
+                                    <span wire:loading wire:target="applyBulkCommission">
                                         <span class="spinner-border spinner-border-sm me-2"></span>Processing...
                                     </span>
                                 </button>
@@ -117,10 +91,8 @@
                                                 <th>Code</th>
                                                 <th>Name</th>
                                                 <th>Price</th>
-                                                <th class="table-primary bg-opacity-10">Wholesale Cash</th>
-                                                <th class="table-primary bg-opacity-10">Wholesale Credit</th>
-                                                <th class="table-success bg-opacity-10">Retail Cash</th>
-                                                <th class="table-success bg-opacity-10">Retail Credit</th>
+                                                <th class="table-primary bg-opacity-10">Cash Commission</th>
+                                                <th class="table-success bg-opacity-10">Credit Commission</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
@@ -134,11 +106,8 @@
                                                 </td>
                                                 <td>Rs. {{ number_format($product->price->selling_price ?? 0, 2) }}</td>
                                                 
-                                                <td class="table-primary bg-opacity-10 fw-bold text-dark">Rs. {{ number_format($product->wholesale_cash_bonus, 2) }}</td>
-                                                <td class="table-primary bg-opacity-10 fw-bold text-dark">Rs. {{ number_format($product->wholesale_credit_bonus, 2) }}</td>
-                                                
-                                                <td class="table-success bg-opacity-10 fw-bold text-dark">Rs. {{ number_format($product->retail_cash_bonus, 2) }}</td>
-                                                <td class="table-success bg-opacity-10 fw-bold text-dark">Rs. {{ number_format($product->retail_credit_bonus, 2) }}</td>
+                                                <td class="table-primary bg-opacity-10 fw-bold text-dark">Rs. {{ number_format($product->cash_sale_commission, 2) }}</td>
+                                                <td class="table-success bg-opacity-10 fw-bold text-dark">Rs. {{ number_format($product->credit_sale_commission, 2) }}</td>
                                                 
                                                 <td>
                                                     <button class="btn btn-sm btn-outline-primary" 
@@ -744,68 +713,38 @@
             <div class="modal-content border-0 rounded-4 shadow-lg">
                 <div class="modal-header bg-warning text-white rounded-top-4">
                     <h5 class="modal-title fw-bold">
-                        <i class="bi bi-gift"></i> Edit Product Sales Bonus
+                        <i class="bi bi-gift"></i> Edit Sales Commission
                     </h5>
                     <button type="button" class="btn-close btn-close-white" wire:click="closeBonusModal"></button>
                 </div>
 
                 <form wire:submit.prevent="updateProductBonus">
                     <div class="modal-body">
-                        <!-- Wholesale Section -->
-                        <h6 class="text-primary border-bottom pb-2 mb-3">Wholesale Bonuses</h6>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold small">Wholesale Cash Bonus</label>
-                                <div class="input-group">
-                                    <select class="form-select bg-white" wire:model="editBonusWholesaleCashType" style="max-width: 110px;">
-                                        <option value="fixed">Fixed (Rs)</option>
-                                        <option value="percentage">Percent (%)</option>
-                                    </select>
-                                    <input type="number" step="0.01" wire:model="editBonusWholesaleCash"
-                                        class="form-control @error('editBonusWholesaleCash') is-invalid @enderror" placeholder="0.00">
-                                </div>
-                                @error('editBonusWholesaleCash') <span class="text-danger small">{{ $message }}</span> @enderror
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold small">Wholesale Credit Bonus</label>
-                                <div class="input-group">
-                                    <select class="form-select bg-white" wire:model="editBonusWholesaleCreditType" style="max-width: 110px;">
-                                        <option value="fixed">Fixed (Rs)</option>
-                                        <option value="percentage">Percent (%)</option>
-                                    </select>
-                                    <input type="number" step="0.01" wire:model="editBonusWholesaleCredit"
-                                        class="form-control @error('editBonusWholesaleCredit') is-invalid @enderror" placeholder="0.00">
-                                </div>
-                                @error('editBonusWholesaleCredit') <span class="text-danger small">{{ $message }}</span> @enderror
-                            </div>
-                        </div>
-
-                        <!-- Retail Section -->
-                        <h6 class="text-success border-bottom pb-2 mb-3">Retail Bonuses</h6>
+                        <h6 class="text-primary border-bottom pb-2 mb-3">Sales Commission</h6>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold small">Retail Cash Bonus</label>
+                                <label class="form-label fw-semibold small">Cash Sale Commission</label>
                                 <div class="input-group">
-                                    <select class="form-select bg-white" wire:model="editBonusRetailCashType" style="max-width: 110px;">
+                                    <select class="form-select bg-white" wire:model="editCommissionCashType" style="max-width: 110px;">
                                         <option value="fixed">Fixed (Rs)</option>
                                         <option value="percentage">Percent (%)</option>
                                     </select>
-                                    <input type="number" step="0.01" wire:model="editBonusRetailCash"
-                                        class="form-control @error('editBonusRetailCash') is-invalid @enderror" placeholder="0.00">
+                                    <input type="number" step="0.01" wire:model="editCommissionCash"
+                                        class="form-control @error('editCommissionCash') is-invalid @enderror" placeholder="0.00">
                                 </div>
-                                @error('editBonusRetailCash') <span class="text-danger small">{{ $message }}</span> @enderror
+                                @error('editCommissionCash') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold small">Retail Credit Bonus</label>
+                                <label class="form-label fw-semibold small">Credit Sale Commission</label>
                                 <div class="input-group">
-                                    <select class="form-select bg-white" wire:model="editBonusRetailCreditType" style="max-width: 110px;">
+                                    <select class="form-select bg-white" wire:model="editCommissionCreditType" style="max-width: 110px;">
                                         <option value="fixed">Fixed (Rs)</option>
                                         <option value="percentage">Percent (%)</option>
                                     </select>
-                                    <input type="number" step="0.01" wire:model="editBonusRetailCredit"
-                                        class="form-control @error('editBonusRetailCredit') is-invalid @enderror" placeholder="0.00">
+                                    <input type="number" step="0.01" wire:model="editCommissionCredit"
+                                        class="form-control @error('editCommissionCredit') is-invalid @enderror" placeholder="0.00">
                                 </div>
-                                @error('editBonusRetailCredit') <span class="text-danger small">{{ $message }}</span> @enderror
+                                @error('editCommissionCredit') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         </div>
                     </div>
@@ -816,7 +755,7 @@
                         </button>
                         <button type="submit" class="btn btn-warning text-white shadow-sm" wire:loading.attr="disabled">
                             <span wire:loading.remove>
-                                <i class="bi bi-check-circle"></i> Update Bonus
+                                <i class="bi bi-check-circle"></i> Update Commission
                             </span>
                             <span wire:loading>
                                 <span class="spinner-border spinner-border-sm" role="status"></span>
@@ -892,7 +831,7 @@
     window.addEventListener('swal:confirm-bulk-update', event => {
         Swal.fire({
             title: 'Are you sure?',
-            text: "This will update sales bonus for ALL products based on the settings!",
+            text: "This will update sales commission for ALL products based on the settings!",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ffc107',

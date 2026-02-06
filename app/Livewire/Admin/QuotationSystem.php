@@ -287,8 +287,8 @@ class QuotationSystem extends Component
                 return $item;
             })->toArray();
         } else {
-            // Add new item - use discount_price if available, otherwise 0
-            $discountPrice = ProductDetail::find($product['id'])->price->discount_price ?? 0;
+            // Add new item - no pre-filled discount
+            $discountPrice = 0;
 
             $this->cart[] = [
                 'id' => $product['id'],
@@ -297,7 +297,7 @@ class QuotationSystem extends Component
                 'model' => $product['model'],
                 'price' => $product['price'], // Unit price from selling_price
                 'quantity' => 1,
-                'discount' => $discountPrice, // Pre-fill with discount_price from database
+                'discount' => $discountPrice, // No pre-filled discount
                 'total' => $product['price'] - $discountPrice // Initial total with discount applied
             ];
         }

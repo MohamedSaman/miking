@@ -45,10 +45,10 @@ class Billing extends Component
     public $customerAddress = '';
     public $customerType = 'retail';
     public $businessName = '';
-    public $customerTypeSale = 'retail'; // Added for sale type selection
 
     // Sale Properties
     public $notes = '';
+    public $salePriceType = 'cash'; // Price type: cash, credit, cash_credit
 
     // Payment Properties (same as admin StoreBilling)
     public $paymentMethod = 'cash';
@@ -202,16 +202,34 @@ class Billing extends Component
             $customer = Customer::find($value);
             if ($customer) {
                 $this->selectedCustomer = $customer;
-                
-                // Auto update sale type based on customer type
-                if ($customer->type === 'wholesale') {
-                    $this->customerTypeSale = 'wholesale';
-                } else {
-                    $this->customerTypeSale = 'retail';
-                }
             }
         } else {
             $this->setDefaultCustomer();
+        }
+    }
+
+    // When sale price type is changed, recalculate all cart prices
+    public function updatedSalePriceType($value)
+    {
+        foreach ($this->cart as $index => $item) {
+            $price = 0;
+            
+            switch ($value) {
+                case 'cash':
+                    $price = $item['cash_price'] ?? $item['price'];
+                    break;
+                case 'credit':
+                    $price = $item['credit_price'] ?? $item['price'];
+                    break;
+                case 'cash_credit':
+                    $price = $item['cash_credit_price'] ?? $item['cash_price'] ?? $item['price'];
+                    break;
+                default:
+                    $price = $item['cash_price'] ?? $item['price'];
+            }
+            
+            $this->cart[$index]['price'] = $price;
+            $this->cart[$index]['total'] = ($price - $this->cart[$index]['discount']) * $this->cart[$index]['quantity'];
         }
     }
 
@@ -331,13 +349,6 @@ class Billing extends Component
             $this->customerId = $customer->id;
             $this->selectedCustomer = $customer;
             
-            // Auto update sale type based on customer type
-            if ($customer->type === 'wholesale') {
-                $this->customerTypeSale = 'wholesale';
-            } else {
-                $this->customerTypeSale = 'retail';
-            }
-            
             $this->closeCustomerModal();
 
             $this->js("Swal.fire('success', 'Customer created and selected successfully!', 'success')");
@@ -347,24 +358,6 @@ class Billing extends Component
     }
 
 
-
-    // When sale type changes, update prices in cart
-    public function updatedCustomerTypeSale($value)
-    {
-        $this->cart = collect($this->cart)->map(function ($item) use ($value) {
-            // Check if we have both prices stored
-            if (isset($item['wholesale_price']) && isset($item['retail_price'])) {
-                if ($value === 'wholesale' && $item['wholesale_price'] > 0) {
-                    $item['price'] = $item['wholesale_price'];
-                } else {
-                    $item['price'] = $item['retail_price'];
-                }
-                // Recalculate total
-                $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
-            }
-            return $item;
-        })->toArray();
-    }
 
     // Search for staff allocated products only
     public function updatedSearch()
@@ -441,13 +434,32 @@ class Billing extends Component
                 return $item;
             })->toArray();
         } else {
-            // Determine price based on current sale type
-            $retailPrice = $product['retail_price'] ?? $product['price'];
-            $wholesalePrice = $product['wholesale_price'] ?? 0;
+            // Get staff product details for pricing
+            $staffProduct = StaffProduct::where('staff_id', Auth::id())
+                ->where('product_id', $product['id'])
+                ->first();
             
-            $finalPrice = ($this->customerTypeSale === 'wholesale' && $wholesalePrice > 0) 
-                          ? $wholesalePrice 
-                          : $retailPrice;
+            // Get product price details
+            $productDetail = ProductDetail::with('price')->find($product['id']);
+            
+            // Determine which price to use based on salePriceType
+            $cashPrice = $productDetail->price->cash_price ?? $product['price'];
+            $creditPrice = $productDetail->price->credit_price ?? $product['price'];
+            $cashCreditPrice = $productDetail->price->cash_credit_price ?? $cashPrice;
+            
+            switch ($this->salePriceType) {
+                case 'cash':
+                    $finalPrice = $cashPrice;
+                    break;
+                case 'credit':
+                    $finalPrice = $creditPrice;
+                    break;
+                case 'cash_credit':
+                    $finalPrice = $cashCreditPrice;
+                    break;
+                default:
+                    $finalPrice = $cashPrice;
+            }
 
             $newItem = [
                 'key' => uniqid('cart_'),
@@ -456,8 +468,9 @@ class Billing extends Component
                 'code' => $product['code'],
                 'model' => $product['model'],
                 'price' => $finalPrice,
-                'retail_price' => $retailPrice,
-                'wholesale_price' => $wholesalePrice,
+                'cash_price' => $cashPrice,
+                'credit_price' => $creditPrice,
+                'cash_credit_price' => $cashCreditPrice,
                 'quantity' => 1,
                 'discount' => 0,
                 'total' => $finalPrice,
@@ -701,7 +714,7 @@ class Billing extends Component
                 'user_id' => $staffId,
                 'status' => 'confirm',
                 'sale_type' => 'staff',
-                'customer_type_sale' => $this->customerTypeSale, // Save sale type
+                'sale_price_type' => $this->salePriceType,
             ]);
 
             // Create sale items

@@ -93,7 +93,7 @@
                             <th>Staff Name</th>
                             <th class="text-center">Basic Salary</th>
                             <th class="text-center">Allowance</th>
-                            <th class="text-center">Sales Bonus</th>
+                            <th class="text-center">Sales Comm</th>
                             <th class="text-center">Advance</th>
                             <th class="text-center">Net Salary</th>
                             <th class="text-center">Salary Status</th>

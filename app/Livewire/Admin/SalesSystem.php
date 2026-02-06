@@ -47,8 +47,8 @@ class SalesSystem extends Component
 
     // Sale Properties
     public $notes = '';
-    public $customerTypeSale = 'retail'; // wholesale or retail
     public $paymentMethod = 'credit'; // Always credit for Sales System
+    public $salePriceType = 'cash'; // Price type: cash, credit, cash_credit
 
     // Discount Properties
     public $additionalDiscount = 0;
@@ -147,22 +147,29 @@ class SalesSystem extends Component
         }
     }
 
-    // When sale type changes, update prices in cart
-    public function updatedCustomerTypeSale($value)
+    // When sale price type is changed, recalculate all cart prices
+    public function updatedSalePriceType($value)
     {
-        $this->cart = collect($this->cart)->map(function ($item) use ($value) {
-            // Check if we have both prices stored
-            if (isset($item['wholesale_price']) && isset($item['retail_price'])) {
-                if ($value === 'wholesale' && $item['wholesale_price'] > 0) {
-                    $item['price'] = $item['wholesale_price'];
-                } else {
-                    $item['price'] = $item['retail_price'];
-                }
-                // Recalculate total
-                $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
+        foreach ($this->cart as $index => $item) {
+            $price = 0;
+            
+            switch ($value) {
+                case 'cash':
+                    $price = $item['cash_price'] ?? $item['price'];
+                    break;
+                case 'credit':
+                    $price = $item['credit_price'] ?? $item['price'];
+                    break;
+                case 'cash_credit':
+                    $price = $item['cash_credit_price'] ?? $item['cash_price'] ?? $item['price'];
+                    break;
+                default:
+                    $price = $item['cash_price'] ?? $item['price'];
             }
-            return $item;
-        })->toArray();
+            
+            $this->cart[$index]['price'] = $price;
+            $this->cart[$index]['total'] = ($price - $this->cart[$index]['discount']) * $this->cart[$index]['quantity'];
+        }
     }
 
     // Reset customer fields
@@ -318,15 +325,28 @@ class SalesSystem extends Component
                 return $item;
             })->toArray();
         } else {
-            $discountPrice = ProductDetail::find($product['id'])->price->discount_price ?? 0;
-
-            // Determine price based on current sale type
-            $retailPrice = $product['retail_price'] ?? $product['price'];
-            $wholesalePrice = $product['wholesale_price'] ?? 0;
+            // Get product price details
+            $productDetail = ProductDetail::with('price')->find($product['id']);
             
-            $finalPrice = ($this->customerTypeSale === 'wholesale' && $wholesalePrice > 0) 
-                          ? $wholesalePrice 
-                          : $retailPrice;
+            // Determine which price to use based on salePriceType
+            $finalPrice = $product['price']; // default
+            $cashPrice = $productDetail->price->cash_price ?? $product['price'];
+            $creditPrice = $productDetail->price->credit_price ?? $product['price'];
+            $cashCreditPrice = $productDetail->price->cash_credit_price ?? $cashPrice;
+            
+            switch ($this->salePriceType) {
+                case 'cash':
+                    $finalPrice = $cashPrice;
+                    break;
+                case 'credit':
+                    $finalPrice = $creditPrice;
+                    break;
+                case 'cash_credit':
+                    $finalPrice = $cashCreditPrice;
+                    break;
+                default:
+                    $finalPrice = $cashPrice;
+            }
 
             $newItem = [
                 'key' => uniqid('cart_'),  // Add unique key to maintain state
@@ -335,11 +355,12 @@ class SalesSystem extends Component
                 'code' => $product['code'],
                 'model' => $product['model'],
                 'price' => $finalPrice,
-                'retail_price' => $retailPrice,
-                'wholesale_price' => $wholesalePrice,
+                'cash_price' => $cashPrice,
+                'credit_price' => $creditPrice,
+                'cash_credit_price' => $cashCreditPrice,
                 'quantity' => 1,
-                'discount' => $discountPrice,
-                'total' => $finalPrice - $discountPrice,
+                'discount' => 0,
+                'total' => $finalPrice,
                 'stock' => $product['stock']
             ];
 
@@ -351,7 +372,6 @@ class SalesSystem extends Component
         $this->searchResults = [];
     }
 
-    // Update Quantity
     public function updateQuantity($index, $quantity)
     {
         if ($quantity < 1) $quantity = 1;
@@ -502,7 +522,6 @@ class SalesSystem extends Component
                 'invoice_number' => Sale::generateInvoiceNumber(),
                 'customer_id' => $customer->id,
                 'customer_type' => $customer->type,
-                'customer_type_sale' => $this->customerTypeSale,
                 'subtotal' => $this->subtotal,
                 'discount_amount' => $this->additionalDiscountAmount,
                 'total_amount' => $this->grandTotal,
@@ -513,7 +532,8 @@ class SalesSystem extends Component
                 'notes' => $this->notes,
                 'user_id' => Auth::id(),
                 'status' => 'confirm',
-                'sale_type' => $this->getSaleType()
+                'sale_type' => $this->getSaleType(),
+                'sale_price_type' => $this->salePriceType,
             ]);
 
             // Create sale items and update stock using FIFO

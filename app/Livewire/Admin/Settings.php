@@ -59,36 +59,27 @@ class Settings extends Component
     public $editingCategoryId = null;
     public $deleteCategoryTypeId = null;
 
-    // Sales Bonus Management
-    public $bulkRetailCashBonusType = 'percentage';
-    public $bulkRetailCashBonusValue = 0;
-    public $bulkRetailCreditBonusType = 'percentage';
-    public $bulkRetailCreditBonusValue = 0;
-
-    public $bulkWholesaleCashBonusType = 'percentage';
-    public $bulkWholesaleCashBonusValue = 0;
-    public $bulkWholesaleCreditBonusType = 'percentage';
-    public $bulkWholesaleCreditBonusValue = 0;
+    // Sales Commission Management
+    public $bulkCashCommissionType = 'percentage';
+    public $bulkCashCommissionValue = 0;
+    public $bulkCreditCommissionType = 'percentage';
+    public $bulkCreditCommissionValue = 0;
     
     public $bonusSearch = '';
     public $bonusProducts = [];
     public $editingBonusProductId = null;
     
-    public $editBonusRetailCash = 0;
-    public $editBonusRetailCashType = 'fixed';
-    public $editBonusRetailCredit = 0;
-    public $editBonusRetailCreditType = 'fixed';
-    public $editBonusWholesaleCash = 0;
-    public $editBonusWholesaleCashType = 'fixed';
-    public $editBonusWholesaleCredit = 0;
-    public $editBonusWholesaleCreditType = 'fixed';
+    public $editCommissionCash = 0;
+    public $editCommissionCashType = 'fixed';
+    public $editCommissionCredit = 0;
+    public $editCommissionCreditType = 'fixed';
     public $showBonusModal = false;
 
     protected $listeners = [
         'deleteConfirmed' => 'deleteConfiguration', 
         'deleteExpenseConfirmed' => 'deleteExpense',
         'deleteCategoryTypeConfirmed' => 'deleteCategoryType',
-        'applyBulkBonusConfirmed' => 'applyBulkBonus'
+        'applyBulkBonusConfirmed' => 'applyBulkCommission'
     ];
 
     protected $rules = [
@@ -120,17 +111,11 @@ class Settings extends Component
 
     public function loadBulkBonusSettings()
     {
-        $this->bulkRetailCashBonusType = Setting::where('key', 'bulk_retail_cash_bonus_type')->value('value') ?? 'percentage';
-        $this->bulkRetailCashBonusValue = Setting::where('key', 'bulk_retail_cash_bonus_value')->value('value') ?? 0;
+        $this->bulkCashCommissionType = Setting::where('key', 'bulk_cash_commission_type')->value('value') ?? 'percentage';
+        $this->bulkCashCommissionValue = Setting::where('key', 'bulk_cash_commission_value')->value('value') ?? 0;
         
-        $this->bulkRetailCreditBonusType = Setting::where('key', 'bulk_retail_credit_bonus_type')->value('value') ?? 'percentage';
-        $this->bulkRetailCreditBonusValue = Setting::where('key', 'bulk_retail_credit_bonus_value')->value('value') ?? 0;
-        
-        $this->bulkWholesaleCashBonusType = Setting::where('key', 'bulk_wholesale_cash_bonus_type')->value('value') ?? 'percentage';
-        $this->bulkWholesaleCashBonusValue = Setting::where('key', 'bulk_wholesale_cash_bonus_value')->value('value') ?? 0;
-        
-        $this->bulkWholesaleCreditBonusType = Setting::where('key', 'bulk_wholesale_credit_bonus_type')->value('value') ?? 'percentage';
-        $this->bulkWholesaleCreditBonusValue = Setting::where('key', 'bulk_wholesale_credit_bonus_value')->value('value') ?? 0;
+        $this->bulkCreditCommissionType = Setting::where('key', 'bulk_credit_commission_type')->value('value') ?? 'percentage';
+        $this->bulkCreditCommissionValue = Setting::where('key', 'bulk_credit_commission_value')->value('value') ?? 0;
     }
 
     public function loadExpenseCategories()
@@ -557,14 +542,12 @@ class Settings extends Component
         $this->dispatch('swal:confirm-bulk-update');
     }
 
-    public function applyBulkBonus()
+    public function applyBulkCommission()
     {
         try {
             $this->validate([
-                'bulkRetailCashBonusValue' => 'required|numeric|min:0',
-                'bulkRetailCreditBonusValue' => 'required|numeric|min:0',
-                'bulkWholesaleCashBonusValue' => 'required|numeric|min:0',
-                'bulkWholesaleCreditBonusValue' => 'required|numeric|min:0',
+                'bulkCashCommissionValue' => 'required|numeric|min:0',
+                'bulkCreditCommissionValue' => 'required|numeric|min:0',
             ]);
 
             // Save these as defaults first
@@ -576,59 +559,41 @@ class Settings extends Component
             foreach ($products as $product) {
                 $sellingPrice = $product->price->selling_price ?? 0;
 
-                // Retail Cash Bonus
-                if ($this->bulkRetailCashBonusType === 'percentage') {
-                    $product->retail_cash_bonus = ($sellingPrice * $this->bulkRetailCashBonusValue) / 100;
+                // Cash Sale Commission
+                if ($this->bulkCashCommissionType === 'percentage') {
+                    $product->cash_sale_commission = ($sellingPrice * $this->bulkCashCommissionValue) / 100;
                 } else {
-                    $product->retail_cash_bonus = $this->bulkRetailCashBonusValue;
+                    $product->cash_sale_commission = $this->bulkCashCommissionValue;
                 }
 
-                // Retail Credit Bonus
-                if ($this->bulkRetailCreditBonusType === 'percentage') {
-                    $product->retail_credit_bonus = ($sellingPrice * $this->bulkRetailCreditBonusValue) / 100;
+                // Credit Sale Commission
+                if ($this->bulkCreditCommissionType === 'percentage') {
+                    $product->credit_sale_commission = ($sellingPrice * $this->bulkCreditCommissionValue) / 100;
                 } else {
-                    $product->retail_credit_bonus = $this->bulkRetailCreditBonusValue;
-                }
-
-                // Wholesale Cash Bonus
-                if ($this->bulkWholesaleCashBonusType === 'percentage') {
-                    $product->wholesale_cash_bonus = ($sellingPrice * $this->bulkWholesaleCashBonusValue) / 100;
-                } else {
-                    $product->wholesale_cash_bonus = $this->bulkWholesaleCashBonusValue;
-                }
-
-                // Wholesale Credit Bonus
-                if ($this->bulkWholesaleCreditBonusType === 'percentage') {
-                    $product->wholesale_credit_bonus = ($sellingPrice * $this->bulkWholesaleCreditBonusValue) / 100;
-                } else {
-                    $product->wholesale_credit_bonus = $this->bulkWholesaleCreditBonusValue;
+                    $product->credit_sale_commission = $this->bulkCreditCommissionValue;
                 }
 
                 $product->save();
                 $count++;
             }
 
-            $this->js("Swal.fire('Success!', 'Sales bonus updated for {$count} products.', 'success')");
+            $this->js("Swal.fire('Success!', 'Sales commission updated for {$count} products.', 'success')");
             
             // Re-run search if active
             $this->updatedBonusSearch();
 
         } catch (\Exception $e) {
-            $this->js("Swal.fire('Error!', 'Unable to apply bulk bonus. Please check values.', 'error')");
+            $this->js("Swal.fire('Error!', 'Unable to apply bulk commission. Please check values.', 'error')");
         }
     }
 
     public function saveBulkDefaults()
     {
         $settings = [
-            'bulk_retail_cash_bonus_type' => $this->bulkRetailCashBonusType,
-            'bulk_retail_cash_bonus_value' => $this->bulkRetailCashBonusValue,
-            'bulk_retail_credit_bonus_type' => $this->bulkRetailCreditBonusType,
-            'bulk_retail_credit_bonus_value' => $this->bulkRetailCreditBonusValue,
-            'bulk_wholesale_cash_bonus_type' => $this->bulkWholesaleCashBonusType,
-            'bulk_wholesale_cash_bonus_value' => $this->bulkWholesaleCashBonusValue,
-            'bulk_wholesale_credit_bonus_type' => $this->bulkWholesaleCreditBonusType,
-            'bulk_wholesale_credit_bonus_value' => $this->bulkWholesaleCreditBonusValue,
+            'bulk_cash_commission_type' => $this->bulkCashCommissionType,
+            'bulk_cash_commission_value' => $this->bulkCashCommissionValue,
+            'bulk_credit_commission_type' => $this->bulkCreditCommissionType,
+            'bulk_credit_commission_value' => $this->bulkCreditCommissionValue,
         ];
 
         foreach ($settings as $key => $value) {
@@ -645,14 +610,12 @@ class Settings extends Component
     {
         try {
             $this->validate([
-                'bulkRetailCashBonusValue' => 'required|numeric|min:0',
-                'bulkRetailCreditBonusValue' => 'required|numeric|min:0',
-                'bulkWholesaleCashBonusValue' => 'required|numeric|min:0',
-                'bulkWholesaleCreditBonusValue' => 'required|numeric|min:0',
+                'bulkCashCommissionValue' => 'required|numeric|min:0',
+                'bulkCreditCommissionValue' => 'required|numeric|min:0',
             ]);
 
             $this->saveBulkDefaults();
-            $this->js("Swal.fire('Success!', 'Bonus defaults updated successfully.', 'success')");
+            $this->js("Swal.fire('Success!', 'Commission defaults updated successfully.', 'success')");
         } catch (\Exception $e) {
             $this->js("Swal.fire('Error!', 'Unable to update defaults.', 'error')");
         }
@@ -662,16 +625,12 @@ class Settings extends Component
     {
         $product = ProductDetail::findOrFail($id);
         $this->editingBonusProductId = $id;
-        $this->editBonusRetailCash = $product->retail_cash_bonus;
-        $this->editBonusRetailCredit = $product->retail_credit_bonus;
-        $this->editBonusWholesaleCash = $product->wholesale_cash_bonus;
-        $this->editBonusWholesaleCredit = $product->wholesale_credit_bonus;
+        $this->editCommissionCash = $product->cash_sale_commission;
+        $this->editCommissionCredit = $product->credit_sale_commission;
         
         // Default to fixed when opening, as we don't store the type in DB
-        $this->editBonusRetailCashType = 'fixed';
-        $this->editBonusRetailCreditType = 'fixed';
-        $this->editBonusWholesaleCashType = 'fixed';
-        $this->editBonusWholesaleCreditType = 'fixed';
+        $this->editCommissionCashType = 'fixed';
+        $this->editCommissionCreditType = 'fixed';
         
         $this->showBonusModal = true;
     }
@@ -680,41 +639,25 @@ class Settings extends Component
     {
         try {
             $this->validate([
-                'editBonusRetailCash' => 'required|numeric|min:0',
-                'editBonusRetailCredit' => 'required|numeric|min:0',
-                'editBonusWholesaleCash' => 'required|numeric|min:0',
-                'editBonusWholesaleCredit' => 'required|numeric|min:0',
+                'editCommissionCash' => 'required|numeric|min:0',
+                'editCommissionCredit' => 'required|numeric|min:0',
             ]);
 
             $product = ProductDetail::with('price')->findOrFail($this->editingBonusProductId);
             $sellingPrice = $product->price->selling_price ?? 0;
 
-            // Retail Cash
-            if ($this->editBonusRetailCashType === 'percentage') {
-                $product->retail_cash_bonus = ($sellingPrice * $this->editBonusRetailCash) / 100;
+            // Cash Commission
+            if ($this->editCommissionCashType === 'percentage') {
+                $product->cash_sale_commission = ($sellingPrice * $this->editCommissionCash) / 100;
             } else {
-                $product->retail_cash_bonus = $this->editBonusRetailCash;
+                $product->cash_sale_commission = $this->editCommissionCash;
             }
 
-            // Retail Credit
-            if ($this->editBonusRetailCreditType === 'percentage') {
-                $product->retail_credit_bonus = ($sellingPrice * $this->editBonusRetailCredit) / 100;
+            // Credit Commission
+            if ($this->editCommissionCreditType === 'percentage') {
+                $product->credit_sale_commission = ($sellingPrice * $this->editCommissionCredit) / 100;
             } else {
-                $product->retail_credit_bonus = $this->editBonusRetailCredit;
-            }
-
-            // Wholesale Cash
-            if ($this->editBonusWholesaleCashType === 'percentage') {
-                $product->wholesale_cash_bonus = ($sellingPrice * $this->editBonusWholesaleCash) / 100;
-            } else {
-                $product->wholesale_cash_bonus = $this->editBonusWholesaleCash;
-            }
-
-            // Wholesale Credit
-            if ($this->editBonusWholesaleCreditType === 'percentage') {
-                $product->wholesale_credit_bonus = ($sellingPrice * $this->editBonusWholesaleCredit) / 100;
-            } else {
-                $product->wholesale_credit_bonus = $this->editBonusWholesaleCredit;
+                $product->credit_sale_commission = $this->editCommissionCredit;
             }
 
             $product->save();
@@ -724,9 +667,9 @@ class Settings extends Component
             // Update the list
             $this->updatedBonusSearch();
 
-            $this->js("Swal.fire('Success!', 'Product bonus updated successfully.', 'success')");
+            $this->js("Swal.fire('Success!', 'Product commission updated successfully.', 'success')");
         } catch (\Exception $e) {
-            $this->js("Swal.fire('Error!', 'Unable to update product bonus. Error: {$e->getMessage()}', 'error')");
+            $this->js("Swal.fire('Error!', 'Unable to update product commission. Error: {$e->getMessage()}', 'error')");
         }
     }
 
@@ -734,15 +677,11 @@ class Settings extends Component
     {
         $this->showBonusModal = false;
         $this->editingBonusProductId = null;
-        $this->editBonusRetailCash = 0;
-        $this->editBonusRetailCredit = 0;
-        $this->editBonusWholesaleCash = 0;
-        $this->editBonusWholesaleCredit = 0;
+        $this->editCommissionCash = 0;
+        $this->editCommissionCredit = 0;
         
-        $this->editBonusRetailCashType = 'fixed';
-        $this->editBonusRetailCreditType = 'fixed';
-        $this->editBonusWholesaleCashType = 'fixed';
-        $this->editBonusWholesaleCreditType = 'fixed';
+        $this->editCommissionCashType = 'fixed';
+        $this->editCommissionCreditType = 'fixed';
     }
 
     public function render()

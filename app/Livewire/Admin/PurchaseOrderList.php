@@ -62,20 +62,16 @@ class PurchaseOrderList extends Component
     public $newProducts = [];
     public $perPage = 10;
 
-    public $bonusItemIndex = null;
-    public $bonusRetailCash = 0;
-    public $bonusRetailCredit = 0;
-    public $bonusWholesaleCash = 0;
-    public $bonusWholesaleCredit = 0;
-    public $bonusMode = 'create'; // 'create' or 'edit'
+    public $commissionItemIndex = null;
+    public $commissionCash = 0;
+    public $commissionCredit = 0;
+    public $commissionMode = 'create'; // 'create' or 'edit'
     public $itemSupplierPrice = 0;
-    public $itemRetailPrice = 0;
-    public $itemWholesalePrice = 0;
+    public $itemCashPrice = 0;
+    public $itemCreditPrice = 0;
 
-    public $bonusRetailCashPercentage = 0;
-    public $bonusRetailCreditPercentage = 0;
-    public $bonusWholesaleCashPercentage = 0;
-    public $bonusWholesaleCreditPercentage = 0;
+    public $commissionCashPercentage = 0;
+    public $commissionCreditPercentage = 0;
 
     public function mount()
     {
@@ -226,119 +222,87 @@ class PurchaseOrderList extends Component
         $this->calculateGrandTotal();
     }
 
-    public function openBonusModal($index, $mode = 'create')
+    public function openCommissionModal($index, $mode = 'create')
     {
-        $this->bonusMode = $mode;
+        $this->commissionMode = $mode;
         $items = $mode === 'create' ? $this->orderItems : $this->editOrderItems;
 
         if (!isset($items[$index])) return;
 
-        $this->bonusItemIndex = $index;
+        $this->commissionItemIndex = $index;
         $productId = $items[$index]['product_id'];
         $product = ProductDetail::find($productId);
 
         if ($product) {
-            $this->bonusRetailCash = $product->retail_cash_bonus ?? 0;
-            $this->bonusRetailCredit = $product->retail_credit_bonus ?? 0;
-            $this->bonusWholesaleCash = $product->wholesale_cash_bonus ?? 0;
-            $this->bonusWholesaleCredit = $product->wholesale_credit_bonus ?? 0;
+            $this->commissionCash = $product->cash_sale_commission ?? 0;
+            $this->commissionCredit = $product->credit_sale_commission ?? 0;
             
             $this->itemSupplierPrice = floatval($items[$index]['supplier_price'] ?? 0);
             
             // Get current prices from the database for calculation reference
             $priceModel = \App\Models\ProductPrice::where('product_id', $productId)->first();
-            $this->itemRetailPrice = floatval($priceModel->retail_price ?? $priceModel->selling_price ?? 0);
-            $this->itemWholesalePrice = floatval($priceModel->wholesale_price ?? 0);
+            $this->itemCashPrice = floatval($priceModel->cash_price ?? 0);
+            $this->itemCreditPrice = floatval($priceModel->credit_price ?? 0);
             
             // Calculate percentages based on correct reference prices
-            if ($this->itemRetailPrice > 0) {
-                $this->bonusRetailCashPercentage = round(($this->bonusRetailCash / $this->itemRetailPrice) * 100, 2);
-                $this->bonusRetailCreditPercentage = round(($this->bonusRetailCredit / $this->itemRetailPrice) * 100, 2);
+            if ($this->itemCashPrice > 0) {
+                $this->commissionCashPercentage = round(($this->commissionCash / $this->itemCashPrice) * 100, 2);
             } else {
-                $this->bonusRetailCashPercentage = 0;
-                $this->bonusRetailCreditPercentage = 0;
+                $this->commissionCashPercentage = 0;
             }
 
-            if ($this->itemWholesalePrice > 0) {
-                $this->bonusWholesaleCashPercentage = round(($this->bonusWholesaleCash / $this->itemWholesalePrice) * 100, 2);
-                $this->bonusWholesaleCreditPercentage = round(($this->bonusWholesaleCredit / $this->itemWholesalePrice) * 100, 2);
+            if ($this->itemCreditPrice > 0) {
+                $this->commissionCreditPercentage = round(($this->commissionCredit / $this->itemCreditPrice) * 100, 2);
             } else {
-                $this->bonusWholesaleCashPercentage = 0;
-                $this->bonusWholesaleCreditPercentage = 0;
+                $this->commissionCreditPercentage = 0;
             }
         }
 
-        $this->js("new bootstrap.Modal(document.getElementById('bonusModal')).show();");
+        $this->js("new bootstrap.Modal(document.getElementById('commissionModal')).show();");
     }
 
-    public function updatedBonusRetailCash($value)
+    public function updatedCommissionCash($value)
     {
-        if ($this->itemRetailPrice > 0) {
-            $this->bonusRetailCashPercentage = round(($value / $this->itemRetailPrice) * 100, 2);
+        if ($this->itemCashPrice > 0) {
+            $this->commissionCashPercentage = round(($value / $this->itemCashPrice) * 100, 2);
         }
     }
 
-    public function updatedBonusRetailCashPercentage($value)
+    public function updatedCommissionCashPercentage($value)
     {
-        $this->bonusRetailCash = round(($value / 100) * $this->itemRetailPrice, 2);
+        $this->commissionCash = round(($value / 100) * $this->itemCashPrice, 2);
     }
 
-    public function updatedBonusRetailCredit($value)
+    public function updatedCommissionCredit($value)
     {
-        if ($this->itemRetailPrice > 0) {
-            $this->bonusRetailCreditPercentage = round(($value / $this->itemRetailPrice) * 100, 2);
+        if ($this->itemCreditPrice > 0) {
+            $this->commissionCreditPercentage = round(($value / $this->itemCreditPrice) * 100, 2);
         }
     }
 
-    public function updatedBonusRetailCreditPercentage($value)
+    public function updatedCommissionCreditPercentage($value)
     {
-        $this->bonusRetailCredit = round(($value / 100) * $this->itemRetailPrice, 2);
+        $this->commissionCredit = round(($value / 100) * $this->itemCreditPrice, 2);
     }
 
-    public function updatedBonusWholesaleCash($value)
+    public function saveCommissionValues()
     {
-        if ($this->itemWholesalePrice > 0) {
-            $this->bonusWholesaleCashPercentage = round(($value / $this->itemWholesalePrice) * 100, 2);
-        }
-    }
-
-    public function updatedBonusWholesaleCashPercentage($value)
-    {
-        $this->bonusWholesaleCash = round(($value / 100) * $this->itemWholesalePrice, 2);
-    }
-
-    public function updatedBonusWholesaleCredit($value)
-    {
-        if ($this->itemWholesalePrice > 0) {
-            $this->bonusWholesaleCreditPercentage = round(($value / $this->itemWholesalePrice) * 100, 2);
-        }
-    }
-
-    public function updatedBonusWholesaleCreditPercentage($value)
-    {
-        $this->bonusWholesaleCredit = round(($value / 100) * $this->itemWholesalePrice, 2);
-    }
-
-    public function saveBonusValues()
-    {
-        $items_property = $this->bonusMode === 'create' ? 'orderItems' : 'editOrderItems';
+        $items_property = $this->commissionMode === 'create' ? 'orderItems' : 'editOrderItems';
         
-        if ($this->bonusItemIndex === null || !isset($this->{$items_property}[$this->bonusItemIndex])) return;
+        if ($this->commissionItemIndex === null || !isset($this->{$items_property}[$this->commissionItemIndex])) return;
 
-        $productId = $this->{$items_property}[$this->bonusItemIndex]['product_id'];
+        $productId = $this->{$items_property}[$this->commissionItemIndex]['product_id'];
         $product = ProductDetail::find($productId);
 
         if ($product) {
             $product->update([
-                'retail_cash_bonus' => $this->bonusRetailCash,
-                'retail_credit_bonus' => $this->bonusRetailCredit,
-                'wholesale_cash_bonus' => $this->bonusWholesaleCash,
-                'wholesale_credit_bonus' => $this->bonusWholesaleCredit,
+                'cash_sale_commission' => $this->commissionCash,
+                'credit_sale_commission' => $this->commissionCredit,
             ]);
         }
 
         $this->js("
-            const modalEl = document.getElementById('bonusModal');
+            const modalEl = document.getElementById('commissionModal');
             const modal = bootstrap.Modal.getInstance(modalEl);
             if (modal) modal.hide();
             
@@ -350,8 +314,8 @@ class PurchaseOrderList extends Component
 
             Swal.fire({ 
                 icon: 'success', 
-                title: 'Product Bonus Updated', 
-                text: 'Default bonus for this product has been updated.', 
+                title: 'Sale Commission Updated', 
+                text: 'Default commission for this product has been updated.', 
                 timer: 1500, 
                 showConfirmButton: false 
             });
@@ -939,7 +903,7 @@ class PurchaseOrderList extends Component
                     'product_id' => $productId,
                     'supplier_price' => $supplierPrice,
                     'selling_price' => $sellingPrice,
-                    'discount_price' => 0,
+                    'cash_credit_price' => 0,
                 ]);
             }
         }

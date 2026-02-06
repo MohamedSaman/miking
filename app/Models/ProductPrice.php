@@ -10,7 +10,7 @@ class ProductPrice extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['product_id', 'supplier_price', 'selling_price', 'retail_price', 'wholesale_price', 'discount_price'];
+    protected $fillable = ['product_id', 'supplier_price', 'selling_price', 'cash_price', 'credit_price', 'cash_credit_price'];
 
     /**
      * Get the Product that owns this price information
@@ -26,7 +26,7 @@ class ProductPrice extends Model
     public function getProfitMarginAttribute()
     {
         if ($this->supplier_price > 0) {
-            $price = $this->discount_price ?? $this->selling_price;
+            $price = $this->selling_price;
             return (($price - $this->supplier_price) / $this->supplier_price) * 100;
         }
         return 0;

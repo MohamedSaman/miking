@@ -114,7 +114,7 @@ class QuotationList extends Component
             $this->editableItems = collect($items)->map(function ($item) {
                 $product = ProductDetail::find($item['product_id']);
                 $currentStock = $product->stock->available_stock ?? 0;
-                $discountPrice = $product->price->discount_price ?? 0;
+                $discountPrice = 0; // No discount price
 
                 return [
                     'product_id' => $item['product_id'] ?? null,
@@ -398,7 +398,7 @@ class QuotationList extends Component
                         'code' => $product->code,
                         'model' => $product->model,
                         'price' => $product->price->selling_price ?? 0,
-                        'discount_price' => $product->price->discount_price ?? 0,
+                        'discount_price' => 0, // No discount price
                         'stock' => $product->stock->available_stock ?? 0
                     ];
                 })
@@ -429,7 +429,7 @@ class QuotationList extends Component
             $this->editableItems[$index]['product_code'] = $product->code;
             $this->editableItems[$index]['product_model'] = $product->model;
             $this->editableItems[$index]['unit_price'] = $product->price->selling_price ?? 0;
-            $this->editableItems[$index]['discount_per_unit'] = $product->price->discount_price ?? 0;
+            $this->editableItems[$index]['discount_per_unit'] = 0; // No discount price
             $this->editableItems[$index]['current_stock'] = $product->stock->available_stock ?? 0;
 
             // Clear search term and hide results for this index

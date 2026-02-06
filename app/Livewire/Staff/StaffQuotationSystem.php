@@ -282,9 +282,9 @@ class StaffQuotationSystem extends Component
                 return $item;
             })->toArray();
         } else {
-            // Add new item - use discount_price if available, otherwise 0
+            // Add new item - no pre-filled discount
             $productDetail = ProductDetail::with('price')->find($product['id']);
-            $discountPrice = $productDetail->price->discount_price ?? 0;
+            $discountPrice = 0;
             
             // Determine price based on current sale type
             $retailPrice = $product['retail_price'] ?? $product['price'];

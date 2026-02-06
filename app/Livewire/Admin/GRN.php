@@ -487,7 +487,7 @@ class GRN extends Component
                     'product_id' => $productId,
                     'supplier_price' => $supplierPrice,
                     'selling_price' => $sellingPrice,
-                    'discount_price' => 0,
+                    'cash_credit_price' => 0,
                 ]);
             }
         }

@@ -135,7 +135,7 @@ class FIFOStockService
                     'product_id' => $productId,
                     'supplier_price' => $nextBatch->supplier_price,
                     'selling_price' => $nextBatch->selling_price,
-                    'discount_price' => 0,
+                    'cash_credit_price' => 0,
                 ]);
 
                 Log::info("Product #{$productId} price record created", [
