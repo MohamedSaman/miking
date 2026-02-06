@@ -43,8 +43,8 @@ class Products extends Component
 
     // Create form fields
     public $code, $name, $model, $brand, $category, $image, $description, $barcode, $status, $supplier, $unit;
-    public $retail_cash_bonus, $retail_credit_bonus, $wholesale_cash_bonus, $wholesale_credit_bonus;
-    public $supplier_price, $selling_price, $retail_price, $wholesale_price, $discount_price, $available_stock, $opening_stock_rate, $damage_stock;
+    public $cash_commission, $credit_commission;
+    public $supplier_price, $selling_price, $cash_price, $credit_price, $cash_credit_price, $available_stock, $opening_stock_rate, $damage_stock;
 
     // Import file
     public $importFile;
@@ -52,9 +52,9 @@ class Products extends Component
     // Edit form fields
     public $editId, $editCode, $editName, $editModel, $editBrand, $editCategory, $editImage, $existingImage,
         $editDescription, $editBarcode, $editStatus, $editUnit, 
-        $editRetailCashBonus, $editRetailCreditBonus, $editWholesaleCashBonus, $editWholesaleCreditBonus,
-        $editSupplierPrice, $editSellingPrice, $editRetailPrice, $editWholesalePrice, 
-        $editDiscountPrice, $editOpeningStockRate, $editDamageStock;
+        $editCashCommission, $editCreditCommission,
+        $editSupplierPrice, $editSellingPrice, $editCashPrice, $editCreditPrice, 
+        $editCashCreditPrice, $editOpeningStockRate, $editDamageStock;
 
     // Stock Adjustment fields
     public $adjustmentProductId, $adjustmentProductName, $adjustmentAvailableStock, $adjustmentDamageStock,
@@ -157,9 +157,9 @@ class Products extends Component
         // Set default prices
         $this->supplier_price = 0;
         $this->selling_price = 0;
-        $this->retail_price = 0;
-        $this->wholesale_price = 0;
-        $this->discount_price = 0;
+        $this->cash_price = 0;
+        $this->credit_price = 0;
+        $this->cash_credit_price = 0;
     }
 
     public function render()
@@ -223,7 +223,7 @@ class Products extends Component
                     'product_details.status',
                     'product_prices.supplier_price',
                     'product_prices.selling_price',
-                    'product_prices.discount_price',
+                    'product_prices.cash_credit_price',
                     'product_stocks.available_stock',
                     'product_stocks.damage_stock',
                     'product_stocks.total_stock',
@@ -272,7 +272,7 @@ class Products extends Component
             'barcode' => 'nullable|string|max:255|unique:product_details,barcode',
             'supplier_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0|gte:supplier_price',
-            'discount_price' => 'nullable|numeric|min:0|lte:selling_price',
+            'cash_credit_price' => 'nullable|numeric|min:0',
             'available_stock' => 'required|integer|min:0',
             'damage_stock' => 'nullable|integer|min:0',
         ];
@@ -297,7 +297,7 @@ class Products extends Component
             'selling_price.numeric' => 'Selling price must be a number.',
             'selling_price.min' => 'Selling price cannot be negative.',
             'selling_price.gte' => 'Selling price must be greater than or equal to supplier price.',
-            'discount_price.lte' => 'Discount price cannot be greater than selling price.',
+            'cash_credit_price.numeric' => 'Cash & Credit price must be a valid number.',
             'available_stock.required' => 'Available stock is required.',
             'available_stock.integer' => 'Available stock must be a whole number.',
             'available_stock.min' => 'Available stock cannot be negative.',
@@ -339,10 +339,8 @@ class Products extends Component
                 'barcode' => $this->barcode,
                 'status' => 'active',
                 'unit' => $this->unit ?? 'Piece',
-                'retail_cash_bonus' => $this->retail_cash_bonus ?? 0,
-                'retail_credit_bonus' => $this->retail_credit_bonus ?? 0,
-                'wholesale_cash_bonus' => $this->wholesale_cash_bonus ?? 0,
-                'wholesale_credit_bonus' => $this->wholesale_credit_bonus ?? 0,
+                'cash_sale_commission' => $this->cash_commission ?? 0,
+                'credit_sale_commission' => $this->credit_commission ?? 0,
                 'brand_id' => $this->brand,
                 'category_id' => $this->category,
             ]);
@@ -351,9 +349,9 @@ class Products extends Component
                 'product_id' => $product->id,
                 'supplier_price' => $this->supplier_price,
                 'selling_price' => $this->selling_price,
-                'retail_price' => $this->retail_price,
-                'wholesale_price' => $this->wholesale_price,
-                'discount_price' => $this->discount_price,
+                'cash_price' => $this->cash_price,
+                'credit_price' => $this->credit_price,
+                'cash_credit_price' => $this->cash_credit_price,
             ]);
 
             ProductStock::create([
@@ -462,15 +460,13 @@ class Products extends Component
             'status',
             'supplier',
             'unit',
-            'retail_cash_bonus',
-            'retail_credit_bonus',
-            'wholesale_cash_bonus',
-            'wholesale_credit_bonus',
+            'cash_commission',
+            'credit_commission',
             'supplier_price',
             'selling_price',
-            'retail_price',
-            'wholesale_price',
-            'discount_price',
+            'cash_price',
+            'credit_price',
+            'cash_credit_price',
             'available_stock',
             'opening_stock_rate',
             'damage_stock'
@@ -494,15 +490,13 @@ class Products extends Component
         $this->editBarcode = $product->barcode;
         $this->editStatus = $product->status;
         $this->editUnit = $product->unit;
-        $this->editRetailCashBonus = $product->retail_cash_bonus;
-        $this->editRetailCreditBonus = $product->retail_credit_bonus;
-        $this->editWholesaleCashBonus = $product->wholesale_cash_bonus;
-        $this->editWholesaleCreditBonus = $product->wholesale_credit_bonus;
+        $this->editCashCommission = $product->cash_sale_commission;
+        $this->editCreditCommission = $product->credit_sale_commission;
         $this->editSupplierPrice = $product->price->supplier_price ?? 0;
         $this->editSellingPrice = $product->price->selling_price ?? 0;
-        $this->editRetailPrice = $product->price->retail_price ?? 0;
-        $this->editWholesalePrice = $product->price->wholesale_price ?? 0;
-        $this->editDiscountPrice = $product->price->discount_price ?? 0;
+        $this->editCashPrice = $product->price->cash_price ?? 0;
+        $this->editCreditPrice = $product->price->credit_price ?? 0;
+        $this->editCashCreditPrice = $product->price->cash_credit_price ?? 0;
         $this->editOpeningStockRate = $product->stock->opening_stock_rate ?? 0;
         $this->editDamageStock = $product->stock->damage_stock ?? 0;
 
@@ -530,15 +524,13 @@ class Products extends Component
             'editBarcode' => 'nullable|string|max:255|unique:product_details,barcode,' . $this->editId,
             'editStatus' => 'required|in:active,inactive',
             'editUnit' => 'nullable|in:Piece,Dozen,Bundle',
-            'editRetailCashBonus' => 'nullable|numeric|min:0',
-            'editRetailCreditBonus' => 'nullable|numeric|min:0',
-            'editWholesaleCashBonus' => 'nullable|numeric|min:0',
-            'editWholesaleCreditBonus' => 'nullable|numeric|min:0',
+            'editCashCommission' => 'nullable|numeric|min:0',
+            'editCreditCommission' => 'nullable|numeric|min:0',
             'editSupplierPrice' => 'required|numeric|min:0',
             'editSellingPrice' => 'required|numeric|min:0|gte:editSupplierPrice',
-            'editRetailPrice' => 'nullable|numeric|min:0',
-            'editWholesalePrice' => 'nullable|numeric|min:0',
-            'editDiscountPrice' => 'nullable|numeric|min:0|lte:editSellingPrice',
+            'editCashPrice' => 'nullable|numeric|min:0',
+            'editCreditPrice' => 'nullable|numeric|min:0',
+            'editCashCreditPrice' => 'nullable|numeric|min:0',
             'editOpeningStockRate' => 'nullable|numeric|min:0',
             'editDamageStock' => 'required|integer|min:0',
         ];
@@ -564,18 +556,16 @@ class Products extends Component
                 'barcode' => $this->editBarcode,
                 'status' => $this->editStatus,
                 'unit' => $this->editUnit,
-                'retail_cash_bonus' => $this->editRetailCashBonus,
-                'retail_credit_bonus' => $this->editRetailCreditBonus,
-                'wholesale_cash_bonus' => $this->editWholesaleCashBonus,
-                'wholesale_credit_bonus' => $this->editWholesaleCreditBonus,
+                'cash_sale_commission' => $this->editCashCommission,
+                'credit_sale_commission' => $this->editCreditCommission,
             ]);
 
             $product->price()->updateOrCreate([], [
                 'supplier_price' => $this->editSupplierPrice,
                 'selling_price' => $this->editSellingPrice,
-                'retail_price' => $this->editRetailPrice,
-                'wholesale_price' => $this->editWholesalePrice,
-                'discount_price' => $this->editDiscountPrice,
+                'cash_price' => $this->editCashPrice,
+                'credit_price' => $this->editCreditPrice,
+                'cash_credit_price' => $this->editCashCreditPrice,
             ]);
 
             $product->stock()->updateOrCreate([], [

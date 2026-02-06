@@ -112,7 +112,7 @@ class BillingPage extends Component
                 ->select(
                     'product_details.*',
                     'product_prices.selling_price',
-                    'product_prices.discount_price',
+                    'product_prices.cash_credit_price',
                     'product_stocks.available_stock',
                     'brand_lists.brand_name as brand_name',
                     'category_lists.category_name as category_name'
@@ -162,7 +162,7 @@ class BillingPage extends Component
             }
             $this->quantities[$ProductId]++;
         } else {
-            $discountPrice = $Product->selling_price - $Product->discount_price ?? 0;
+            $discountPrice = 0; // Discount price removed, set to 0
             $this->cart[$ProductId] = [
                 'id' => $Product->id,
                 'code' => $Product->code,

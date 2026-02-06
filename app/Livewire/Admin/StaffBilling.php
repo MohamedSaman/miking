@@ -42,7 +42,6 @@ class StaffBilling extends Component
     public $customerAddress = '';
     public $customerType = 'retail';
     public $businessName = '';
-    public $customerTypeSale = 'retail'; // Added for sale type selection
 
     // Sale Properties
     public $notes = '';
@@ -214,23 +213,6 @@ class StaffBilling extends Component
     }
 
     // Search for staff allocated products only
-    public function updatedCustomerTypeSale($value)
-    {
-        $this->cart = collect($this->cart)->map(function ($item) use ($value) {
-            // Check if we have both prices stored
-            if (isset($item['wholesale_price']) && isset($item['retail_price'])) {
-                if ($value === 'wholesale' && $item['wholesale_price'] > 0) {
-                    $item['price'] = $item['wholesale_price'];
-                } else {
-                    $item['price'] = $item['retail_price'];
-                }
-                // Recalculate total
-                $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
-            }
-            return $item;
-        })->toArray();
-    }
-
     public function updatedSearch()
     {
         if (strlen($this->search) >= 2) {
@@ -311,13 +293,12 @@ class StaffBilling extends Component
                 return $item;
             })->toArray();
         } else {
-            // Determine price based on current sale type
-            $retailPrice = $product['retail_price'] ?? $product['price'];
-            $wholesalePrice = $product['wholesale_price'] ?? 0;
+            // Use cash_price or credit_price based on payment method
+            $cashPrice = $product['cash_price'] ?? $product['price'];
+            $creditPrice = $product['credit_price'] ?? $cashPrice;
             
-            $finalPrice = ($this->customerTypeSale === 'wholesale' && $wholesalePrice > 0) 
-                          ? $wholesalePrice 
-                          : $retailPrice;
+            // Default to cash price
+            $finalPrice = $cashPrice;
 
             // For staff, no additional discount
             $newItem = [
@@ -327,7 +308,7 @@ class StaffBilling extends Component
                 'code' => $product['code'],
                 'model' => $product['model'],
                 'price' => $finalPrice,
-                'retail_price' => $retailPrice,
+                'cash_price' => $cashPrice,
                 'wholesale_price' => $wholesalePrice,
                 'quantity' => 1,
                 'discount' => 0,
@@ -475,7 +456,6 @@ class StaffBilling extends Component
                 'user_id' => Auth::id(),
                 'status' => 'confirm',
                 'sale_type' => 'staff',
-                'customer_type_sale' => $this->customerTypeSale // Save sale type
             ]);
 
             // Create sale items

@@ -15,7 +15,6 @@ class Sale extends Model
         'invoice_number',
         'customer_id',
         'customer_type',
-        'customer_type_sale',
         'subtotal',
         'discount_amount',
         'total_amount',
@@ -26,7 +25,8 @@ class Sale extends Model
         'notes',
         'due_amount',
         'user_id',
-        'sale_type', 
+        'sale_type',
+        'sale_price_type',
     ];
 
     public function customer()

@@ -128,7 +128,7 @@ class StaffQuotationList extends Component
                 // Calculate available stock: allocated quantity minus already sold quantity
                 $currentStock = ($staffProduct->quantity ?? 0) - ($staffProduct->sold_quantity ?? 0);
 
-                $discountPrice = $product->price->discount_price ?? 0;
+                $discountPrice = 0; // No discount price
 
                 return [
                     'product_id' => $item['product_id'] ?? null,
@@ -413,7 +413,7 @@ class StaffQuotationList extends Component
                     'product_details.code',
                     'product_details.model',
                     'staff_products.unit_price as price',
-                    'product_prices.discount_price',
+                    'product_prices.cash_credit_price',
                     'staff_products.quantity',
                     'staff_products.sold_quantity'
                 )
@@ -426,7 +426,7 @@ class StaffQuotationList extends Component
                         'code' => $product->code,
                         'model' => $product->model,
                         'price' => $product->price,
-                        'discount_price' => $product->discount_price ?? 0,
+                        'discount_price' => 0, // No discount price
                         'stock' => ($product->quantity - $product->sold_quantity)
                     ];
                 })
@@ -469,7 +469,7 @@ class StaffQuotationList extends Component
             $this->editableItems[$index]['product_code'] = $product->code;
             $this->editableItems[$index]['product_model'] = $product->model;
             $this->editableItems[$index]['unit_price'] = $staffProduct->unit_price;
-            $this->editableItems[$index]['discount_per_unit'] = $product->price->discount_price ?? 0;
+            $this->editableItems[$index]['discount_per_unit'] = 0; // No discount price
             $this->editableItems[$index]['current_stock'] = $currentStock;
 
             // Clear search term and hide results for this index
@@ -527,7 +527,6 @@ class StaffQuotationList extends Component
                     'invoice_number' => Sale::generateInvoiceNumber(),
                     'customer_id' => $customer->id,
                     'customer_type' => $customer->type,
-                    'customer_type_sale' => $this->selectedQuotation->sale_type ?? 'retail',
                     'subtotal' => $this->subtotal,
                     'discount_amount' => $totalCombinedDiscount,
                     'total_amount' => $this->grandTotal,

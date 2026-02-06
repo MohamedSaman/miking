@@ -73,7 +73,7 @@ class StaffStockOverview extends Component
        
         // Modified to explicitly include all statuses including completed
         $staffProducts = StaffProduct::where('staff_id', auth()->id())
-            ->with(['Product', 'staffSale.admin'])
+            ->with(['Product.brand', 'staffSale.admin'])
             ->get();
 
         // Group products by product_id and aggregate quantities
@@ -96,7 +96,7 @@ class StaffStockOverview extends Component
                 $query = strtolower($this->searchQuery);
                 if (!str_contains(strtolower($Product->name ?? ''), $query) && 
                     !str_contains(strtolower($Product->code ?? ''), $query) && 
-                    !str_contains(strtolower($Product->brand ?? ''), $query)) {
+                    !str_contains(strtolower($Product->brand->brand_name ?? ''), $query)) {
                     continue;
                 }
             }
@@ -120,7 +120,7 @@ class StaffStockOverview extends Component
         $batchProducts = collect();
         
         if ($this->selectedSaleId) {
-            $selectedSale = StaffSale::with(['admin', 'products.Product'])
+            $selectedSale = StaffSale::with(['admin', 'products.Product.brand'])
                 ->find($this->selectedSaleId);
                 
             if ($selectedSale) {
@@ -132,7 +132,7 @@ class StaffStockOverview extends Component
                     $batchProducts = $batchProducts->filter(function($product) use ($query) {
                         return str_contains(strtolower($product->Product->name ?? ''), $query) || 
                                str_contains(strtolower($product->Product->code ?? ''), $query) || 
-                               str_contains(strtolower($product->Product->brand ?? ''), $query);
+                               str_contains(strtolower($product->Product->brand->brand_name ?? ''), $query);
                     });
                 }
             }

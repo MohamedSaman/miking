@@ -61,6 +61,7 @@ class StoreBilling extends Component
 
     // Sale Properties
     public $notes = '';
+    public $salePriceType = 'cash'; // Price type: cash, credit, cash_credit
 
     // Payment Properties
     public $paymentMethod = 'cash'; // 'cash', 'credit', 'cheque', 'bank_transfer'
@@ -368,6 +369,31 @@ class StoreBilling extends Component
         }
     }
 
+    // When sale price type is changed, recalculate all cart prices
+    public function updatedSalePriceType($value)
+    {
+        foreach ($this->cart as $index => $item) {
+            $price = 0;
+            
+            switch ($value) {
+                case 'cash':
+                    $price = $item['cash_price'] ?? $item['price'];
+                    break;
+                case 'credit':
+                    $price = $item['credit_price'] ?? $item['price'];
+                    break;
+                case 'cash_credit':
+                    $price = $item['cash_credit_price'] ?? $item['cash_price'] ?? $item['price'];
+                    break;
+                default:
+                    $price = $item['cash_price'] ?? $item['price'];
+            }
+            
+            $this->cart[$index]['price'] = $price;
+            $this->cart[$index]['total'] = ($price - $this->cart[$index]['discount']) * $this->cart[$index]['quantity'];
+        }
+    }
+
     // When payment method changes
     public function updatedPaymentMethod($value)
     {
@@ -566,7 +592,27 @@ class StoreBilling extends Component
                 return $item;
             })->toArray();
         } else {
-            $discountPrice = ProductDetail::find($product['id'])->price->discount_price ?? 0;
+            // Get product price details
+            $productDetail = ProductDetail::with('price')->find($product['id']);
+            
+            // Determine which price to use based on salePriceType
+            $cashPrice = $productDetail->price->cash_price ?? $product['price'];
+            $creditPrice = $productDetail->price->credit_price ?? $product['price'];
+            $cashCreditPrice = $productDetail->price->cash_credit_price ?? $cashPrice;
+            
+            switch ($this->salePriceType) {
+                case 'cash':
+                    $finalPrice = $cashPrice;
+                    break;
+                case 'credit':
+                    $finalPrice = $creditPrice;
+                    break;
+                case 'cash_credit':
+                    $finalPrice = $cashCreditPrice;
+                    break;
+                default:
+                    $finalPrice = $cashPrice;
+            }
 
             $newItem = [
                 'key' => uniqid('cart_'),  // Add unique key to maintain state
@@ -574,10 +620,13 @@ class StoreBilling extends Component
                 'name' => $product['name'],
                 'code' => $product['code'],
                 'model' => $product['model'],
-                'price' => $product['price'],
+                'price' => $finalPrice,
+                'cash_price' => $cashPrice,
+                'credit_price' => $creditPrice,
+                'cash_credit_price' => $cashCreditPrice,
                 'quantity' => 1,
-                'discount' => $discountPrice,
-                'total' => $product['price'] - $discountPrice,
+                'discount' => 0,
+                'total' => $finalPrice,
                 'stock' => $product['stock']
             ];
 
@@ -811,7 +860,8 @@ class StoreBilling extends Component
                 'notes' => $this->notes,
                 'user_id' => Auth::id(),
                 'status' => 'confirm',
-                'sale_type' => 'pos'
+                'sale_type' => 'pos',
+                'sale_price_type' => $this->salePriceType,
             ]);
 
             // Create sale items and update stock

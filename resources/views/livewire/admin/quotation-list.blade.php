@@ -321,7 +321,7 @@
                                                             <br>
                                                             <small>Code: {{ $product['code'] }} | Model: {{ $product['model'] }}</small>
                                                             <br>
-                                                            <small>Price: Rs.{{ number_format($product['price'], 2) }} | Discount: Rs.{{ number_format($product['discount_price'], 2) }} | Stock: {{ $product['stock'] }}</small>
+                                                            <small>Price: Rs.{{ number_format($product['price'], 2) }} | Stock: {{ $product['stock'] }}</small>
                                                         </div>
                                                         @endforeach
                                                         @else

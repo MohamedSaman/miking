@@ -873,9 +873,9 @@
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="price-card text-center p-3 border rounded-3 h-100">
-                                                    <small class="text-muted d-block mb-2">Discount Price</small>
-                                                    <h4 class="fw-bold text-danger mb-0">
-                                                        Rs.{{ number_format($viewProduct->price->discount_price ?? 0, 2) }}
+                                                    <small class="text-muted d-block mb-2">Cash & Credit Price</small>
+                                                    <h4 class="fw-bold text-success mb-0">
+                                                        Rs.{{ number_format($viewProduct->price->cash_credit_price ?? 0, 2) }}
                                                     </h4>
                                                 </div>
                                             </div>
@@ -883,64 +883,46 @@
                                         <div class="row g-3 mt-2">
                                             <div class="col-md-6">
                                                 <div class="price-card text-center p-3 border border-info rounded-3 bg-info bg-opacity-10 h-100">
-                                                    <small class="text-info d-block mb-2 fw-semibold">Retail Price</small>
+                                                    <small class="text-info d-block mb-2 fw-semibold">Cash Price</small>
                                                     <h4 class="fw-bold text-info mb-0">
-                                                        Rs.{{ number_format($viewProduct->price->retail_price ?? 0, 2) }}
+                                                        Rs.{{ number_format($viewProduct->price->cash_price ?? 0, 2) }}
                                                     </h4>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="price-card text-center p-3 border border-warning rounded-3 bg-warning bg-opacity-10 h-100">
-                                                    <small class="text-warning d-block mb-2 fw-semibold">Wholesale Price</small>
+                                                    <small class="text-warning d-block mb-2 fw-semibold">Credit Price</small>
                                                     <h4 class="fw-bold text-warning mb-0">
-                                                        Rs.{{ number_format($viewProduct->price->wholesale_price ?? 0, 2) }}
+                                                        Rs.{{ number_format($viewProduct->price->credit_price ?? 0, 2) }}
                                                     </h4>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- Sales Bonus -->
+                                    <!-- Staff Commission -->
                                     <div class="info-section mb-4">
                                         <div class="section-header d-flex align-items-center mb-3">
                                             <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-circle me-3"
                                                 style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                                                 <i class="bi bi-gift"></i>
                                             </div>
-                                            <h6 class="fw-bold mb-0 text-dark">Sales Bonus</h6>
+                                            <h6 class="fw-bold mb-0 text-dark">Staff Commission</h6>
                                         </div>
                                         <div class="row g-3">
-                                            <!-- Wholesale -->
                                             <div class="col-md-6">
                                                 <div class="price-card text-center p-3 border border-primary rounded-3 bg-primary bg-opacity-10 h-100">
-                                                    <small class="text-primary d-block mb-2 fw-semibold">Wholesale Cash Bonus</small>
+                                                    <small class="text-primary d-block mb-2 fw-semibold">Cash Sale Commission</small>
                                                     <h4 class="fw-bold text-primary mb-0">
-                                                        Rs.{{ number_format($viewProduct->wholesale_cash_bonus ?? 0, 2) }}
-                                                    </h4>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="price-card text-center p-3 border border-primary rounded-3 bg-primary bg-opacity-10 h-100">
-                                                    <small class="text-primary d-block mb-2 fw-semibold">Wholesale Credit Bonus</small>
-                                                    <h4 class="fw-bold text-primary mb-0">
-                                                        Rs.{{ number_format($viewProduct->wholesale_credit_bonus ?? 0, 2) }}
-                                                    </h4>
-                                                </div>
-                                            </div>
-                                            <!-- Retail -->
-                                            <div class="col-md-6">
-                                                <div class="price-card text-center p-3 border border-success rounded-3 bg-success bg-opacity-10 h-100">
-                                                    <small class="text-success d-block mb-2 fw-semibold">Retail Cash Bonus</small>
-                                                    <h4 class="fw-bold text-success mb-0">
-                                                        Rs.{{ number_format($viewProduct->retail_cash_bonus ?? 0, 2) }}
+                                                        Rs.{{ number_format($viewProduct->cash_sale_commission ?? 0, 2) }}
                                                     </h4>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="price-card text-center p-3 border border-success rounded-3 bg-success bg-opacity-10 h-100">
-                                                    <small class="text-success d-block mb-2 fw-semibold">Retail Credit Bonus</small>
+                                                    <small class="text-success d-block mb-2 fw-semibold">Credit Sale Commission</small>
                                                     <h4 class="fw-bold text-success mb-0">
-                                                        Rs.{{ number_format($viewProduct->retail_credit_bonus ?? 0, 2) }}
+                                                        Rs.{{ number_format($viewProduct->credit_sale_commission ?? 0, 2) }}
                                                     </h4>
                                                 </div>
                                             </div>
@@ -1149,9 +1131,9 @@
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="price-card text-center p-3 border rounded-3 h-100">
-                                                    <small class="text-muted d-block mb-2">Discount Price</small>
-                                                    <h4 class="fw-bold text-danger mb-0">
-                                                        Rs.{{ number_format($viewProduct->price->discount_price ?? 0, 2)
+                                                    <small class="text-muted d-block mb-2">Cash & Credit Price</small>
+                                                    <h4 class="fw-bold text-success mb-0">
+                                                        Rs.{{ number_format($viewProduct->price->cash_credit_price ?? 0, 2)
                                                         }}
                                                     </h4>
                                                 </div>
@@ -1160,18 +1142,18 @@
                                         <div class="row g-3 mt-2">
                                             <div class="col-md-6">
                                                 <div class="price-card text-center p-3 border border-info rounded-3 bg-info bg-opacity-10 h-100">
-                                                    <small class="text-info d-block mb-2 fw-semibold">Retail Price</small>
+                                                    <small class="text-info d-block mb-2 fw-semibold">Cash Price</small>
                                                     <h4 class="fw-bold text-info mb-0">
-                                                        Rs.{{ number_format($viewProduct->price->retail_price ?? 0, 2)
+                                                        Rs.{{ number_format($viewProduct->price->cash_price ?? 0, 2)
                                                         }}
                                                     </h4>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="price-card text-center p-3 border border-warning rounded-3 bg-warning bg-opacity-10 h-100">
-                                                    <small class="text-warning d-block mb-2 fw-semibold">Wholesale Price</small>
+                                                    <small class="text-warning d-block mb-2 fw-semibold">Credit Price</small>
                                                     <h4 class="fw-bold text-warning mb-0">
-                                                        Rs.{{ number_format($viewProduct->price->wholesale_price ?? 0, 2)
+                                                        Rs.{{ number_format($viewProduct->price->credit_price ?? 0, 2)
                                                         }}
                                                     </h4>
                                                 </div>
@@ -1185,40 +1167,22 @@
                                                 style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                                                 <i class="bi bi-gift"></i>
                                             </div>
-                                            <h6 class="fw-bold mb-0 text-dark">Sales Bonus</h6>
+                                            <h6 class="fw-bold mb-0 text-dark">Staff Commission</h6>
                                         </div>
                                         <div class="row g-3">
-                                            <!-- Wholesale -->
                                             <div class="col-md-6">
                                                 <div class="price-card text-center p-3 border border-primary rounded-3 bg-primary bg-opacity-10 h-100">
-                                                    <small class="text-primary d-block mb-2 fw-semibold">Wholesale Cash Bonus</small>
+                                                    <small class="text-primary d-block mb-2 fw-semibold">Cash Sale Commission</small>
                                                     <h4 class="fw-bold text-primary mb-0">
-                                                        Rs.{{ number_format($viewProduct->wholesale_cash_bonus ?? 0, 2) }}
-                                                    </h4>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="price-card text-center p-3 border border-primary rounded-3 bg-primary bg-opacity-10 h-100">
-                                                    <small class="text-primary d-block mb-2 fw-semibold">Wholesale Credit Bonus</small>
-                                                    <h4 class="fw-bold text-primary mb-0">
-                                                        Rs.{{ number_format($viewProduct->wholesale_credit_bonus ?? 0, 2) }}
-                                                    </h4>
-                                                </div>
-                                            </div>
-                                            <!-- Retail -->
-                                            <div class="col-md-6">
-                                                <div class="price-card text-center p-3 border border-success rounded-3 bg-success bg-opacity-10 h-100">
-                                                    <small class="text-success d-block mb-2 fw-semibold">Retail Cash Bonus</small>
-                                                    <h4 class="fw-bold text-success mb-0">
-                                                        Rs.{{ number_format($viewProduct->retail_cash_bonus ?? 0, 2) }}
+                                                        Rs.{{ number_format($viewProduct->cash_sale_commission ?? 0, 2) }}
                                                     </h4>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="price-card text-center p-3 border border-success rounded-3 bg-success bg-opacity-10 h-100">
-                                                    <small class="text-success d-block mb-2 fw-semibold">Retail Credit Bonus</small>
+                                                    <small class="text-success d-block mb-2 fw-semibold">Credit Sale Commission</small>
                                                     <h4 class="fw-bold text-success mb-0">
-                                                        Rs.{{ number_format($viewProduct->retail_credit_bonus ?? 0, 2) }}
+                                                        Rs.{{ number_format($viewProduct->credit_sale_commission ?? 0, 2) }}
                                                     </h4>
                                                 </div>
                                             </div>
@@ -1457,84 +1421,35 @@
                         <div class="card mb-4">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
-                                    <i class="bi bi-gift text-primary me-2"></i> Sales Bonus
+                                    <i class="bi bi-gift text-primary me-2"></i> Staff Commission
                                 </h5>
                             </div>
                             <div class="card-body p-4">
-                                <!-- Wholesale -->
-                                <h6 class="text-primary border-bottom pb-2 mb-3">Wholesale Bonuses</h6>
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold small text-primary mb-2">Wholesale Cash Bonus</label>
-                                            <div class="d-flex gap-2">
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text bg-light text-muted">Rs.</span>
-                                                    <input type="number" class="form-control" wire:model.live="wholesale_cash_bonus" min="0" step="0.01">
-                                                </div>
-                                                <div class="input-group input-group-sm">
-                                                    <input type="number" class="form-control" wire:model.live="wholesale_cash_bonus_percentage" min="0" step="0.01">
-                                                    <span class="input-group-text bg-light text-muted">%</span>
-                                                </div>
-                                            </div>
-                                            @error('wholesale_cash_bonus') <span class="text-danger small">* {{ $message }}</span> @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold small text-primary mb-2">Wholesale Credit Bonus</label>
-                                            <div class="d-flex gap-2">
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text bg-light text-muted">Rs.</span>
-                                                    <input type="number" class="form-control" wire:model.live="wholesale_credit_bonus" min="0" step="0.01">
-                                                </div>
-                                                <div class="input-group input-group-sm">
-                                                    <input type="number" class="form-control" wire:model.live="wholesale_credit_bonus_percentage" min="0" step="0.01">
-                                                    <span class="input-group-text bg-light text-muted">%</span>
-                                                </div>
-                                            </div>
-                                            @error('wholesale_credit_bonus') <span class="text-danger small">* {{ $message }}</span> @enderror
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Retail -->
-                                <h6 class="text-success border-bottom pb-2 mb-3">Retail Bonuses</h6>
+                                <h6 class="text-primary border-bottom pb-2 mb-3">Commission Rates</h6>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label fw-bold small text-success mb-2">Retail Cash Bonus</label>
-                                            <div class="d-flex gap-2">
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text bg-light text-muted">Rs.</span>
-                                                    <input type="number" class="form-control" wire:model.live="retail_cash_bonus" min="0" step="0.01">
-                                                </div>
-                                                <div class="input-group input-group-sm">
-                                                    <input type="number" class="form-control" wire:model.live="retail_cash_bonus_percentage" min="0" step="0.01">
-                                                    <span class="input-group-text bg-light text-muted">%</span>
-                                                </div>
+                                            <label class="form-label fw-bold small text-primary mb-2">Cash Sale Commission</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-light text-muted">Rs.</span>
+                                                <input type="number" class="form-control" wire:model="cash_commission" min="0" step="0.01">
                                             </div>
-                                            @error('retail_cash_bonus') <span class="text-danger small">* {{ $message }}</span> @enderror
+                                            @error('cash_commission') <span class="text-danger small">* {{ $message }}</span> @enderror
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label fw-bold small text-success mb-2">Retail Credit Bonus</label>
-                                            <div class="d-flex gap-2">
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text bg-light text-muted">Rs.</span>
-                                                    <input type="number" class="form-control" wire:model.live="retail_credit_bonus" min="0" step="0.01">
-                                                </div>
-                                                <div class="input-group input-group-sm">
-                                                    <input type="number" class="form-control" wire:model.live="retail_credit_bonus_percentage" min="0" step="0.01">
-                                                    <span class="input-group-text bg-light text-muted">%</span>
-                                                </div>
+                                            <label class="form-label fw-bold small text-success mb-2">Credit Sale Commission</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-light text-muted">Rs.</span>
+                                                <input type="number" class="form-control" wire:model="credit_commission" min="0" step="0.01">
                                             </div>
-                                            @error('retail_credit_bonus') <span class="text-danger small">* {{ $message }}</span> @enderror
+                                            @error('credit_commission') <span class="text-danger small">* {{ $message }}</span> @enderror
                                         </div>
                                     </div>
                                 </div>
                                 <div class="mt-2 text-muted small">
-                                    <i class="bi bi-info-circle me-1"></i> Retail bonuses use Retail/Selling Price as reference. Wholesale bonuses use Wholesale Price as reference.
+                                    <i class="bi bi-info-circle me-1"></i> Commission earned by staff for cash and credit sales.
                                 </div>
                             </div>
                         </div>
@@ -1546,15 +1461,15 @@
                                 </h5>
                             </div>
                             <div class="card-body p-4">
+                                <!-- Pricing Row 1 -->
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="supplier_price" class="form-label fw-semibold">Supplier
-                                                Price:</label>
+                                            <label for="supplier_price" class="form-label fw-semibold">Supplier Price:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
                                                 <input type="number" step="0.01" class="form-control"
-                                                    id="supplier_price" wire:model="supplier_price">
+                                                    id="supplier_price" wire:model="supplier_price" placeholder="0">
                                             </div>
                                             @error('supplier_price')
                                             <span class="text-danger small">* {{ $message }}</span>
@@ -1563,12 +1478,11 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="selling_price" class="form-label fw-semibold">Selling
-                                                Price:</label>
+                                            <label for="selling_price" class="form-label fw-semibold">Selling Price:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
                                                 <input type="number" step="0.01" class="form-control" id="selling_price"
-                                                    wire:model="selling_price">
+                                                    wire:model="selling_price" placeholder="0">
                                             </div>
                                             @error('selling_price')
                                             <span class="text-danger small">* {{ $message }}</span>
@@ -1577,44 +1491,42 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="discount_price" class="form-label fw-semibold">Discount
-                                                Price:</label>
+                                            <label for="cash_price" class="form-label fw-semibold">Cash Price:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
                                                 <input type="number" step="0.01" class="form-control"
-                                                    id="discount_price" wire:model="discount_price">
+                                                    id="cash_price" wire:model="cash_price" placeholder="0">
                                             </div>
-                                            @error('discount_price')
+                                            @error('cash_price')
                                             <span class="text-danger small">* {{ $message }}</span>
                                             @enderror
                                         </div>
                                     </div>
                                 </div>
+                                <!-- Pricing Row 2 -->
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="retail_price" class="form-label fw-semibold">Retail
-                                                Price:</label>
+                                            <label for="credit_price" class="form-label fw-semibold">Credit Price:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
                                                 <input type="number" step="0.01" class="form-control"
-                                                    id="retail_price" wire:model="retail_price">
+                                                    id="credit_price" wire:model="credit_price" placeholder="0">
                                             </div>
-                                            @error('retail_price')
+                                            @error('credit_price')
                                             <span class="text-danger small">* {{ $message }}</span>
                                             @enderror
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="wholesale_price" class="form-label fw-semibold">Wholesale
-                                                Price:</label>
+                                            <label for="cash_credit_price" class="form-label fw-semibold">Cash & Credit Price:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
                                                 <input type="number" step="0.01" class="form-control"
-                                                    id="wholesale_price" wire:model="wholesale_price">
+                                                    id="cash_credit_price" wire:model="cash_credit_price" placeholder="0">
                                             </div>
-                                            @error('wholesale_price')
+                                            @error('cash_credit_price')
                                             <span class="text-danger small">* {{ $message }}</span>
                                             @enderror
                                         </div>
@@ -1951,55 +1863,30 @@
                         <div class="card mb-4">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
-                                    <i class="bi bi-gift text-primary me-2"></i> Sales Bonus
+                                    <i class="bi bi-gift text-primary me-2"></i> Staff Commission
                                 </h5>
                             </div>
                             <div class="card-body p-4">
-                                <!-- Wholesale -->
-                                <h6 class="text-primary border-bottom pb-2 mb-3">Wholesale Bonuses</h6>
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold">Wholesale Cash Bonus:</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">Rs.</span>
-                                                <input type="number" step="0.01" class="form-control" wire:model="editWholesaleCashBonus">
-                                            </div>
-                                            @error('editWholesaleCashBonus') <span class="text-danger small">* {{ $message }}</span> @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold">Wholesale Credit Bonus:</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">Rs.</span>
-                                                <input type="number" step="0.01" class="form-control" wire:model="editWholesaleCreditBonus">
-                                            </div>
-                                            @error('editWholesaleCreditBonus') <span class="text-danger small">* {{ $message }}</span> @enderror
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Retail -->
-                                <h6 class="text-success border-bottom pb-2 mb-3">Retail Bonuses</h6>
+                                <h6 class="text-primary border-bottom pb-2 mb-3">Commission Rates</h6>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label fw-semibold">Retail Cash Bonus:</label>
+                                            <label class="form-label fw-semibold">Cash Sale Commission:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
-                                                <input type="number" step="0.01" class="form-control" wire:model="editRetailCashBonus">
+                                                <input type="number" step="0.01" class="form-control" wire:model="editCashCommission">
                                             </div>
-                                            @error('editRetailCashBonus') <span class="text-danger small">* {{ $message }}</span> @enderror
+                                            @error('editCashCommission') <span class="text-danger small">* {{ $message }}</span> @enderror
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label fw-semibold">Retail Credit Bonus:</label>
+                                            <label class="form-label fw-semibold">Credit Sale Commission:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
-                                                <input type="number" step="0.01" class="form-control" wire:model="editRetailCreditBonus">
+                                                <input type="number" step="0.01" class="form-control" wire:model="editCreditCommission">
                                             </div>
-                                            @error('editRetailCreditBonus') <span class="text-danger small">* {{ $message }}</span> @enderror
+                                            @error('editCreditCommission') <span class="text-danger small">* {{ $message }}</span> @enderror
                                         </div>
                                     </div>
                                 </div>
@@ -2042,13 +1929,13 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="editDiscountPrice" class="form-label fw-semibold">Discount Price:</label>
+                                            <label for="editCashCreditPrice" class="form-label fw-semibold">Cash & Credit Price:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
                                                 <input type="number" step="0.01" class="form-control"
-                                                    id="editDiscountPrice" wire:model="editDiscountPrice">
+                                                    id="editCashCreditPrice" wire:model="editCashCreditPrice">
                                             </div>
-                                            @error('editDiscountPrice')
+                                            @error('editCashCreditPrice')
                                             <span class="text-danger small">* {{ $message }}</span>
                                             @enderror
                                         </div>
@@ -2057,26 +1944,26 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="editRetailPrice" class="form-label fw-semibold">Retail Price:</label>
+                                            <label for="editCashPrice" class="form-label fw-semibold">Cash Price:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
                                                 <input type="number" step="0.01" class="form-control"
-                                                    id="editRetailPrice" wire:model="editRetailPrice">
+                                                    id="editCashPrice" wire:model="editCashPrice">
                                             </div>
-                                            @error('editRetailPrice')
+                                            @error('editCashPrice')
                                             <span class="text-danger small">* {{ $message }}</span>
                                             @enderror
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="editWholesalePrice" class="form-label fw-semibold">Wholesale Price:</label>
+                                            <label for="editCreditPrice" class="form-label fw-semibold">Credit Price:</label>
                                             <div class="input-group">
                                                 <span class="input-group-text">Rs.</span>
                                                 <input type="number" step="0.01" class="form-control"
-                                                    id="editWholesalePrice" wire:model="editWholesalePrice">
+                                                    id="editCreditPrice" wire:model="editCreditPrice">
                                             </div>
-                                            @error('editWholesalePrice')
+                                            @error('editCreditPrice')
                                             <span class="text-danger small">* {{ $message }}</span>
                                             @enderror
                                         </div>

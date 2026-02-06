@@ -993,7 +993,7 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link py-2 {{ request()->routeIs('admin.staff-bonus') ? 'active' : '' }}" href="{{ route('admin.staff-bonus') }}">
-                                    <i class="bi bi-gift"></i> <span>Staff Bonus</span>
+                                    <i class="bi bi-percent"></i> <span>Staff Commission</span>
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -1220,12 +1220,13 @@
                                     <i class="bi bi-person-lines-fill"></i> <span>List Customer</span>
                                 </a>
                             </li>
-                            <!-- <li class="nav-item">
+                            <li class="nav-item">
                                 <a class="nav-link py-2 " href="{{ route('admin.manage-staff') }}">
                                      <i class="bi bi-person-badge"></i> <span>List Staff</span>
                                  </a>
                              </li>
-                             <li class="nav-item">
+
+                             <!-- <li class="nav-item">
                                  <a class="nav-link py-2" href="{{ route('admin.manage-admin') }}">
                                      <i class="bi bi-person-check-fill"></i> <span>List Admin</span>
                                  </a>
