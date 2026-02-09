@@ -84,10 +84,16 @@ class StaffSalary extends Component
                 $basicSalary = $userDetail ? ($userDetail->basic_salary ?? 0) : 0;
                 $allowance = 0;
                 
-                if ($userDetail) {
-                    $allowance = is_array($userDetail->allowance) 
-                        ? array_sum($userDetail->allowance) 
-                        : ($userDetail->allowance ?? 0);
+                if ($userDetail && $userDetail->allowance) {
+                    // Decode JSON if it's a string
+                    $allowanceData = is_string($userDetail->allowance) 
+                        ? json_decode($userDetail->allowance, true) 
+                        : $userDetail->allowance;
+                    
+                    // Calculate allowance sum
+                    $allowance = is_array($allowanceData) 
+                        ? array_sum($allowanceData) 
+                        : (is_numeric($allowanceData) ? $allowanceData : 0);
                 }
                 
                 // Calculate sales bonus for this month

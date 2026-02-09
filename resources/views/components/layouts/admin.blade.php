@@ -856,46 +856,28 @@
                         <i class="bi bi-speedometer2"></i> <span>Overview</span>
                     </a>
                 </li>
-                {{--
+
                 <li class="nav-item">
-                    <a class="nav-link dropdown-toggle" href="#hrSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="hrSubmenu">
-                        <i class="bi bi-people"></i> <span>HR Management</span>
+                    <a class="nav-link dropdown-toggle" href="#purchaseSubmenu" data-bs-toggle="collapse" role="button"
+                        aria-expanded="false" aria-controls="purchaseSubmenu">
+                        <i class="bi bi-truck"></i><span>Purchase</span>
                     </a>
-                    <div class="collapse" id="hrSubmenu">
+                    <div class="collapse" id="purchaseSubmenu">
                         <ul class="nav flex-column ms-3">
                             <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('admin.manage-admin') }}">
-                                    <i class="bi bi-shield-lock"></i> <span>Manage Admin</span>
-                                </a>
-                            </li>
-                            <!-- Disabled: Manage Staff -->
-                            <!-- Disabled: Staff Attendance -->
-                            <li class="nav-item">
-                                <a class="nav-link py-2 disabled" href="#">
-                                    <i class="bi bi-calendar-check"></i> <span>Staff Attendance</span>
-                                </a>
-                            </li>
-                            <!-- Disabled: Staff Salary -->
-                            <li class="nav-item">
-                                <a class="nav-link py-2 disabled" href="#">
-                                    <i class="bi bi-currency-dollar"></i> <span>Staff Salary</span>
-                                </a>
-                            </li>
-                            <!-- Disabled: Loan Management -->
-                            <li class="nav-item">
-                                <a class="nav-link py-2 disabled" href="#">
-                                    <i class="bi bi-credit-card"></i> <span>Loan Management</span>
+                                <a class="nav-link py-2" href="{{ route('admin.purchase-order-list') }}">
+                                    <i class="bi bi-journal-bookmark"></i> <span>Purchase Order</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('admin.manage-customer') }}">
-                                    <i class="bi bi-people"></i> <span>Manage Customer</span>
+                                <a class="nav-link py-2" href="{{ route('admin.grn') }}">
+                                    <i class="bi bi-boxes"></i><span>GRN</span>
                                 </a>
                             </li>
                         </ul>
                     </div>
                 </li>
-                --}}
+
                 <li class="nav-item">
                     <a class="nav-link dropdown-toggle" href="#inventorySubmenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="inventorySubmenu">
                         <i class="bi bi-basket3"></i> <span>Products</span>
@@ -920,6 +902,7 @@
                         </ul>
                     </div>
                 </li>
+
                 <li class="nav-item">
                     <a class="nav-link dropdown-toggle" href="#salesSubmenu" data-bs-toggle="collapse" role="button"
                         aria-expanded="false" aria-controls="salesSubmenu">
@@ -947,88 +930,10 @@
                                     <i class="bi bi-truck"></i> <span>Sales Distribution</span>
                                 </a>
                             </li>
-                            {{-- no need him  --}}
-                            {{--
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('admin.due-payments') }}">
-                                    <i class="bi bi-cash-coin"></i> <span>Due Payments</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('admin.view-payments') }}">
-                                    <i class="bi bi-credit-card-2-back"></i> <span>View Payments</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('admin.return-product') }}">
-                                    <i class="bi bi-collection"></i> <span>Return Product</span>
-                                </a>
-                            </li>
-                            --}}
                         </ul>
                     </div>
                 </li>
-                
-                <li class="nav-item">
-                    <a class="nav-link dropdown-toggle" href="#staffSubmenu" data-bs-toggle="collapse" role="button"
-                        aria-expanded="false" aria-controls="staffSubmenu">
-                        <i class="bi bi-file-earmark-text"></i> <span>Staff Management</span>
-                    </a>
-                    <div class="collapse" id="staffSubmenu">
-                        <ul class="nav flex-column ms-3">
-                            <li class="nav-item">
-                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-sales') ? 'active' : '' }}" href="{{ route('admin.staff-sales') }}">
-                                    <i class="bi bi-shop"></i> <span>Staff Sales</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('admin.staff-product-allocation') ? 'active' : '' }}" href="{{ route('admin.staff-product-allocation') }}">
-                                    <i class="bi bi-person-badge"></i> <span>Staff Allocation</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-payment-approval') ? 'active' : '' }}" href="{{ route('admin.staff-payment-approval') }}">
-                                    <i class="bi bi-credit-card"></i> <span>Payment Approvals</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-bonus') ? 'active' : '' }}" href="{{ route('admin.staff-bonus') }}">
-                                    <i class="bi bi-percent"></i> <span>Staff Commission</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-salary-management') ? 'active' : '' }}" href="{{ route('admin.staff-salary-management') }}">
-                                    <i class="bi bi-wallet2"></i> <span>Staff Salary</span>
-                                </a>
-                            </li>
-                            <!-- <li class="nav-item">
-                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-allocation-list') ? 'active' : '' }}" href="{{ route('admin.staff-allocation-list') }}">
-                                    <i class="bi bi-list-check"></i> <span>Staff Allocation List</span>
-                                </a>
-                            </li> -->
-                            <li class="nav-item">
-                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-return-requests') ? 'active' : '' }}" href="{{ route('admin.staff-return-requests') }}">
-                                    <i class="bi bi-arrow-return-left"></i> <span>Staff Return Requests</span>
-                                </a>
-                            </li>
-                            <!-- <li class="nav-item">
-                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-attendance') ? 'active' : '' }}" href="{{ route('admin.staff-attendance') }}">
-                                    <i class="bi bi-calendar-check"></i> <span>Staff Attendance</span>
-                                </a>
-                            </li> -->
-                            <!-- <li class="nav-item">
-                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-salary') ? 'active' : '' }}" href="{{ route('admin.staff-salary') }}">
-                                    <i class="bi bi-cash"></i> <span>Staff Salary (Calc)</span>
-                                </a>
-                            </li> -->
-                            <!-- <li class="nav-item">
-                                <a class="nav-link py-2 {{ request()->routeIs('admin.loan-management') ? 'active' : '' }}" href="{{ route('admin.loan-management') }}">
-                                    <i class="bi bi-bank"></i> <span>Loan Management</span>
-                                </a>
-                            </li> -->
-                        </ul>
-                    </div>
-                </li>
+
                 <li class="nav-item">
                     <a class="nav-link dropdown-toggle" href="#stockSubmenu" data-bs-toggle="collapse" role="button"
                         aria-expanded="false" aria-controls="stockSubmenu">
@@ -1054,26 +959,7 @@
                         </ul>
                     </div>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link dropdown-toggle" href="#purchaseSubmenu" data-bs-toggle="collapse" role="button"
-                        aria-expanded="false" aria-controls="purchaseSubmenu">
-                        <i class="bi bi-truck"></i><span>Purchase</span>
-                    </a>
-                    <div class="collapse" id="purchaseSubmenu">
-                        <ul class="nav flex-column ms-3">
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('admin.purchase-order-list') }}">
-                                    <i class="bi bi-journal-bookmark"></i> <span>Purchase Order</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link py-2" href="{{ route('admin.grn') }}">
-                                    <i class="bi bi-boxes"></i><span>GRN</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
+
                 <li class="nav-item">
                     <a class="nav-link dropdown-toggle" href="#returnSubmenu" data-bs-toggle="collapse" role="button"
                         aria-expanded="false" aria-controls="returnSubmenu">
@@ -1109,6 +995,52 @@
                                 </a>
                             </li>
 
+                        </ul>
+                    </div>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link dropdown-toggle" href="#staffSubmenu" data-bs-toggle="collapse" role="button"
+                        aria-expanded="false" aria-controls="staffSubmenu">
+                        <i class="bi bi-person-badge-fill"></i> <span>Staff Management</span>
+                    </a>
+                    <div class="collapse" id="staffSubmenu">
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-sales') ? 'active' : '' }}" href="{{ route('admin.staff-sales') }}">
+                                    <i class="bi bi-shop"></i> <span>Staff Sales</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('admin.staff-product-allocation') ? 'active' : '' }}" href="{{ route('admin.staff-product-allocation') }}">
+                                    <i class="bi bi-person-badge"></i> <span>Staff Allocation</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-allocation-list') ? 'active' : '' }}" href="{{ route('admin.staff-allocation-list') }}">
+                                    <i class="bi bi-list-check"></i> <span>Staff Allocation List</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-payment-approval') ? 'active' : '' }}" href="{{ route('admin.staff-payment-approval') }}">
+                                    <i class="bi bi-credit-card"></i> <span>Payment Approvals</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-bonus') ? 'active' : '' }}" href="{{ route('admin.staff-bonus') }}">
+                                    <i class="bi bi-percent"></i> <span>Staff Commission</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-salary-management') ? 'active' : '' }}" href="{{ route('admin.staff-salary-management') }}">
+                                    <i class="bi bi-wallet2"></i> <span>Staff Salary</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-return-requests') ? 'active' : '' }}" href="{{ route('admin.staff-return-requests') }}">
+                                    <i class="bi bi-arrow-return-left"></i> <span>Staff Return Requests</span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </li>

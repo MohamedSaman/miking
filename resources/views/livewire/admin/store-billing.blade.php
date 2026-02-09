@@ -1,4 +1,4 @@
-<div class="container-fluid py-3" style="background-color:#ffffff;">
+<div class="container-fluid py-3 pb-5" style="background-color:#ffffff;">
     {{-- Opening Cash Modal --}}
     @if($showOpeningCashModal)
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.8);" data-bs-backdrop="static" data-bs-keyboard="false">
