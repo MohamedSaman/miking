@@ -2,8 +2,8 @@
     {{-- Top Header with Staff Selection --}}
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0 fw-bold">Staff Product Allocation</h5>
-        <div style="width: 280px;">
-            <select class="form-select form-select-sm" wire:model.live="staffId">
+        <div class="d-flex gap-2 align-items-center">
+            <select class="form-select form-select-sm" wire:model.live="staffId" style="width: 280px;">
                 <option value="">-- Choose Staff --</option>
                 @foreach($staff as $member)
                     <option value="{{ $member->id }}">
@@ -14,6 +14,10 @@
                     </option>
                 @endforeach
             </select>
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#importAllocationModal"
+                {{ !$staffId ? 'disabled' : '' }}>
+                <i class="bi bi-file-earmark-excel me-1"></i> Import
+            </button>
         </div>
     </div>
 
@@ -204,6 +208,62 @@
         </div>
     </div>
     @endif
+
+    {{-- Import Modal --}}
+    <div class="modal fade" id="importAllocationModal" tabindex="-1" aria-labelledby="importAllocationModalLabel" aria-hidden="true" wire:ignore.self>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="importAllocationModalLabel">
+                        <i class="bi bi-file-earmark-excel me-2"></i>Import Staff Allocation
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Instructions:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Download the template file below</li>
+                            <li>Fill in: <strong>Item Code</strong>, <strong>Description</strong>, and <strong>Qty</strong></li>
+                            <li>Upload the completed file</li>
+                            <li>Products will be allocated to the selected staff member</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Download Template</label>
+                        <button type="button" class="btn btn-outline-success w-100" wire:click="downloadTemplate">
+                            <i class="bi bi-download me-2"></i>Download Excel Template
+                        </button>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Upload File</label>
+                        <input type="file" class="form-control" wire:model="importFile" accept=".xlsx,.xls,.csv">
+                        @error('importFile')
+                            <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    @if($importFile)
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            File selected: <strong>{{ $importFile->getClientOriginalName() }}</strong>
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" wire:click="importProducts" {{ !$importFile ? 'disabled' : '' }}>
+                        <i class="bi bi-upload me-1"></i>Import Products
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     </div>
 </div>

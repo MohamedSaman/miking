@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use App\Models\User;
@@ -13,16 +14,22 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Livewire\Concerns\WithDynamicLayout;
+use App\Imports\StaffAllocationImport;
+use App\Exports\StaffAllocationTemplateExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 #[Title('Staff Product Allocation')]
 class StaffProductAllocation extends Component
 {
-    use WithDynamicLayout;
+    use WithDynamicLayout, WithFileUploads;
 
     // Basic Properties
     public $search = '';
     public $searchResults = [];
     public $staffId = '';
+
+    // Import file
+    public $importFile;
 
     // Cart Items (allocated products)
     public $cart = [];
@@ -350,6 +357,117 @@ class StaffProductAllocation extends Component
         }
     }
 
+    // 🔹 Import Products from Excel for Staff Allocation
+    public function importProducts()
+    {
+        // Validate staff selection
+        if (!$this->staffId) {
+            $this->js("Swal.fire('Error!', 'Please select a staff member first.', 'error')");
+            return;
+        }
+
+        // Validate file
+        $this->validate([
+            'importFile' => 'required|mimes:xlsx,xls,csv|max:10240', // Max 10MB
+        ], [
+            'importFile.required' => 'Please select an Excel file to import.',
+            'importFile.mimes' => 'File must be an Excel file (xlsx, xls, or csv).',
+            'importFile.max' => 'File size must not exceed 10MB.',
+        ]);
+
+        try {
+            // Create import instance with staff ID
+            $import = new StaffAllocationImport($this->staffId);
+
+            // Import the file
+            Excel::import($import, $this->importFile->getRealPath());
+
+            // Get import statistics
+            $successCount = $import->getSuccessCount();
+            $skipCount = $import->getSkipCount();
+            $errors = $import->getErrors();
+            $failures = $import->failures();
+
+            // Build success message
+            $message = "Import completed! ";
+            $message .= "✅ {$successCount} product(s) allocated successfully. ";
+
+            if ($skipCount > 0) {
+                $message .= "⚠️ {$skipCount} product(s) skipped. ";
+                
+                // Add first few errors for debugging
+                if (!empty($errors)) {
+                    $message .= "<br><br><strong>Error details:</strong><br>";
+                    $errorList = array_slice($errors, 0, 5); // Show first 5 errors
+                    foreach ($errorList as $error) {
+                        $message .= "• " . $error . "<br>";
+                    }
+                    if (count($errors) > 5) {
+                        $message .= "• ... and " . (count($errors) - 5) . " more errors<br>";
+                    }
+                }
+            }
+
+            // Reset file input
+            $this->reset(['importFile']);
+
+            // Get staff name for message
+            $staff = User::find($this->staffId);
+            $staffName = $staff ? $staff->name : 'staff';
+
+            // Close modal and show appropriate message
+            $this->js("$('#importAllocationModal').modal('hide')");
+            
+            if ($skipCount > 0 && $successCount == 0) {
+                // All failed
+                $this->js("Swal.fire({
+                    icon: 'error',
+                    title: 'Import Failed',
+                    html: '{$message}',
+                    confirmButtonText: 'OK'
+                })");
+            } else {
+                // Some or all succeeded
+                $icon = $skipCount > 0 ? 'warning' : 'success';
+                $this->js("Swal.fire({
+                    icon: '{$icon}',
+                    title: 'Import Complete',
+                    html: 'Products allocated to {$staffName}. {$message}',
+                    confirmButtonText: 'OK'
+                })");
+            }
+
+            // Clear cart and reset
+            $this->cart = [];
+            $this->staffId = '';
+            $this->additionalDiscount = 0;
+            $this->notes = '';
+
+            $this->dispatch('refreshPage');
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errorMessage = "Import failed due to validation errors: <br>";
+
+            foreach ($failures as $failure) {
+                $errorMessage .= "Row {$failure->row()}: " . implode(', ', $failure->errors()) . "<br>";
+            }
+
+            $this->js("Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                html: '{$errorMessage}',
+                confirmButtonText: 'OK'
+            })");
+        } catch (\Exception $e) {
+            $this->js("Swal.fire('Error!', 'Failed to import products: {$e->getMessage()}', 'error')");
+        }
+    }
+
+    // 🔹 Download Excel Template for Staff Allocation
+    public function downloadTemplate()
+    {
+        return Excel::download(new StaffAllocationTemplateExport(), 'staff_allocation_template.xlsx');
+    }
 
     public function render()
     {
