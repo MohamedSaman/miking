@@ -259,9 +259,8 @@
         </div>
     </div>
 
-    {{-- Add Order Modal --}}
     <div wire:ignore.self class="modal fade" id="addPurchaseOrderModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">
@@ -649,7 +648,7 @@
 
 {{-- View Order Modal --}}
 <div wire:ignore.self class="modal fade" id="viewOrderModal" tabindex="-1" aria-labelledby="viewOrderModalLabel" >
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">
@@ -751,7 +750,7 @@
 
 {{-- Edit Order Modal --}}
 <div wire:ignore.self class="modal fade" id="editOrderModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">Edit Purchase Order</h5>
