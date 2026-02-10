@@ -40,6 +40,7 @@ class Products extends Component
     use WithPagination, WithFileUploads;
 
     public $search = '';
+    public $stockFilter = 'all';
 
     // Create form fields
     public $code, $name, $model, $brand, $category, $image, $description, $barcode, $status, $supplier, $unit;
@@ -82,6 +83,11 @@ class Products extends Component
      * This fixes the issue where wrong product shows in modal on different pages
      */
     public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStockFilter()
     {
         $this->resetPage();
     }
@@ -203,6 +209,15 @@ class Products extends Component
                         ->orWhere('category_lists.category_name', 'like', '%' . $this->search . '%')
                         ->orWhere('product_details.barcode', 'like', '%' . $this->search . '%');
                 })
+                ->when($this->stockFilter === 'low', function ($query) {
+                    $query->havingRaw('available_stock > 0 AND available_stock < 5');
+                })
+                ->when($this->stockFilter === 'out', function ($query) {
+                    $query->havingRaw('available_stock = 0');
+                })
+                ->when($this->stockFilter === 'in_stock', function ($query) {
+                    $query->havingRaw('available_stock > 0');
+                })
                 ->orderByRaw("CASE WHEN product_details.code LIKE 'G-%' THEN 1 ELSE 0 END ASC")
                 ->orderBy('product_details.code', 'asc')
                 ->paginate($this->perPage);
@@ -238,6 +253,16 @@ class Products extends Component
                         ->orWhere('category_lists.category_name', 'like', '%' . $this->search . '%')
                         ->orWhere('product_details.status', 'like', '%' . $this->search . '%')
                         ->orWhere('product_details.barcode', 'like', '%' . $this->search . '%');
+                })
+                ->when($this->stockFilter === 'low', function ($query) {
+                    $query->where('product_stocks.available_stock', '>', 0)
+                          ->where('product_stocks.available_stock', '<', 5);
+                })
+                ->when($this->stockFilter === 'out', function ($query) {
+                    $query->where('product_stocks.available_stock', '=', 0);
+                })
+                ->when($this->stockFilter === 'in_stock', function ($query) {
+                    $query->where('product_stocks.available_stock', '>', 0);
                 })
                 ->orderByRaw("CASE WHEN product_details.code LIKE 'G-%' THEN 1 ELSE 0 END ASC")
                 ->orderBy('product_details.code', 'asc')

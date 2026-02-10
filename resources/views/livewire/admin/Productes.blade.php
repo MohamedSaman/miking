@@ -529,7 +529,14 @@
                                 <p class="text-muted small mb-0">View and manage all products in your inventory</p>
                             </div>
                             <div class="d-flex align-items-center gap-2">
-                                <label class="text-sm text-muted fw-medium">Show</label>
+                                <label class="text-sm text-muted fw-medium">Stock</label>
+                                <select wire:model.live="stockFilter" class="form-select form-select-sm" style="width: 160px;">
+                                    <option value="all">All</option>
+                                    <option value="low">Low Stock (&lt; 5)</option>
+                                    <option value="out">Out of Stock</option>
+                                    <option value="in_stock">Available Stock</option>
+                                </select>
+                                <label class="text-sm text-muted fw-medium ms-2">Show</label>
                                 <select wire:model.live="perPage" class="form-select form-select-sm" style="width: 80px;">
                                     <option value="10">10</option>
                                     <option value="25">25</option>
