@@ -23,6 +23,7 @@ class QuotationSystem extends Component
     public $searchResults = [];
     public $selectedResultIndex = 0;
     public $customerId = '';
+    public $salePriceType = 'cash'; // cash, credit, cash_credit
     public $validUntil;
 
     // Cart Items
@@ -138,6 +139,24 @@ class QuotationSystem extends Component
     public function getGrandTotalProperty()
     {
         return $this->subtotalAfterItemDiscounts - $this->additionalDiscountAmount;
+    }
+
+    public function updatedSalePriceType($value)
+    {
+        $this->cart = collect($this->cart)->map(function ($item) use ($value) {
+            // Check which price to use
+            if ($value === 'cash' && isset($item['cash_price'])) {
+                $item['price'] = $item['cash_price'];
+            } elseif ($value === 'credit' && isset($item['credit_price'])) {
+                $item['price'] = $item['credit_price'];
+            } elseif ($value === 'cash_credit' && isset($item['cash_credit_price'])) {
+                $item['price'] = $item['cash_credit_price'];
+            }
+            
+            // Recalculate total
+            $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
+            return $item;
+        })->toArray();
     }
 
     // When customer is selected from dropdown
@@ -258,12 +277,19 @@ class QuotationSystem extends Component
                     ->take(10)
                     ->get()
                     ->map(function ($product) {
+                        $cashPrice = $product->price->cash_price ?? ($product->price->selling_price ?? 0);
+                        $creditPrice = $product->price->credit_price ?? ($product->price->selling_price ?? 0);
+                        $cashCreditPrice = $product->price->cash_credit_price ?? $cashPrice;
+
                         return [
                             'id' => $product->id,
                             'name' => $product->name,
                             'code' => $product->code,
                             'model' => $product->model,
                             'price' => $product->price->selling_price ?? 0,
+                            'cash_price' => $cashPrice,
+                            'credit_price' => $creditPrice,
+                            'cash_credit_price' => $cashCreditPrice,
                             'stock' => $product->stock->available_stock ?? 0,
                             'image' => $product->image
                         ];
@@ -313,18 +339,31 @@ class QuotationSystem extends Component
                 return $item;
             })->toArray();
         } else {
-            // Add new item - no pre-filled discount
-            $discountPrice = 0;
+            // New item addition with support for multiple price types
+            $cashPrice = $product['cash_price'] ?? $product['price'];
+            $creditPrice = $product['credit_price'] ?? $product['price'];
+            $cashCreditPrice = $product['cash_credit_price'] ?? $cashPrice;
+
+            // Determine initial price based on current salePriceType
+            $initialPrice = $cashPrice;
+            if ($this->salePriceType === 'credit') {
+                $initialPrice = $creditPrice;
+            } elseif ($this->salePriceType === 'cash_credit') {
+                $initialPrice = $cashCreditPrice;
+            }
 
             $this->cart[] = [
                 'id' => $product['id'],
                 'name' => $product['name'],
                 'code' => $product['code'],
                 'model' => $product['model'],
-                'price' => $product['price'], // Unit price from selling_price
+                'price' => $initialPrice,
+                'cash_price' => $cashPrice,
+                'credit_price' => $creditPrice,
+                'cash_credit_price' => $cashCreditPrice,
                 'quantity' => 1,
-                'discount' => $discountPrice, // No pre-filled discount
-                'total' => $product['price'] - $discountPrice // Initial total with discount applied
+                'discount' => 0,
+                'total' => $initialPrice
             ];
         }
 
@@ -513,6 +552,7 @@ class QuotationSystem extends Component
                 'customer_phone' => $customer->phone,
                 'customer_email' => $customer->email,
                 'customer_address' => $customer->address,
+                'sale_type' => $this->salePriceType,
                 'quotation_date' => now(),
                 'valid_until' => $this->validUntil,
                 'subtotal' => $this->subtotal,

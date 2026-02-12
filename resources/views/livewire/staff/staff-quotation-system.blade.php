@@ -137,15 +137,18 @@
                             <input type="date" class="form-control shadow-sm" wire:model="validUntil">
                         </div>
 
-                        {{-- Sale Type --}}
+                        {{-- Sale Price Type --}}
                         <div class="col-md-6 mt-3">
-                            <label class="form-label fw-semibold">Sale Type *</label>
-                            <select class="form-select shadow-sm" wire:model.live="saleType">
-                                <option value="retail">Retail Sale</option>
-                                <option value="wholesale">Wholesale Sale</option>
+                            <label class="form-label fw-semibold">Sale Price Type *</label>
+                            <select class="form-select shadow-sm" wire:model.live="salePriceType">
+                                <option value="cash">Cash Price</option>
+                                <option value="cash_credit">Cash & Credit Price (Partial)</option>
+                                <option value="credit">Credit Price</option>
                             </select>
                             <div class="form-text mt-2">
-                                Prices will automatically adjust based on selection.
+                                <span class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i> Select price type for calculation (not payment method)
+                                </span>
                             </div>
                         </div>
                     </div>

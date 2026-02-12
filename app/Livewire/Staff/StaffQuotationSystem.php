@@ -43,7 +43,7 @@ class StaffQuotationSystem extends Component
 
     // Quotation Properties
     public $notes = '';
-    public $saleType = 'retail'; // retail or wholesale
+    public $salePriceType = 'cash'; // cash, credit, cash_credit
     public $termsConditions = "1. This quotation is valid for 30 days.\n2. Prices are subject to change.";
 
     // Discount Properties
@@ -131,20 +131,20 @@ class StaffQuotationSystem extends Component
         return $this->subtotalAfterItemDiscounts - $this->additionalDiscountAmount;
     }
 
-    // When sale type changes, update prices in cart
-    public function updatedSaleType($value)
+    public function updatedSalePriceType($value)
     {
         $this->cart = collect($this->cart)->map(function ($item) use ($value) {
-            // Check if we have both prices stored
-            if (isset($item['wholesale_price']) && isset($item['retail_price'])) {
-                if ($value === 'wholesale' && $item['wholesale_price'] > 0) {
-                    $item['price'] = $item['wholesale_price'];
-                } else {
-                    $item['price'] = $item['retail_price'];
-                }
-                // Recalculate total
-                $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
+            // Update active price based on stored price types
+            if ($value === 'cash' && isset($item['cash_price'])) {
+                $item['price'] = $item['cash_price'];
+            } elseif ($value === 'credit' && isset($item['credit_price'])) {
+                $item['price'] = $item['credit_price'];
+            } elseif ($value === 'cash_credit' && isset($item['cash_credit_price'])) {
+                $item['price'] = $item['cash_credit_price'];
             }
+            
+            // Recalculate total
+            $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
             return $item;
         })->toArray();
     }
@@ -258,8 +258,9 @@ class StaffQuotationSystem extends Component
                         'code' => $product->code,
                         'model' => $product->model,
                         'price' => $product->price,
-                        'retail_price' => $retailPrice,
-                        'wholesale_price' => $wholesalePrice,
+                        'cash_price' => $fullProduct->price->cash_price ?? ($fullProduct->price->selling_price ?? 0),
+                        'credit_price' => $fullProduct->price->credit_price ?? ($fullProduct->price->selling_price ?? 0),
+                        'cash_credit_price' => $fullProduct->price->cash_credit_price ?? ($fullProduct->price->cash_price ?? ($fullProduct->price->selling_price ?? 0)),
                         'stock' => ($product->quantity - $product->sold_quantity),
                         'image' => $product->image
                     ];
@@ -308,17 +309,18 @@ class StaffQuotationSystem extends Component
                 return $item;
             })->toArray();
         } else {
-            // Add new item - no pre-filled discount
-            $productDetail = ProductDetail::with('price')->find($product['id']);
-            $discountPrice = 0;
-            
-            // Determine price based on current sale type
-            $retailPrice = $product['retail_price'] ?? $product['price'];
-            $wholesalePrice = $product['wholesale_price'] ?? 0;
-            
-            $finalPrice = ($this->saleType === 'wholesale' && $wholesalePrice > 0) 
-                          ? $wholesalePrice 
-                          : $retailPrice;
+            // Fetch multiple price types for the new item
+            $cashPrice = $product['cash_price'] ?? $product['price'];
+            $creditPrice = $product['credit_price'] ?? $product['price'];
+            $cashCreditPrice = $product['cash_credit_price'] ?? $cashPrice;
+
+            // Determine active price based on current salePriceType
+            $finalPrice = $cashPrice;
+            if ($this->salePriceType === 'credit') {
+                $finalPrice = $creditPrice;
+            } elseif ($this->salePriceType === 'cash_credit') {
+                $finalPrice = $cashCreditPrice;
+            }
 
             $this->cart[] = [
                 'id' => $product['id'],
@@ -326,11 +328,12 @@ class StaffQuotationSystem extends Component
                 'code' => $product['code'],
                 'model' => $product['model'],
                 'price' => $finalPrice,
-                'retail_price' => $retailPrice,
-                'wholesale_price' => $wholesalePrice,
+                'cash_price' => $cashPrice,
+                'credit_price' => $creditPrice,
+                'cash_credit_price' => $cashCreditPrice,
                 'quantity' => 1,
-                'discount' => $discountPrice,
-                'total' => $finalPrice - $discountPrice
+                'discount' => 0,
+                'total' => $finalPrice
             ];
         }
 
@@ -530,7 +533,7 @@ class StaffQuotationSystem extends Component
                 'terms_conditions' => $this->termsConditions,
                 'notes' => $this->notes,
                 'status' => 'draft',
-                'sale_type' => $this->saleType,
+                'sale_type' => $this->salePriceType,
                 'created_by' => Auth::id(),
                 'user_id' => Auth::id(),
             ]);
