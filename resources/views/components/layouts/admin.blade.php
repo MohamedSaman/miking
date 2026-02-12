@@ -1041,6 +1041,11 @@
                                     <i class="bi bi-arrow-return-left"></i> <span>Staff Return Requests</span>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.staff-tracking') ? 'active' : '' }}" href="{{ route('admin.staff-tracking') }}">
+                                    <i class="bi bi-person-workspace"></i> <span>Staff Attendance</span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </li>

@@ -178,6 +178,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/print/sale/{id}', [PrintController::class, 'printSale'])->name('print.sale');
         Route::get('/due-payments', AdminDuePayments::class)->name('due-payments');
         Route::get('/staff-attendance', StaffAttendance::class)->name('staff-attendance');
+        Route::get('/staff-tracking', \App\Livewire\Admin\StaffSessionTracking::class)->name('staff-tracking');
         Route::get('/staff-salary', StaffSallary::class)->name('staff-salary');
         Route::get('/loan-management', LoanManage::class)->name('loan-management');
         Route::get('/sales-system', SalesSystem::class)->name('sales-system');

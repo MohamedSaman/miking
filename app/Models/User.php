@@ -88,6 +88,12 @@ class User extends Authenticatable
         return $this->hasMany(StaffProduct::class, 'staff_id', 'id');
     }
 
+    // Relationship: User has many sales
+    public function sales()
+    {
+        return $this->hasMany(Sale::class, 'user_id', 'id');
+    }
+
     /**
      * Check if user has a specific permission
      * Some pages are always accessible to staff without permission
@@ -128,5 +134,98 @@ class User extends Authenticatable
     public function isStaff()
     {
         return $this->role === 'staff';
+    }
+
+    /**
+     * Get the attendance status for a specific date based on activity (sessions and sales)
+     */
+    public function getAttendanceStatus($date = null)
+    {
+        $date = $date ?: now()->toDateString();
+        $isToday = $date === now()->toDateString();
+        
+        // 1. Check if there is an official attendance record
+        $attendance = $this->attendances()->whereDate('date', $date)->first();
+        
+        if ($attendance) {
+            // Check if there was any system activity on this date even if record is official
+            $startOfDay = \Carbon\Carbon::parse($date)->startOfDay()->timestamp;
+            $endOfDay = \Carbon\Carbon::parse($date)->endOfDay()->timestamp;
+            $hasSession = \DB::table('sessions')->where('user_id', $this->id)->whereBetween('last_activity', [$startOfDay, $endOfDay])->exists();
+            $hasSales = $this->sales()->whereDate('created_at', $date)->exists();
+
+            return [
+                'status' => strtolower($attendance->status),
+                'present_status' => strtolower($attendance->present_status),
+                'type' => 'official',
+                'record' => $attendance,
+                'has_activity' => $hasSession || $hasSales
+            ];
+        }
+        
+        // 2. If no official record, check for system activity on that day
+        // For sessions: check if any session was active during that day
+        $startOfDay = \Carbon\Carbon::parse($date)->startOfDay()->timestamp;
+        $endOfDay = \Carbon\Carbon::parse($date)->endOfDay()->timestamp;
+        
+        $hasActivityOnDate = \DB::table('sessions')
+            ->where('user_id', $this->id)
+            ->whereBetween('last_activity', [$startOfDay, $endOfDay])
+            ->exists();
+        
+        // Check sales on that day
+        $salesCount = $this->sales()
+            ->whereDate('created_at', $date)
+            ->count();
+        
+        if ($hasActivityOnDate || $salesCount > 0) {
+            // New Rule: If sales count >= 2 and no official record exists, automatically mark as present
+            if ($salesCount >= 2) {
+                $this->markAttendance('present', $date);
+                // Return official status now that we just created it
+                return [
+                    'status' => 'present',
+                    'present_status' => 'ontime',
+                    'type' => 'official',
+                    'is_auto_marked' => true,
+                    'has_activity' => true
+                ];
+            }
+
+            return [
+                'status' => 'pending',
+                'present_status' => 'pending',
+                'type' => 'detected',
+                'sales_count' => $salesCount,
+                'has_activity' => true,
+                'is_today' => $isToday,
+                'reason' => $salesCount >= 2 ? 'Auto-Attended (Sales)' : ($salesCount > 0 ? 'Sales Detected' : 'Login Detected')
+            ];
+        }
+        
+        return [
+            'status' => 'absent',
+            'present_status' => 'absent',
+            'type' => 'none',
+            'has_activity' => false,
+            'is_today' => $isToday
+        ];
+    }
+
+    /**
+     * Manually mark attendance for a user for a specific date
+     */
+    public function markAttendance($status = 'present', $date = null)
+    {
+        $date = $date ?: now()->toDateString();
+        
+        return Attendance::updateOrCreate(
+            ['user_id' => $this->id, 'date' => $date],
+            [
+                'status' => $status,
+                'present_status' => $status === 'present' ? 'ontime' : null,
+                'check_in' => ($status === 'present' && $date === now()->toDateString()) ? now()->format('H:i:s') : null
+            ]
+        );
     }
 }
