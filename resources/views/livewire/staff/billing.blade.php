@@ -1,4 +1,96 @@
-<div class="container-fluid py-3" style="background-color:#ffffff;">
+<div class="container-fluid py-3" style="background-color:#ffffff;"
+    x-data="{ 
+        init() {
+            window.addEventListener('keydown', (e) => {
+                // Focus search: F1
+                if (e.key === 'F1') {
+                    e.preventDefault();
+                    document.getElementById('productSearchInput').focus();
+                }
+                
+                // Complete sale: F2
+                if (e.key === 'F2') {
+                    e.preventDefault();
+                    document.getElementById('completeSaleButton').click();
+                }
+
+                // Alt + C: Add new customer
+                if (e.altKey && e.key === 'c' || e.altKey && e.key === 'C') {
+                    e.preventDefault();
+                    @this.call('openCustomerModal');
+                }
+
+                // Alt + X: Clear cart
+                if (e.altKey && e.key === 'x' || e.altKey && e.key === 'X') {
+                    e.preventDefault();
+                    if(confirm('Are you sure you want to clear the cart?')) {
+                        @this.call('clearCart');
+                    }
+                }
+            });
+
+            window.addEventListener('focus-result', () => {
+                setTimeout(() => {
+                    let searchInput = document.getElementById('productSearchInput');
+                    if(searchInput) {
+                        searchInput.focus();
+                        searchInput.select();
+                    }
+                }, 100);
+            });
+
+            window.addEventListener('focus-search', () => {
+                setTimeout(() => {
+                    let searchInput = document.getElementById('productSearchInput');
+                    if(searchInput) {
+                        searchInput.focus();
+                        searchInput.select();
+                    }
+                }, 100);
+            });
+
+            window.addEventListener('focus-qty', (e) => {
+                setTimeout(() => {
+                    let index = e.detail.index !== undefined ? e.detail.index : 0;
+                    let qtyInput = document.getElementById('qty-input-' + index);
+                    if(qtyInput) {
+                        qtyInput.focus();
+                        qtyInput.select();
+                    }
+                }, 150);
+            });
+
+            window.addEventListener('focus-pos-field', (e) => {
+                setTimeout(() => {
+                    let { index, field } = e.detail;
+                    let input = document.getElementById(`${field}-input-${index}`);
+                    if (input) {
+                        input.focus();
+                        if(input.select) input.select();
+                    }
+                }, 50);
+            });
+
+            window.addEventListener('scroll-to-result', (e) => {
+                const index = e.detail.index;
+                const container = document.getElementById('search-results-container');
+                const element = document.getElementById('search-result-' + index);
+                
+                if (container && element) {
+                    const containerRect = container.getBoundingClientRect();
+                    const elementRect = element.getBoundingClientRect();
+
+                    if (elementRect.bottom > containerRect.bottom) {
+                        // Scroll down
+                        container.scrollTop += (elementRect.bottom - containerRect.bottom);
+                    } else if (elementRect.top < containerRect.top) {
+                        // Scroll up
+                        container.scrollTop -= (containerRect.top - elementRect.top);
+                    }
+                }
+            });
+        }
+    }">
     <!-- Header -->
     <div class="header-section mb-4">
         <div class="d-flex justify-content-between align-items-center p-3 bg-white rounded shadow-sm border">
@@ -26,8 +118,8 @@
 
     <div class="row">
         {{-- Customer Information --}}
-        <div class="col-6 mb-4">
-            <div class="card border-2 shadow-sm">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 border-2 shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
                     <h5 class="card-title mb-0 fw-bold" style="color:#2a83df;">
                         <i class="bi bi-person me-2" style="color:#2a83df;"></i>Customer Information
@@ -91,16 +183,25 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <input type="text" class="form-control shadow-sm"
+                            id="productSearchInput"
                             wire:model.live="search"
-                            placeholder="Search by product name, code, or model...">
+                            wire:keydown.arrow-down.prevent="selectNextResult"
+                            wire:keydown.arrow-up.prevent="selectPreviousResult"
+                            wire:keydown.enter.prevent="addSelectedResult"
+                            wire:keydown.escape.prevent="$set('search', '')"
+                            placeholder="Search by product name, code, or model... [F1]">
                     </div>
 
                     {{-- Search Results --}}
                     @if($search && count($searchResults) > 0)
-                    <div class="search-results mt-1 position-absolute w-100 z-10 shadow-lg" style="max-height: 300px; max-width: 96%;">
-                        @foreach($searchResults as $product)
-                        <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white rounded-1"
-                            wire:key="product-{{ $product['id'] }}">
+                    <div class="search-results mt-1 position-absolute w-100 z-10 shadow-lg bg-white border" 
+                        id="search-results-container"
+                        style="max-height: 300px; max-width: 96%; overflow-y: auto;">
+                        @foreach($searchResults as $index => $product)
+                        <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white rounded-1 {{ $selectedResultIndex === $index ? 'bg-primary bg-opacity-10 border-primary' : '' }}"
+                            id="search-result-{{ $index }}"
+                            wire:key="product-{{ $product['id'] }}"
+                            style="{{ $selectedResultIndex === $index ? 'border-left: 4px solid #0d6efd;' : '' }}">
                             <div>
                                 <h6 class="mb-1 fw-semibold">{{ $product['name'] }}</h6>
                                 <p class="text-muted small mb-0">
@@ -165,23 +266,36 @@
                                 </td>
                                 <td class="fw-bold">
                                     <input type="number" class="form-control-sm text-primary rounded-0" style="min-width:90px;"
+                                        id="price-input-{{ $index }}"
                                         wire:change="updatePrice({{ $index }}, $event.target.value)"
+                                        wire:keydown.enter.prevent="$dispatch('focus-search')"
+                                        x-on:keydown.arrow-right.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'qty' })"
+                                        x-on:keydown.arrow-left.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'qty' })"
+                                        x-on:keydown.arrow-down.prevent="$dispatch('focus-pos-field', { index: {{ $index + 1 }}, field: 'price' })"
+                                        x-on:keydown.arrow-up.prevent="$dispatch('focus-pos-field', { index: {{ $index - 1 }}, field: 'price' })"
                                         value="{{ $item['price'] }}" min="0" step="0.01">
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <button class="btn btn-outline-secondary rounded-0" type="button"
-                                            wire:click="decrementQuantity({{ $index }})">-</button>
                                         <input type="number" class="form-control text-center rounded-0"
+                                            id="qty-input-{{ $index }}"
                                             wire:change="updateQuantity({{ $index }}, $event.target.value)"
+                                            wire:keydown.enter.prevent="$dispatch('focus-search')"
+                                            x-on:keydown.arrow-right.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'discount' })"
+                                            x-on:keydown.arrow-left.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'price' })"
+                                            x-on:keydown.arrow-down.prevent="$dispatch('focus-pos-field', { index: {{ $index + 1 }}, field: 'qty' })"
+                                            x-on:keydown.arrow-up.prevent="$dispatch('focus-pos-field', { index: {{ $index - 1 }}, field: 'qty' })"
                                             value="{{ $item['quantity'] }}" min="1" max="{{ $item['stock'] }}">
-                                        <button class="btn btn-outline-secondary rounded-0" type="button"
-                                            wire:click="incrementQuantity({{ $index }})">+</button>
                                     </div>
                                 </td>
                                 <td>
                                     <input type="number" class="form-control-sm text-danger rounded-0"
+                                        id="discount-input-{{ $index }}"
                                         wire:change="updateDiscount({{ $index }}, $event.target.value)"
+                                        wire:keydown.enter.prevent="$dispatch('focus-search')"
+                                        x-on:keydown.arrow-left.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'qty' })"
+                                        x-on:keydown.arrow-down.prevent="$dispatch('focus-pos-field', { index: {{ $index + 1 }}, field: 'discount' })"
+                                        x-on:keydown.arrow-up.prevent="$dispatch('focus-pos-field', { index: {{ $index - 1 }}, field: 'discount' })"
                                         value="{{ $item['discount'] }}" min="0" step="0.01">
                                 </td>
                                 <td class="fw-bold">Rs.{{ number_format($item['total'], 2) }}</td>
@@ -496,10 +610,11 @@
                 <button class="btn btn-lg px-5 rounded-0 fw-bold text-white position-relative" 
                     style="background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);" 
                     wire:click="validateAndCreateSale"
+                    id="completeSaleButton"
                     wire:loading.attr="disabled"
                     {{ count($cart) == 0 ? 'disabled' : '' }}>
                     <span wire:loading.remove wire:target="validateAndCreateSale">
-                        <i class="bi bi-cart-check me-2"></i>Complete Sale
+                        <i class="bi bi-cart-check me-2"></i>Complete Sale [F2]
                     </span>
                     <span wire:loading wire:target="validateAndCreateSale">
                         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -508,9 +623,9 @@
                 </button>
                 <p class="text-muted small mt-2 mb-0">
                     @if($paymentMethod === 'credit' || ($paymentMethod === 'cash' && $cashAmount <= 0))
-                        <i class="bi bi-info-circle me-1"></i>Credit sale - no payment approval needed
+                        <i class="bi bi-info-circle me-1"></i>Credit sale - no payment approval needed [F2]
                     @else
-                        <i class="bi bi-shield-check me-1"></i>Payment will be pending admin approval
+                        <i class="bi bi-shield-check me-1"></i>Payment will be pending admin approval [F2]
                     @endif
                 </p>
             </div>
@@ -790,4 +905,13 @@
         </div>
     </div>
     @endif
+    {{-- Shortcut Legend --}}
+    <div class="position-fixed bottom-0 end-0 m-3 d-none d-lg-block" style="z-index: 1050;">
+        <div class="bg-dark text-white p-2 rounded shadow-lg opacity-85 small">
+            <div class="mb-1"><span class="badge bg-primary">F1</span> Search</div>
+            <div class="mb-1"><span class="badge bg-primary">F2</span> Complete Sale</div>
+            <div class="mb-1"><span class="badge bg-primary">Alt + C</span> Add Customer</div>
+            <div><span class="badge bg-danger">Alt + X</span> Clear Cart</div>
+        </div>
+    </div>
 </div>

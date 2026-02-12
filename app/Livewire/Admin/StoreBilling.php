@@ -42,6 +42,7 @@ class StoreBilling extends Component
     // Basic Properties
     public $search = '';
     public $searchResults = [];
+    public $selectedResultIndex = 0;
     public $customerId = '';
 
     // Cart Items
@@ -559,6 +560,32 @@ class StoreBilling extends Component
                 });
         } else {
             $this->searchResults = [];
+            $this->selectedResultIndex = 0;
+        }
+    }
+
+    // Keyboard navigation for search results
+    public function selectNextResult()
+    {
+        if (count($this->searchResults) > 0) {
+            $this->selectedResultIndex = ($this->selectedResultIndex + 1) % count($this->searchResults);
+            $this->dispatch('scroll-to-result', index: $this->selectedResultIndex);
+        }
+    }
+
+    public function selectPreviousResult()
+    {
+        if (count($this->searchResults) > 0) {
+            $this->selectedResultIndex = ($this->selectedResultIndex - 1 + count($this->searchResults)) % count($this->searchResults);
+            $this->dispatch('scroll-to-result', index: $this->selectedResultIndex);
+        }
+    }
+
+    public function addSelectedResult()
+    {
+        if (count($this->searchResults) > 0 && isset($this->searchResults[$this->selectedResultIndex])) {
+            $this->addToCart($this->searchResults[$this->selectedResultIndex]);
+            // No need to dispatch here as addToCart already does it
         }
     }
 
@@ -580,17 +607,15 @@ class StoreBilling extends Component
                 return;
             }
 
-            $this->cart = collect($this->cart)->map(function ($item) use ($product) {
-                if ($item['id'] == $product['id']) {
-                    $item['quantity'] += 1;
-                    $item['total'] = ($item['price'] - $item['discount']) * $item['quantity'];
-                    // Ensure key exists
-                    if (!isset($item['key'])) {
-                        $item['key'] = uniqid('cart_');
-                    }
-                }
-                return $item;
-            })->toArray();
+            // Move the updated item to the top
+            $items = collect($this->cart);
+            $updatedItem = $items->firstWhere('id', $product['id']);
+            $updatedItem['quantity'] += 1;
+            $updatedItem['total'] = ($updatedItem['price'] - $updatedItem['discount']) * $updatedItem['quantity'];
+            
+            $this->cart = $items->reject(fn($item) => $item['id'] == $product['id'])
+                ->prepend($updatedItem)
+                ->toArray();
         } else {
             // Get product price details
             $productDetail = ProductDetail::with('price')->find($product['id']);
@@ -636,6 +661,8 @@ class StoreBilling extends Component
 
         $this->search = '';
         $this->searchResults = [];
+        $this->selectedResultIndex = 0;
+        $this->dispatch('focus-qty', index: 0);
     }
 
     // Update Quantity

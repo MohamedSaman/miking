@@ -21,6 +21,7 @@ class QuotationSystem extends Component
     // Basic Properties
     public $search = '';
     public $searchResults = [];
+    public $selectedResultIndex = 0;
     public $customerId = '';
     public $validUntil;
 
@@ -214,6 +215,7 @@ class QuotationSystem extends Component
     // Search Products
     public function updatedSearch()
     {
+        $this->selectedResultIndex = 0;
         if (strlen($this->search) >= 2) {
             if ($this->isStaff()) {
                 // For staff: only show their allocated products
@@ -269,6 +271,30 @@ class QuotationSystem extends Component
             }
         } else {
             $this->searchResults = [];
+            $this->selectedResultIndex = 0;
+        }
+    }
+
+    public function selectNextResult()
+    {
+        if (count($this->searchResults) > 0) {
+            $this->selectedResultIndex = ($this->selectedResultIndex + 1) % count($this->searchResults);
+            $this->dispatch('scroll-to-result', index: $this->selectedResultIndex);
+        }
+    }
+
+    public function selectPreviousResult()
+    {
+        if (count($this->searchResults) > 0) {
+            $this->selectedResultIndex = ($this->selectedResultIndex - 1 + count($this->searchResults)) % count($this->searchResults);
+            $this->dispatch('scroll-to-result', index: $this->selectedResultIndex);
+        }
+    }
+
+    public function addSelectedResult()
+    {
+        if (count($this->searchResults) > 0 && isset($this->searchResults[$this->selectedResultIndex])) {
+            $this->addToCart($this->searchResults[$this->selectedResultIndex]);
         }
     }
 
@@ -304,6 +330,8 @@ class QuotationSystem extends Component
 
         $this->search = '';
         $this->searchResults = [];
+        $this->selectedResultIndex = 0;
+        $this->dispatch('focus-qty', index: 0);
     }
 
     // Update Quantity

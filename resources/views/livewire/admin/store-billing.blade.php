@@ -1,4 +1,90 @@
-<div class="container-fluid py-3 pb-5" style="background-color:#ffffff;">
+<div class="container-fluid py-3 pb-5" style="background-color:#ffffff;" 
+    x-data="{ 
+        init() {
+            window.addEventListener('keydown', (e) => {
+                // F1 - Focus Search
+                if (e.key === 'F1') {
+                    e.preventDefault();
+                    document.getElementById('productSearchInput').focus();
+                }
+                // F2 - Complete Sale
+                if (e.key === 'F2') {
+                    e.preventDefault();
+                    $wire.validateAndCreateSale();
+                }
+                // Alt+C - Add New Customer
+                if (e.altKey && e.key === 'c') {
+                    e.preventDefault();
+                    $wire.openCustomerModal();
+                }
+                // Alt+P - Focus Payment Method
+                if (e.altKey && e.key === 'p') {
+                    e.preventDefault();
+                    document.getElementById('paymentMethodSelect').focus();
+                }
+                // Alt+X - Clear Cart
+                if (e.altKey && e.key === 'x') {
+                    e.preventDefault();
+                    if(confirm('Are you sure you want to clear the cart?')) {
+                        $wire.clearCart();
+                    }
+                }
+                // Alt+A - Focus Amount Received
+                if (e.altKey && e.key === 'a') {
+                    e.preventDefault();
+                    let amtInput = document.getElementById('cashAmountInput') || document.getElementById('bankTransferAmountInput');
+                    if(amtInput) amtInput.focus();
+                }
+            });
+
+            window.addEventListener('focus-search', () => {
+                setTimeout(() => {
+                    document.getElementById('productSearchInput').focus();
+                }, 100);
+            });
+
+            window.addEventListener('scroll-to-result', (e) => {
+                const index = e.detail.index;
+                const container = document.getElementById('search-results-container');
+                const element = document.getElementById('search-result-' + index);
+                
+                if (container && element) {
+                    const containerRect = container.getBoundingClientRect();
+                    const elementRect = element.getBoundingClientRect();
+
+                    if (elementRect.bottom > containerRect.bottom) {
+                        // Scroll down
+                        container.scrollTop += (elementRect.bottom - containerRect.bottom);
+                    } else if (elementRect.top < containerRect.top) {
+                        // Scroll up
+                        container.scrollTop -= (containerRect.top - elementRect.top);
+                    }
+                }
+            });
+
+            window.addEventListener('focus-qty', (e) => {
+                setTimeout(() => {
+                    let index = e.detail.index !== undefined ? e.detail.index : 0;
+                    let qtyInput = document.getElementById('qty-input-' + index);
+                    if(qtyInput) {
+                        qtyInput.focus();
+                        qtyInput.select();
+                    }
+                }, 150);
+            });
+
+            window.addEventListener('focus-pos-field', (e) => {
+                setTimeout(() => {
+                    let { index, field } = e.detail;
+                    let input = document.getElementById(`${field}-input-${index}`);
+                    if (input) {
+                        input.focus();
+                        if(input.select) input.select();
+                    }
+                }, 50);
+            });
+        }
+    }">
     {{-- Opening Cash Modal --}}
     @if($showOpeningCashModal)
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.8);" data-bs-backdrop="static" data-bs-keyboard="false">
@@ -167,16 +253,26 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <input type="text" class="form-control shadow-sm"
+                            id="productSearchInput"
                             wire:model.live="search"
-                            placeholder="Search by product name, code, or model...">
+                            wire:keydown.arrow-down.prevent="selectNextResult"
+                            wire:keydown.arrow-up.prevent="selectPreviousResult"
+                            wire:keydown.enter.prevent="addSelectedResult"
+                            wire:keydown.escape.prevent="$set('search', '')"
+                            placeholder="Search by product name, code, or model... [F1]"
+                            autofocus>
                     </div>
 
                     {{-- Search Results --}}
                     @if($search && count($searchResults) > 0)
-                    <div class="search-results mt-1 position-absolute w-100 z-10 shadow-lg " style="max-height: 300px; max-width: 96%;">
-                        @foreach($searchResults as $product)
-                        <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white rounded-1"
-                            wire:key="product-{{ $product['id'] }}">
+                    <div class="search-results mt-1 position-absolute w-100 z-10 shadow-lg bg-white border" 
+                        id="search-results-container"
+                        style="max-height: 400px; max-width: 96%; overflow-y: auto; z-index: 9999;">
+                        @foreach($searchResults as $index => $product)
+                        <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white rounded-1 {{ $selectedResultIndex === $index ? 'bg-primary bg-opacity-10 border-primary' : '' }}"
+                            wire:key="product-{{ $product['id'] }}"
+                            id="search-result-{{ $index }}"
+                            style="{{ $selectedResultIndex === $index ? 'border-left: 4px solid #0d6efd;' : '' }}">
                             <div>
                                 <h6 class="mb-1 fw-semibold">{{ $product['name'] }}</h6>
                                 <p class="text-muted small mb-0">
@@ -186,11 +282,16 @@
                                     Rs.{{ number_format($product['price'], 2) }} | Stock: {{ $product['stock'] }}
                                 </p>
                             </div>
-                            <button class="btn btn-sm btn-outline-primary"
-                                wire:click="addToCart({{ json_encode($product) }})"
-                                {{ $product['stock'] <= 0 ? 'disabled' : '' }}>
-                                <i class="bi bi-plus-lg"></i> Add
-                            </button>
+                            <div class="d-flex align-items-center">
+                                @if($selectedResultIndex === $index)
+                                <span class="badge bg-primary me-2">Enter to add</span>
+                                @endif
+                                <button class="btn btn-sm {{ $selectedResultIndex === $index ? 'btn-primary' : 'btn-outline-primary' }}"
+                                    wire:click="addToCart({{ json_encode($product) }})"
+                                    {{ $product['stock'] <= 0 ? 'disabled' : '' }}>
+                                    <i class="bi bi-plus-lg"></i> Add
+                                </button>
+                            </div>
                         </div>
                         @endforeach
                     </div>
@@ -221,8 +322,8 @@
                             <tr>
                                 <th width="30">#</th>
                                 <th>Product</th>
-                                <th width="120">Unit Price</th>
                                 <th width="150">Quantity</th>
+                                <th width="120">Unit Price</th>
                                 <th width="120">Discount/Unit</th>
                                 <th width="120">Total</th>
                                 <th width="100" class="text-center">Actions</th>
@@ -243,26 +344,42 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="fw-bold">
-                                    <input type="number" class="form-control-sm text-primary rounded-0" style="min-width:90px;"
-                                        wire:change="updatePrice({{ $index }}, $event.target.value)"
-                                        value="{{ $item['price'] }}" min="0" step="0.01"
-                                        placeholder="0.00">
-                                </td>
                                 <td>
                                     <div class="input-group input-group-sm">
                                         <button class="btn btn-outline-secondary rounded-0" type="button"
                                             wire:click="decrementQuantity({{ $index }})">-</button>
                                         <input type="number" class="form-control text-center rounded-0"
+                                            id="qty-input-{{ $index }}"
                                             wire:change="updateQuantity({{ $index }}, $event.target.value)"
+                                            wire:keydown.enter.prevent="$dispatch('focus-search')"
+                                            x-on:keydown.arrow-right.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'price' })"
+                                            x-on:keydown.arrow-down.prevent="$dispatch('focus-pos-field', { index: {{ $index + 1 }}, field: 'qty' })"
+                                            x-on:keydown.arrow-up.prevent="$dispatch('focus-pos-field', { index: {{ $index - 1 }}, field: 'qty' })"
                                             value="{{ $item['quantity'] }}" min="1" max="{{ $item['stock'] }}">
                                         <button class="btn btn-outline-secondary rounded-0" type="button"
                                             wire:click="incrementQuantity({{ $index }})">+</button>
                                     </div>
                                 </td>
+                                <td class="fw-bold">
+                                    <input type="number" class="form-control-sm text-primary rounded-0" style="min-width:90px;"
+                                        id="price-input-{{ $index }}"
+                                        wire:change="updatePrice({{ $index }}, $event.target.value)"
+                                        wire:keydown.enter.prevent="$dispatch('focus-search')"
+                                        x-on:keydown.arrow-right.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'discount' })"
+                                        x-on:keydown.arrow-left.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'qty' })"
+                                        x-on:keydown.arrow-down.prevent="$dispatch('focus-pos-field', { index: {{ $index + 1 }}, field: 'price' })"
+                                        x-on:keydown.arrow-up.prevent="$dispatch('focus-pos-field', { index: {{ $index - 1 }}, field: 'price' })"
+                                        value="{{ $item['price'] }}" min="0" step="0.01"
+                                        placeholder="0.00">
+                                </td>
                                 <td>
                                     <input type="number" class="form-control-sm text-danger rounded-0"
+                                        id="discount-input-{{ $index }}"
                                         wire:change="updateDiscount({{ $index }}, $event.target.value)"
+                                        wire:keydown.enter.prevent="$dispatch('focus-search')"
+                                        x-on:keydown.arrow-left.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'price' })"
+                                        x-on:keydown.arrow-down.prevent="$dispatch('focus-pos-field', { index: {{ $index + 1 }}, field: 'discount' })"
+                                        x-on:keydown.arrow-up.prevent="$dispatch('focus-pos-field', { index: {{ $index - 1 }}, field: 'discount' })"
                                         value="{{ $item['discount'] }}" min="0" step="0.01"
                                         placeholder="0.00">
                                 </td>
@@ -370,8 +487,8 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-12">
-                            <label class="form-label fw-semibold" style="color:#2a83df;">Payment Method *</label>
-                            <select class="form-select rounded-0 border" wire:model.live="paymentMethod">
+                            <label class="form-label fw-semibold" style="color:#2a83df;">Payment Method * <small class="text-muted">[Alt+P]</small></label>
+                            <select class="form-select rounded-0 border" id="paymentMethodSelect" wire:model.live="paymentMethod">
                                 <option value="cash">Cash</option>
                                 <option value="cheque">Cheque</option>
                                 <option value="bank_transfer">Bank Transfer</option>
@@ -382,10 +499,11 @@
                         {{-- Cash Payment Fields --}}
                         @if($paymentMethod === 'cash')
                         <div class="col-md-12">
-                            <label class="form-label fw-semibold" style="color:#2a83df;">Cash Amount *</label>
+                            <label class="form-label fw-semibold" style="color:#2a83df;">Cash Amount * <small class="text-muted">[Alt+A]</small></label>
                             <div class="input-group">
                                 <span class="input-group-text rounded-0">Rs.</span>
                                 <input type="number" class="form-control rounded-0"
+                                    id="cashAmountInput"
                                     wire:model.live="cashAmount"
                                     min="0"
                                     step="0.01"
@@ -493,10 +611,11 @@
                         {{-- Bank Transfer Fields --}}
                         @if($paymentMethod === 'bank_transfer')
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="color:#2a83df;">Bank Transfer Amount *</label>
+                            <label class="form-label fw-semibold" style="color:#2a83df;">Bank Transfer Amount * <small class="text-muted">[Alt+A]</small></label>
                             <div class="input-group">
                                 <span class="input-group-text rounded-0">Rs.</span>
                                 <input type="number" class="form-control rounded-0"
+                                    id="bankTransferAmountInput"
                                     wire:model.live="bankTransferAmount"
                                     min="0"
                                     step="0.01"
@@ -595,10 +714,23 @@
         <div class="card border-0 shadow-sm">
             <div class="card-body text-center bg-light py-4">
                 <button class="btn btn-lg px-5 rounded-0 fw-bold text-white" style="background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%); border-color:#2a83df;" wire:click="validateAndCreateSale"
+                    id="completeSaleButton"
                     {{ count($cart) == 0 ? 'disabled' : '' }}>
-                    <i class="bi bi-cart-check me-2"></i>Complete Sale
+                    <i class="bi bi-cart-check me-2"></i>Complete Sale [F2]
                 </button>
             </div>
+        </div>
+    </div>
+
+    {{-- Shortcut Legend --}}
+    <div class="position-fixed bottom-0 start-0 m-3 d-none d-lg-block" style="z-index: 1000;">
+        <div class="bg-dark text-white p-2 rounded shadow-lg opacity-75 small">
+            <div class="mb-1"><span class="badge bg-primary">F1</span> Search</div>
+            <div class="mb-1"><span class="badge bg-primary">F2</span> Complete Sale</div>
+            <div class="mb-1"><span class="badge bg-primary">Alt + C</span> Add Customer</div>
+            <div class="mb-1"><span class="badge bg-primary">Alt + P</span> Payment</div>
+            <div class="mb-1"><span class="badge bg-primary">Alt + A</span> Amount</div>
+            <div><span class="badge bg-danger">Alt + X</span> Clear Cart</div>
         </div>
     </div>
 
@@ -618,7 +750,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold" style="color:#2a83df;">Name *</label>
-                            <input type="text" class="form-control rounded-0" wire:model="customerName" placeholder="Enter customer name">
+                            <input type="text" class="form-control rounded-0" wire:model="customerName" placeholder="Enter customer name" autofocus>
                             @error('customerName') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                         <div class="col-md-6">

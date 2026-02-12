@@ -1,4 +1,86 @@
-<div class="container-fluid py-3">
+<div class="container-fluid py-3"
+    x-data="{ 
+        init() {
+            window.addEventListener('keydown', (e) => {
+                // Focus search: F1
+                if (e.key === 'F1') {
+                    e.preventDefault();
+                    document.getElementById('productSearchInput').focus();
+                }
+                
+                // Complete sale: F2
+                if (e.key === 'F2') {
+                    e.preventDefault();
+                    document.getElementById('completeSaleButton').click();
+                }
+
+                // Alt + C: Add new customer
+                if (e.altKey && e.key === 'c' || e.altKey && e.key === 'C') {
+                    e.preventDefault();
+                    @this.call('openCustomerModal');
+                }
+
+                // Alt + X: Clear cart
+                if (e.altKey && e.key === 'x' || e.altKey && e.key === 'X') {
+                    e.preventDefault();
+                    if(confirm('Are you sure you want to clear the cart?')) {
+                        @this.call('clearCart');
+                    }
+                }
+            });
+
+            window.addEventListener('focus-search', () => {
+                setTimeout(() => {
+                    let searchInput = document.getElementById('productSearchInput');
+                    if(searchInput) {
+                        searchInput.focus();
+                        searchInput.select();
+                    }
+                }, 100);
+            });
+
+            window.addEventListener('focus-qty', (e) => {
+                setTimeout(() => {
+                    let index = e.detail.index !== undefined ? e.detail.index : 0;
+                    let qtyInput = document.getElementById('qty-input-' + index);
+                    if(qtyInput) {
+                        qtyInput.focus();
+                        qtyInput.select();
+                    }
+                }, 150);
+            });
+
+            window.addEventListener('focus-pos-field', (e) => {
+                setTimeout(() => {
+                    let { index, field } = e.detail;
+                    let input = document.getElementById(`${field}-input-${index}`);
+                    if (input) {
+                        input.focus();
+                        if(input.select) input.select();
+                    }
+                }, 50);
+            });
+
+            window.addEventListener('scroll-to-result', (e) => {
+                const index = e.detail.index;
+                const container = document.getElementById('search-results-container');
+                const element = document.getElementById('search-result-' + index);
+                
+                if (container && element) {
+                    const containerRect = container.getBoundingClientRect();
+                    const elementRect = element.getBoundingClientRect();
+
+                    if (elementRect.bottom > containerRect.bottom) {
+                        // Scroll down
+                        container.scrollTop += (elementRect.bottom - containerRect.bottom);
+                    } else if (elementRect.top < containerRect.top) {
+                        // Scroll up
+                        container.scrollTop -= (containerRect.top - elementRect.top);
+                    }
+                }
+            });
+        }
+    }">
     {{-- Flash Messages --}}
     @if (session()->has('success'))
     <div class="alert alert-success alert-dismissible fade show mb-4">
@@ -94,16 +176,25 @@
                     <div class="card-body position-relative">
                         <div class="mb-3">
                             <input type="text" class="form-control shadow-sm"
+                                id="productSearchInput"
                                 wire:model.live="search"
-                                placeholder="Search by product name, code, or model...">
+                                wire:keydown.arrow-down.prevent="selectNextResult"
+                                wire:keydown.arrow-up.prevent="selectPreviousResult"
+                                wire:keydown.enter.prevent="addSelectedResult"
+                                wire:keydown.escape.prevent="$set('search', '')"
+                                placeholder="Search by product name, code, or model... [F1]">
                         </div>
 
                         {{-- Search Results --}}
                         @if($search && count($searchResults) > 0)
-                        <div class="search-results mt-1 position-absolute w-100 shadow-lg" style="max-height: 300px; max-width: 96%; z-index: 1055;">
-                            @foreach($searchResults as $product)
-                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white rounded-1"
-                                wire:key="product-{{ $product['id'] }}">
+                        <div class="search-results mt-1 position-absolute w-100 shadow-lg bg-white border" 
+                            id="search-results-container"
+                            style="max-height: 300px; max-width: 96%; z-index: 1055; overflow-y: auto;">
+                            @foreach($searchResults as $index => $product)
+                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white rounded-1 {{ $selectedResultIndex === $index ? 'bg-primary bg-opacity-10 border-primary' : '' }}"
+                                id="search-result-{{ $index }}"
+                                wire:key="product-{{ $product['id'] }}"
+                                style="{{ $selectedResultIndex === $index ? 'border-left: 4px solid #0d6efd;' : '' }}">
                                 <div>
                                     <h6 class="mb-1 fw-semibold">{{ $product['name'] }}</h6>
                                     <p class="text-muted small mb-0">
@@ -173,25 +264,38 @@
                                         </div>
                                     </td>
                                     <td class="fw-bold">
-                                        <input type="number" class="form-control-sm text-primary" style="min-width:90px;"
+                                        <input type="number" class="form-control-sm text-primary rounded-0" style="min-width:90px;"
+                                            id="price-input-{{ $index }}"
                                             wire:change="updatePrice({{ $index }}, $event.target.value)"
+                                            wire:keydown.enter.prevent="$dispatch('focus-search')"
+                                            x-on:keydown.arrow-right.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'qty' })"
+                                            x-on:keydown.arrow-left.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'qty' })"
+                                            x-on:keydown.arrow-down.prevent="$dispatch('focus-pos-field', { index: {{ $index + 1 }}, field: 'price' })"
+                                            x-on:keydown.arrow-up.prevent="$dispatch('focus-pos-field', { index: {{ $index - 1 }}, field: 'price' })"
                                             value="{{ $item['price'] }}" min="0" step="0.01"
                                             placeholder="0.00">
                                     </td>
                                     <td>
                                         <div class="input-group input-group-sm">
-                                            <button class="btn btn-outline-secondary" type="button"
-                                                wire:click="decrementQuantity({{ $index }})">-</button>
-                                            <input type="number" class="form-control text-center"
+                                            <input type="number" class="form-control text-center rounded-0"
+                                                id="qty-input-{{ $index }}"
                                                 wire:change="updateQuantity({{ $index }}, $event.target.value)"
+                                                wire:keydown.enter.prevent="$dispatch('focus-search')"
+                                                x-on:keydown.arrow-right.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'discount' })"
+                                                x-on:keydown.arrow-left.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'price' })"
+                                                x-on:keydown.arrow-down.prevent="$dispatch('focus-pos-field', { index: {{ $index + 1 }}, field: 'qty' })"
+                                                x-on:keydown.arrow-up.prevent="$dispatch('focus-pos-field', { index: {{ $index - 1 }}, field: 'qty' })"
                                                 value="{{ $item['quantity'] }}" min="1" max="{{ $item['stock'] }}">
-                                            <button class="btn btn-outline-secondary" type="button"
-                                                wire:click="incrementQuantity({{ $index }})">+</button>
                                         </div>
                                     </td>
                                     <td>
-                                        <input type="number" class="form-control form-control-sm text-danger"
+                                        <input type="number" class="form-control form-control-sm text-danger rounded-0"
+                                            id="discount-input-{{ $index }}"
                                             wire:change="updateDiscount({{ $index }}, $event.target.value)"
+                                            wire:keydown.enter.prevent="$dispatch('focus-search')"
+                                            x-on:keydown.arrow-left.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'qty' })"
+                                            x-on:keydown.arrow-down.prevent="$dispatch('focus-pos-field', { index: {{ $index + 1 }}, field: 'discount' })"
+                                            x-on:keydown.arrow-up.prevent="$dispatch('focus-pos-field', { index: {{ $index - 1 }}, field: 'discount' })"
                                             value="{{ $item['discount'] }}" min="0" step="0.01"
                                             placeholder="0.00">
                                     </td>
@@ -311,13 +415,15 @@
                         <div class="fw-bold fs-5 text-primary">Rs.{{ number_format($grandTotal, 2) }}</div>
                     </div>
                     <button class="btn btn-success btn-lg px-5" wire:click="createSale"
+                        id="completeSaleButton"
                         {{ count($cart) == 0 ? 'disabled' : '' }}>
-                        <i class="bi bi-cart-check me-2"></i>Complete Sale
+                        <i class="bi bi-cart-check me-2"></i>Complete Sale [F2]
                     </button>
                 </div>
             </div>
         </div>
     </div>
+
 
     {{-- Add Customer Modal --}}
     @if($showCustomerModal)
@@ -540,6 +646,15 @@
         </div>
     </div>
     @endif
+    {{-- Shortcut Legend --}}
+    <div class="position-fixed bottom-0 end-0 m-3 d-none d-lg-block" style="z-index: 1050;">
+        <div class="bg-dark text-white p-2 rounded shadow-lg opacity-85 small">
+            <div class="mb-1"><span class="badge bg-primary">F1</span> Search</div>
+            <div class="mb-1"><span class="badge bg-primary">F2</span> Complete Sale</div>
+            <div class="mb-1"><span class="badge bg-primary">Alt + C</span> Add Customer</div>
+            <div><span class="badge bg-danger">Alt + X</span> Clear Cart</div>
+        </div>
+    </div>
 </div>
 
 @push('styles')
