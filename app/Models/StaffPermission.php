@@ -34,101 +34,99 @@ class StaffPermission extends Model
     {
         return [
             // Dashboard
-            'menu_dashboard' => 'Dashboard/Overview',
+            'menu_dashboard' => 'Dashboard Overview Access',
 
-            // POS
-            'menu_pos' => 'POS (Point of Sale)',
 
-            // Stock Management
-            'menu_stock' => 'Stock Overview',
+            // Stock
+            'menu_stock' => 'Stock Status View',
 
             // Sales Menu
-            'menu_sales' => 'Sales Menu',
-            'menu_sales_add' => 'Staff POS Sale', // Updated description
-            'menu_sales_list' => 'List Sales',
+            'menu_sales' => 'Sales Parent Menu',
+            'menu_sales_add' => 'Staff POS Sale Entry',
+            'menu_sales_list' => 'View Sales Records',
+            'menu_sales_system' => 'Add Sales (Sales System)',
+            'menu_pos_sales' => 'POS Sales Records',
+            'sales_distribution_access' => 'Sales Distribution Page',
 
             // Quotation Menu
-            'menu_quotation' => 'Quotation Menu',
-            'menu_quotation_add' => 'Add Quotation',
-            'menu_quotation_list' => 'List Quotations',
+            'menu_quotation' => 'Quotation Parent Menu',
+            'menu_quotation_add' => 'Add New Quotation',
+            'menu_quotation_list' => 'View All Quotations',
 
             // Payment Management Menu
-            'menu_payment' => 'Payment Management Menu',
-            'menu_payment_add' => 'Add Payment (Due Payments)',
-            'menu_payment_list' => 'Payment List',
+            'menu_payment' => 'Payments Parent Menu',
+            'menu_payment_add' => 'Record Due Payment',
+            'menu_payment_list' => 'View Payment List',
 
-            // Products Menu (if staff needs to view products)
-            'menu_products' => 'Products Menu',
-            'menu_products_list' => 'List Products',
-            'menu_products_brand' => 'Product Brands',
-            'menu_products_category' => 'Product Categories',
+            // Products Menu
+            'menu_products' => 'Products Parent Menu',
+            'menu_products_list' => 'View Product List',
+            'menu_products_brand' => 'Manage Product Brands',
+            'menu_products_category' => 'Manage Categories',
 
             // Purchase Menu
-            'menu_purchase' => 'Purchase Menu',
-            'menu_purchase_order' => 'Purchase Order List',
-            'menu_purchase_grn' => 'GRN (Goods Received Note)',
+            'menu_purchase' => 'Purchase Parent Menu',
+            'menu_purchase_order' => 'Purchase Order Management',
+            'menu_purchase_grn' => 'GRN Processing',
 
             // Return Menu
-            'menu_return' => 'Return Menu',
-            'menu_return_customer_add' => 'Add Customer Return',
-            'menu_return_customer_list' => 'List Customer Returns',
-            'menu_return_supplier_add' => 'Add Supplier Return',
-            'menu_return_supplier_list' => 'List Supplier Returns',
+            'menu_return' => 'Returns Parent Menu',
+            'menu_return_customer_add' => 'Process Customer Return',
+            'menu_return_customer_list' => 'View Customer Returns',
+            'menu_return_supplier_add' => 'Process Supplier Return',
+            'menu_return_supplier_list' => 'View Supplier Returns',
 
             // Cheque/Banks Menu
-            'menu_banks' => 'Cheque/Banks Menu',
-            'menu_banks_deposit' => 'Deposit By Cash',
-            'menu_banks_cheque_list' => 'Cheque List',
-            'menu_banks_return_cheque' => 'Return Cheque',
+            'menu_banks' => 'Banking Parent Menu',
+            'menu_banks_deposit' => 'Cash Deposit Entry',
+            'menu_banks_cheque_list' => 'View Cheque List',
+            'menu_banks_return_cheque' => 'Cheque Return Processing',
 
             // Expenses Menu
-            'menu_expenses' => 'Expenses Menu',
-            'menu_expenses_list' => 'List Expenses',
+            'menu_expenses' => 'Expenses Menu Access',
+            'menu_expenses_list' => 'View Expense List',
 
             // People Menu
-            'menu_people' => 'People Menu',
-            'menu_people_suppliers' => 'Manage Suppliers',
-            'menu_people_customers' => 'Customer Management', // Updated description
-            'menu_people_staff' => 'List Staff',
+            'menu_people' => 'People Parent Menu',
+            'menu_people_suppliers' => 'Supplier Management',
+            'menu_people_customers' => 'Customer Management',
+            'menu_people_staff' => 'Staff Records',
 
             // Reports
-            'menu_reports' => 'Reports Menu Access',
-            'report_sales_transaction_history' => 'Report: Sales - Transaction History',
-            'report_sales_payment' => 'Report: Sales - Sales/Payment',
-            'report_sales_product' => 'Report: Sales - Product',
-            'report_sales_by_staff' => 'Report: Sales - By Staff',
-            'report_sales_by_product' => 'Report: Sales - By Product',
-            'report_sales_invoice_aging' => 'Report: Sales - Invoice Aging',
-            'report_sales_detailed' => 'Report: Sales - Detailed',
-            'report_sales_return' => 'Report: Sales - Sales Return',
+            'menu_reports' => 'Reports Main Access',
+            'report_sales_transaction_history' => 'Report: Sales Transactions',
+            'report_sales_payment' => 'Report: Sales/Payments',
+            'report_sales_product' => 'Report: Sales by Item',
+            'report_sales_by_staff' => 'Report: Sales by Staff',
+            'report_sales_by_product' => 'Report: Detailed Product Sales',
+            'report_sales_invoice_aging' => 'Report: Invoice Aging',
+            'report_sales_detailed' => 'Report: Detailed Sales Info',
+            'report_sales_return' => 'Report: Sales Returns',
             
-            'report_purchases_payment' => 'Report: Purchases - Purchases/Payment',
-            'report_purchases_detailed' => 'Report: Purchases - Detailed',
+            'report_purchases_payment' => 'Report: Purchase Payments',
+            'report_purchases_detailed' => 'Report: Detailed Purchases',
             
-            'report_inventory_product_wise' => 'Report: Inventory - Product Wise COGS',
-            'report_inventory_year_wise' => 'Report: Inventory - Year Wise COGS',
+            'report_inventory_product_wise' => 'Report: Product COGS',
+            'report_inventory_year_wise' => 'Report: Yearly COGS',
             
-            'report_pl_cogs' => 'Report: P&L - COGS Method',
-            'report_pl_opening_closing' => 'Report: P&L - Opening/Closing Method',
-            'report_pl_period_cogs' => 'Report: P&L - Period COGS',
-            'report_pl_period_stock' => 'Report: P&L - Period Stock',
-            'report_pl_product_wise' => 'Report: P&L - Product Wise',
-            'report_pl_invoice_wise' => 'Report: P&L - Invoice Wise',
-            'report_pl_customer_wise' => 'Report: P&L - Customer Wise',
+            'report_pl_cogs' => 'Report: P&L (COGS)',
+            'report_pl_opening_closing' => 'Report: P&L (Stock Change)',
+            'report_pl_period_cogs' => 'Report: Period COGS',
+            'report_pl_period_stock' => 'Report: Period Stock',
+            'report_pl_product_wise' => 'Report: Product P&L',
+            'report_pl_invoice_wise' => 'Report: Invoice P&L',
+            'report_pl_customer_wise' => 'Report: Customer P&L',
             
-            'report_other_expense' => 'Report: Other - Expense Report',
-            'report_other_commission' => 'Report: Other - Commission Report',
-            'report_other_payment_mode' => 'Report: Other - Payment Mode Report',
+            'report_other_expense' => 'Report: Expenses Breakdown',
+            'report_other_commission' => 'Report: Staff Commissions',
+            'report_other_payment_mode' => 'Report: Payment Modes',
 
             // Analytics
-            'menu_analytics' => 'Analytics',
-
-            // Sales Distribution
-            'sales_distribution_access' => 'Sales Distribution Page Access',
+            'menu_analytics' => 'Analytics Dashboard',
             
             // Staff Product Management
-            'staff_product_return' => 'Return Allocated Products',
-            'staff_my_allocated_products' => 'Allocated Products',
+            'staff_product_return' => 'Return Assigned Stock',
+            'staff_my_allocated_products' => 'My Allocated Stock',
             // 'menu_staff_allocation_list' => 'Staff Allocation List',
             // 'menu_staff_return_requests' => 'Staff Return Requests',
             // // 'menu_staff_attendance' => 'Staff Attendance',
@@ -144,40 +142,34 @@ class StaffPermission extends Model
     public static function permissionCategories()
     {
         return [
-            'Dashboard' => [
+            'Overview' => [
                 'menu_dashboard',
-            ],
-            'Point of Sale' => [
-                'menu_pos',
-            ],
-            'Stock Management' => [
-                'menu_stock',
-            ],
-            'Sales Management' => [
-                'menu_sales',
                 'menu_sales_add',
-                'menu_sales_list',
             ],
-            'Quotation Management' => [
-                'menu_quotation',
-                'menu_quotation_add',
-                'menu_quotation_list',
-            ],
-            'Payment Management' => [
-                'menu_payment',
-                'menu_payment_add',
-                'menu_payment_list',
+            'Purchase Management' => [
+                'menu_purchase',
+                'menu_purchase_order',
+                'menu_purchase_grn',
             ],
             'Products Management' => [
                 'menu_products',
                 'menu_products_list',
                 'menu_products_brand',
                 'menu_products_category',
+                'menu_stock',
+                'staff_my_allocated_products',
             ],
-            'Purchase Management' => [
-                'menu_purchase',
-                'menu_purchase_order',
-                'menu_purchase_grn',
+            'Sales Management' => [
+                'menu_sales',
+                'menu_sales_list',
+                'menu_sales_system',
+                'menu_pos_sales',
+                'sales_distribution_access',
+            ],
+            'Quotation Management' => [
+                'menu_quotation',
+                'menu_quotation_add',
+                'menu_quotation_list',
             ],
             'Return Management' => [
                 'menu_return',
@@ -186,21 +178,29 @@ class StaffPermission extends Model
                 'menu_return_supplier_add',
                 'menu_return_supplier_list',
             ],
+            'Payment Management' => [
+                'menu_payment',
+                'menu_payment_add',
+                'menu_payment_list',
+            ],
             'Cheque & Banks' => [
                 'menu_banks',
                 'menu_banks_deposit',
                 'menu_banks_cheque_list',
                 'menu_banks_return_cheque',
             ],
-            'Expenses Management' => [
-                'menu_expenses',
-                'menu_expenses_list',
-            ],
             'People Management' => [
                 'menu_people',
                 'menu_people_suppliers',
                 'menu_people_customers',
                 'menu_people_staff',
+            ],
+            'Staff Management' => [
+                'staff_product_return',
+            ],
+            'Expenses Management' => [
+                'menu_expenses',
+                'menu_expenses_list',
             ],
             'Reports Management' => [
                 'menu_reports',
@@ -229,19 +229,6 @@ class StaffPermission extends Model
             ],
             'Analytics Management' => [
                 'menu_analytics',
-            ],
-            'Distribution Management' => [
-                'sales_distribution_access',
-            ],
-            'Staff Product Management' => [
-                'staff_product_return',
-                'staff_my_allocated_products',
-                // 'menu_staff_allocation_list',
-                // 'menu_staff_return_requests',
-                // // 'menu_staff_attendance',
-                // // 'menu_staff_salary',
-                // 'menu_staff_salary_management',
-                // 'menu_loan_management',
             ],
         ];
     }

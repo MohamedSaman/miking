@@ -449,15 +449,33 @@
                     </div>
 
                     @foreach($permissionCategories as $category => $permissions)
+                    @php
+                        $mainPermKey = $permissions[0] ?? null;
+                        $otherPermissions = array_slice($permissions, 1);
+                    @endphp
                     <div class="card mb-3 border">
-                        <div class="card-header bg-light">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
                             <h6 class="mb-0 fw-bold text-dark">
                                 <i class="bi bi-folder2-open me-2"></i>{{ $category }}
                             </h6>
+                            @if($mainPermKey && isset($availablePermissions[$mainPermKey]))
+                            <div class="form-check mb-0 d-flex align-items-center">
+                                <span class="badge rounded-pill bg-primary-subtle text-primary me-2 px-3 py-2 border border-primary-subtle fw-semibold" style="font-size: 0.75rem;">
+                                    Main Access
+                                </span>
+                                <input class="form-check-input mt-0 border-primary" 
+                                       type="checkbox" 
+                                       id="perm-{{ $mainPermKey }}"
+                                       wire:click="togglePermission('{{ $mainPermKey }}')"
+                                       @if(in_array($mainPermKey, $staffPermissions)) checked @endif
+                                       style="width: 1.5rem; height: 1.5rem; cursor: pointer; border-width: 2px;">
+                            </div>
+                            @endif
                         </div>
+                        @if(count($otherPermissions) > 0)
                         <div class="card-body">
                             <div class="row">
-                                @foreach($permissions as $permKey)
+                                @foreach($otherPermissions as $permKey)
                                     @if(isset($availablePermissions[$permKey]))
                                     <div class="col-md-6 mb-2">
                                         <div class="form-check">
@@ -475,6 +493,7 @@
                                 @endforeach
                             </div>
                         </div>
+                        @endif
                     </div>
                     @endforeach
 
