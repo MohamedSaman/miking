@@ -92,7 +92,33 @@ class StaffPermission extends Model
             'menu_people_staff' => 'List Staff',
 
             // Reports
-            'menu_reports' => 'Reports',
+            'menu_reports' => 'Reports Menu Access',
+            'report_sales_transaction_history' => 'Report: Sales - Transaction History',
+            'report_sales_payment' => 'Report: Sales - Sales/Payment',
+            'report_sales_product' => 'Report: Sales - Product',
+            'report_sales_by_staff' => 'Report: Sales - By Staff',
+            'report_sales_by_product' => 'Report: Sales - By Product',
+            'report_sales_invoice_aging' => 'Report: Sales - Invoice Aging',
+            'report_sales_detailed' => 'Report: Sales - Detailed',
+            'report_sales_return' => 'Report: Sales - Sales Return',
+            
+            'report_purchases_payment' => 'Report: Purchases - Purchases/Payment',
+            'report_purchases_detailed' => 'Report: Purchases - Detailed',
+            
+            'report_inventory_product_wise' => 'Report: Inventory - Product Wise COGS',
+            'report_inventory_year_wise' => 'Report: Inventory - Year Wise COGS',
+            
+            'report_pl_cogs' => 'Report: P&L - COGS Method',
+            'report_pl_opening_closing' => 'Report: P&L - Opening/Closing Method',
+            'report_pl_period_cogs' => 'Report: P&L - Period COGS',
+            'report_pl_period_stock' => 'Report: P&L - Period Stock',
+            'report_pl_product_wise' => 'Report: P&L - Product Wise',
+            'report_pl_invoice_wise' => 'Report: P&L - Invoice Wise',
+            'report_pl_customer_wise' => 'Report: P&L - Customer Wise',
+            
+            'report_other_expense' => 'Report: Other - Expense Report',
+            'report_other_commission' => 'Report: Other - Commission Report',
+            'report_other_payment_mode' => 'Report: Other - Payment Mode Report',
 
             // Analytics
             'menu_analytics' => 'Analytics',
@@ -176,8 +202,32 @@ class StaffPermission extends Model
                 'menu_people_customers',
                 'menu_people_staff',
             ],
-            'Reports & Analytics' => [
+            'Reports Management' => [
                 'menu_reports',
+                'report_sales_transaction_history',
+                'report_sales_payment',
+                'report_sales_product',
+                'report_sales_by_staff',
+                'report_sales_by_product',
+                'report_sales_invoice_aging',
+                'report_sales_detailed',
+                'report_sales_return',
+                'report_purchases_payment',
+                'report_purchases_detailed',
+                'report_inventory_product_wise',
+                'report_inventory_year_wise',
+                'report_pl_cogs',
+                'report_pl_opening_closing',
+                'report_pl_period_cogs',
+                'report_pl_period_stock',
+                'report_pl_product_wise',
+                'report_pl_invoice_wise',
+                'report_pl_customer_wise',
+                'report_other_expense',
+                'report_other_commission',
+                'report_other_payment_mode',
+            ],
+            'Analytics Management' => [
                 'menu_analytics',
             ],
             'Distribution Management' => [

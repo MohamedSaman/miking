@@ -113,6 +113,12 @@ class User extends Authenticatable
             return true;
         }
 
+        // If staff has no permissions assigned, grant full access by default
+        $hasAnyPermissions = StaffPermission::where('user_id', $this->id)->exists();
+        if (!$hasAnyPermissions) {
+            return true;
+        }
+
         // For other permissions, check if admin has granted them
         return $this->staffPermissions()
             ->where('permission_key', $permissionKey)

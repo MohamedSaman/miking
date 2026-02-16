@@ -307,8 +307,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/staff-due-details', StaffDueDetails::class)->name('staff-due-details');
 
         // Reports & Analytics
-        Route::get('/reports', Reports::class)->name('reports');
-        Route::get('/analytics', Analytics::class)->name('analytics');
+        Route::get('/reports', Reports::class)->name('reports')->middleware('permission:menu_reports');
+        Route::get('/analytics', Analytics::class)->name('analytics')->middleware('permission:menu_analytics');
 
         // Settings
         Route::get('/settings', Settings::class)->name('settings');

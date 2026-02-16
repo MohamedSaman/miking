@@ -595,9 +595,7 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    @push('scripts')
     <script>
         // Analytics data
         const monthlySalesData = @json($monthlySalesData);
@@ -1095,6 +1093,442 @@
                 });
             }, 300);
         });
+@push('scripts')
+    <script>
+        // Analytics data
+        const monthlySalesData = @json($monthlySalesData);
+        const invoiceStatusData = @json($invoiceStatusData);
+        const paymentTrendsData = @json($paymentTrendsData);
+
+        // Chart instances
+        let monthlySalesChartInstance = null;
+        let invoiceStatusChartInstance = null;
+        let paymentTrendsChartInstance = null;
+        let revenueComparisonChartInstance = null;
+
+        // Global helper function to format large numbers
+        function formatCurrency(value) {
+            if (value >= 10000000) {
+                return 'Rs.' + (value / 10000000).toFixed(1) + 'Cr';
+            } else if (value >= 100000) {
+                return 'Rs.' + (value / 100000).toFixed(1) + 'L';
+            } else if (value >= 1000) {
+                return 'Rs.' + (value / 1000).toFixed(0) + 'K';
+            }
+            return 'Rs.' + new Intl.NumberFormat().format(value);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize analytics charts
+            initializeAnalyticsCharts();
+
+            // Listen for Livewire updates
+            document.addEventListener('livewire:load', function() {
+                initializeAnalyticsCharts();
+            });
+
+            // Listen for refresh event
+            document.addEventListener('analytics-refreshed', function() {
+                initializeAnalyticsCharts();
+            });
+        });
+
+        function initializeAnalyticsCharts() {
+            // Destroy existing charts before creating new ones
+            destroyExistingCharts();
+            
+            // Monthly Sales Trend Chart
+            initializeMonthlySalesChart();
+            
+            // Invoice Status Pie Chart
+            initializeInvoiceStatusChart();
+            
+            // Payment Trends Chart
+            initializePaymentTrendsChart();
+            
+            // Revenue Comparison Chart
+            initializeRevenueComparisonChart();
+        }
+
+        function destroyExistingCharts() {
+            if (monthlySalesChartInstance) {
+                monthlySalesChartInstance.destroy();
+                monthlySalesChartInstance = null;
+            }
+            if (invoiceStatusChartInstance) {
+                invoiceStatusChartInstance.destroy();
+                invoiceStatusChartInstance = null;
+            }
+            if (paymentTrendsChartInstance) {
+                paymentTrendsChartInstance.destroy();
+                paymentTrendsChartInstance = null;
+            }
+            if (revenueComparisonChartInstance) {
+                revenueComparisonChartInstance.destroy();
+                revenueComparisonChartInstance = null;
+            }
+
+            // Reset all canvas elements to prevent dimension accumulation
+            const canvasIds = ['monthlySalesChart', 'invoiceStatusChart', 'paymentTrendsChart', 'revenueComparisonChart'];
+            canvasIds.forEach(canvasId => {
+                const canvas = document.getElementById(canvasId);
+                if (canvas) {
+                    // Clear all canvas attributes and styles
+                    canvas.style.height = '';
+                    canvas.style.width = '';
+                    canvas.removeAttribute('height');
+                    canvas.removeAttribute('width');
+                    // Reset canvas parent container if needed
+                    const parent = canvas.parentElement;
+                    if (parent) {
+                        parent.style.height = '';
+                        parent.style.width = '';
+                    }
+                }
+            });
+        }
+
+        function resetCanvas(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return null;
+
+            // Store parent for context
+            const parent = canvas.parentElement;
+            
+            // Remove all inline styles and attributes
+            canvas.removeAttribute('style');
+            canvas.removeAttribute('height');
+            canvas.removeAttribute('width');
+            canvas.style.cssText = '';
+            
+            // Reset parent container styles if needed
+            if (parent) {
+                parent.style.height = '';
+                parent.style.width = '';
+            }
+
+            return canvas;
+        }
+
+        function initializeMonthlySalesChart() {
+            const canvas = resetCanvas('monthlySalesChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+
+            const months = monthlySalesData.map(item => item.month_name);
+            const salesData = monthlySalesData.map(item => item.total_sales);
+            const revenueData = monthlySalesData.map(item => item.revenue);
+
+            monthlySalesChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Total Sales',
+                            data: salesData,
+                            borderColor: '#2a83df',
+                            backgroundColor: 'rgba(42, 131, 223, 0.1)',
+                            borderWidth: 4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            pointBackgroundColor: '#2a83df',
+                            pointBorderColor: '#2a83df',
+                            pointBorderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Revenue',
+                            data: revenueData,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.15)',
+                            borderWidth: 4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            pointBackgroundColor: '#28a745',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    aspectRatio: 1.5,
+                    layout: {
+                        padding: {
+                            top: 15,
+                            bottom: 15,
+                            left: 10,
+                            right: 10
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        title: {
+                            display: false
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#2a83df',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeInvoiceStatusChart() {
+            const canvas = resetCanvas('invoiceStatusChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+
+            const statusLabels = invoiceStatusData.map(item => item.payment_status.charAt(0).toUpperCase() + item.payment_status.slice(1));
+            const statusCounts = invoiceStatusData.map(item => item.count);
+
+            invoiceStatusChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusCounts,
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.raw / total) * 100).toFixed(1);
+                                    return context.label + ': ' + context.raw + ' Invoices (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    },
+                    cutout: '75%'
+                }
+            });
+        }
+
+        function initializePaymentTrendsChart() {
+            const canvas = resetCanvas('paymentTrendsChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+
+            const months = paymentTrendsData.map(item => item.month_name);
+            const paymentAmounts = paymentTrendsData.map(item => item.total_payments);
+
+            paymentTrendsChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Payment Amount',
+                        data: paymentAmounts,
+                        backgroundColor: 'rgba(42, 131, 223, 0.7)',
+                        hoverBackgroundColor: '#2a83df',
+                        borderRadius: 6,
+                        maxBarThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Collected: ' + formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawShadow: false,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeRevenueComparisonChart() {
+            const canvas = resetCanvas('revenueComparisonChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+
+            const months = monthlySalesData.map(item => item.month_name);
+            const revenueData = monthlySalesData.map(item => item.revenue);
+            const dueData = monthlySalesData.map(item => item.due_amount);
+
+            revenueComparisonChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Revenue',
+                            data: revenueData,
+                            backgroundColor: '#28a745',
+                            borderRadius: 4,
+                        },
+                        {
+                            label: 'Due Amount',
+                            data: dueData,
+                            backgroundColor: '#dc3545',
+                            borderRadius: 4,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            stacked: false,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Chart control buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('[data-chart]')) {
+                const chartType = e.target.getAttribute('data-chart');
+                const buttons = document.querySelectorAll('[data-chart]');
+                
+                buttons.forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                // Update chart based on selection
+                if (monthlySalesChartInstance && chartType === 'revenue') {
+                    // Show only revenue data
+                    monthlySalesChartInstance.data.datasets[0].hidden = true;
+                    monthlySalesChartInstance.data.datasets[1].hidden = false;
+                } else if (monthlySalesChartInstance && chartType === 'sales') {
+                    // Show only sales data
+                    monthlySalesChartInstance.data.datasets[0].hidden = false;
+                    monthlySalesChartInstance.data.datasets[1].hidden = true;
+                }
+                
+                if (monthlySalesChartInstance) {
+                    monthlySalesChartInstance.update();
+                }
+            }
+        });
+
+        // Window resize handler for responsive chart sizing
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                [monthlySalesChartInstance, invoiceStatusChartInstance, paymentTrendsChartInstance, revenueComparisonChartInstance].forEach(chart => {
+                    if (chart) {
+                        chart.resize();
+                        chart.update('none');
+                    }
+                });
+            }, 300);
+        });
     </script>
-    @endpush
-</div>
+@endpush

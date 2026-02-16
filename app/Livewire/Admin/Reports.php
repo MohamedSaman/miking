@@ -150,15 +150,79 @@ class Reports extends Component
         if (!$this->selectedYear) {
             $this->selectedYear = now()->year;
         }
-
+    
         // Initialize separate date pickers
         $this->dailyMonth = now()->month;
         $this->dailyYear = now()->year;
         $this->monthlyYear = now()->year;
-
+    
         // Set default dates
         $this->reportStartDate = now()->startOfMonth()->format('Y-m-d');
         $this->reportEndDate = now()->endOfMonth()->format('Y-m-d');
+    
+        // Filter reports based on staff permissions
+        $this->filterReportsByPermission();
+    }
+    
+    private function filterReportsByPermission()
+    {
+        $user = Auth::user();
+        if ($user->role === 'admin') {
+            return;
+        }
+    
+        $staffPermissions = \App\Models\StaffPermission::getUserPermissions($user->id);
+        
+        // If they have NO permissions assigned, they see everything (as per system logic described in settings)
+        if (empty($staffPermissions)) {
+            return;
+        }
+    
+        $reportPermissionMap = [
+            'transaction-history' => 'report_sales_transaction_history',
+            'sales-payment' => 'report_sales_payment',
+            'product-report' => 'report_sales_product',
+            'sales-by-staff' => 'report_sales_by_staff',
+            'sales-by-product' => 'report_sales_by_product',
+            'invoice-aging' => 'report_sales_invoice_aging',
+            'detailed-sales' => 'report_sales_detailed',
+            'sales-return' => 'report_sales_return',
+            'purchases-payment' => 'report_purchases_payment',
+            'detailed-purchases' => 'report_purchases_detailed',
+            'product-wise-cogs' => 'report_inventory_product_wise',
+            'year-wise-cogs' => 'report_inventory_year_wise',
+            'pl-cogs' => 'report_pl_cogs',
+            'pl-opening-closing' => 'report_pl_opening_closing',
+            'pl-period-cogs' => 'report_pl_period_cogs',
+            'pl-period-stock' => 'report_pl_period_stock',
+            'productwise-pl' => 'report_pl_product_wise',
+            'invoicewise-pl' => 'report_pl_invoice_wise',
+            'customerwise-pl' => 'report_pl_customer_wise',
+            'expense-report' => 'report_other_expense',
+            'commission-report' => 'report_other_commission',
+            'payment-mode-report' => 'report_other_payment_mode',
+        ];
+    
+        foreach ($this->reportCategories as $catKey => &$category) {
+            $filteredReports = [];
+            foreach ($category['reports'] as $reportKey => $label) {
+                $permissionKey = $reportPermissionMap[$reportKey] ?? null;
+                if ($permissionKey && in_array($permissionKey, $staffPermissions)) {
+                    $filteredReports[$reportKey] = $label;
+                }
+            }
+            $category['reports'] = $filteredReports;
+        }
+    
+        // Remove empty categories
+        $this->reportCategories = array_filter($this->reportCategories, function($category) {
+            return !empty($category['reports']);
+        });
+    
+        // If active category is now empty or removed, set it to the first available one
+        if (!isset($this->reportCategories[$this->activeCategory])) {
+            $this->activeCategory = !empty($this->reportCategories) ? array_key_first($this->reportCategories) : '';
+        }
     }
 
     public function setCategory($category)
@@ -325,17 +389,27 @@ class Reports extends Component
 
     public function getTransactionHistory()
     {
-        return Sale::with(['customer', 'items', 'payments', 'user'])
+        $query = Sale::with(['customer', 'items', 'payments', 'user'])
             ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
+
+        if ($this->isStaff()) {
+            $query->where('user_id', Auth::id());
+        }
+
+        return $query->get();
     }
 
     public function getSalesPaymentReport()
     {
-        $sales = Sale::with(['customer', 'payments'])
-            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
-            ->get();
+        $query = Sale::with(['customer', 'payments'])
+            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+
+        if ($this->isStaff()) {
+            $query->where('user_id', Auth::id());
+        }
+
+        $sales = $query->get();
 
         $totalSales = $sales->sum('total_amount');
         $totalPaid = $sales->flatMap->payments->sum('amount');
@@ -356,6 +430,9 @@ class Reports extends Component
         return SaleItem::with(['product.brand', 'product.category', 'sale'])
             ->whereHas('sale', function($q) {
                 $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+                if ($this->isStaff()) {
+                    $q->where('user_id', Auth::id());
+                }
             })
             ->select('product_id', 'product_name', 'product_code',
                 DB::raw('SUM(quantity) as total_quantity'),
@@ -369,9 +446,14 @@ class Reports extends Component
 
     public function getSalesByStaff()
     {
-        return Sale::with('user')
-            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
-            ->select('user_id',
+        $query = Sale::with('user')
+            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+
+        if ($this->isStaff()) {
+            $query->where('user_id', Auth::id());
+        }
+
+        return $query->select('user_id',
                 DB::raw('COUNT(*) as total_transactions'),
                 DB::raw('SUM(total_amount) as total_sales'),
                 DB::raw('AVG(total_amount) as avg_sale')
@@ -391,6 +473,9 @@ class Reports extends Component
         return SaleItem::with(['product.brand'])
             ->whereHas('sale', function($q) {
                 $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+                if ($this->isStaff()) {
+                    $q->where('user_id', Auth::id());
+                }
             })
             ->select('product_id', 'product_name',
                 DB::raw('SUM(quantity) as total_quantity'),
@@ -404,9 +489,14 @@ class Reports extends Component
 
     public function getInvoiceAging()
     {
-        $sales = Sale::with('customer')
-            ->where('due_amount', '>', 0)
-            ->get()
+        $query = Sale::with('customer')
+            ->where('due_amount', '>', 0);
+
+        if ($this->isStaff()) {
+            $query->where('user_id', Auth::id());
+        }
+
+        $sales = $query->get()
             ->map(function ($sale) {
                 $daysOverdue = Carbon::parse($sale->created_at)->diffInDays(now());
                 $sale->days_overdue = $daysOverdue;
@@ -432,10 +522,15 @@ class Reports extends Component
 
     public function getDetailedSalesReport()
     {
-        return Sale::with(['customer', 'items.product', 'payments', 'user'])
+        $query = Sale::with(['customer', 'items.product', 'payments', 'user'])
             ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
+
+        if ($this->isStaff()) {
+            $query->where('user_id', Auth::id());
+        }
+
+        return $query->get();
     }
 
     public function getSalesReturnReport()
@@ -443,6 +538,9 @@ class Reports extends Component
         return ReturnsProduct::with(['sale.customer', 'product'])
             ->whereHas('sale', function($q) {
                 $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+                if ($this->isStaff()) {
+                    $q->where('user_id', Auth::id());
+                }
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -513,6 +611,9 @@ class Reports extends Component
             // Calculate COGS for the year
             $salesItems = SaleItem::whereHas('sale', function($q) use ($startOfYear, $endOfYear) {
                 $q->whereBetween('created_at', [$startOfYear, $endOfYear]);
+                if ($this->isStaff()) {
+                    $q->where('user_id', Auth::id());
+                }
             })->get();
 
             $totalCOGS = 0;
@@ -522,7 +623,11 @@ class Reports extends Component
                 $totalCOGS += $costPrice * $item->quantity;
             }
 
-            $totalSales = Sale::whereBetween('created_at', [$startOfYear, $endOfYear])->sum('total_amount');
+            $totalSalesQuery = Sale::whereBetween('created_at', [$startOfYear, $endOfYear]);
+            if ($this->isStaff()) {
+                $totalSalesQuery->where('user_id', Auth::id());
+            }
+            $totalSales = $totalSalesQuery->sum('total_amount');
 
             $yearlyData[] = [
                 'year' => $year,
@@ -542,6 +647,9 @@ class Reports extends Component
     {
         $salesItems = SaleItem::whereHas('sale', function($q) {
             $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+            if ($this->isStaff()) {
+                $q->where('user_id', Auth::id());
+            }
         })->get();
 
         $totalCOGS = 0;
@@ -551,14 +659,23 @@ class Reports extends Component
             $totalCOGS += $costPrice * $item->quantity;
         }
 
-        $totalSales = Sale::whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
-            ->sum('total_amount');
+        $totalSalesQuery = Sale::whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+        if ($this->isStaff()) {
+            $totalSalesQuery->where('user_id', Auth::id());
+        }
+        $totalSales = $totalSalesQuery->sum('total_amount');
 
-        $totalExpenses = Expense::whereBetween('date', [$this->reportStartDate, $this->reportEndDate])
-            ->sum('amount');
+        $totalExpensesQuery = Expense::whereBetween('date', [$this->reportStartDate, $this->reportEndDate]);
+        if ($this->isStaff()) {
+            $totalExpensesQuery->where('user_id', Auth::id());
+        }
+        $totalExpenses = $totalExpensesQuery->sum('amount');
 
         $returns = ReturnsProduct::whereHas('sale', function($q) {
             $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+            if ($this->isStaff()) {
+                $q->where('user_id', Auth::id());
+            }
         })->sum('total_amount');
 
         $grossProfit = $totalSales - $totalCOGS - $returns;
@@ -661,6 +778,9 @@ class Reports extends Component
     {
         $salesItems = SaleItem::whereHas('sale', function($q) use ($start, $end) {
             $q->whereBetween('created_at', [$start, $end]);
+            if ($this->isStaff()) {
+                $q->where('user_id', Auth::id());
+            }
         })->get();
 
         $totalCOGS = 0;
@@ -670,8 +790,17 @@ class Reports extends Component
             $totalCOGS += $costPrice * $item->quantity;
         }
 
-        $totalSales = Sale::whereBetween('created_at', [$start, $end])->sum('total_amount');
-        $expenses = Expense::whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')])->sum('amount');
+        $totalSalesQuery = Sale::whereBetween('created_at', [$start, $end]);
+        if ($this->isStaff()) {
+            $totalSalesQuery->where('user_id', Auth::id());
+        }
+        $totalSales = $totalSalesQuery->sum('total_amount');
+
+        $expensesQuery = Expense::whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')]);
+        if ($this->isStaff()) {
+            $expensesQuery->where('user_id', Auth::id());
+        }
+        $expenses = $expensesQuery->sum('amount');
 
         return [
             'period' => $label,
@@ -694,6 +823,9 @@ class Reports extends Component
         return SaleItem::with(['product.price', 'product.brand'])
             ->whereHas('sale', function($q) {
                 $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+                if ($this->isStaff()) {
+                    $q->where('user_id', Auth::id());
+                }
             })
             ->get()
             ->groupBy('product_id')
@@ -718,9 +850,14 @@ class Reports extends Component
 
     public function getInvoicewiseProfitLoss()
     {
-        return Sale::with(['items.product.price', 'customer'])
-            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
-            ->get()
+        $query = Sale::with(['items.product.price', 'customer'])
+            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+
+        if ($this->isStaff()) {
+            $query->where('user_id', Auth::id());
+        }
+
+        return $query->get()
             ->map(function ($sale) {
                 $totalCost = 0;
                 foreach ($sale->items as $item) {
@@ -741,9 +878,14 @@ class Reports extends Component
 
     public function getCustomerwiseProfitLoss()
     {
-        return Sale::with(['items.product.price', 'customer'])
-            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
-            ->get()
+        $query = Sale::with(['items.product.price', 'customer'])
+            ->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+
+        if ($this->isStaff()) {
+            $query->where('user_id', Auth::id());
+        }
+
+        return $query->get()
             ->groupBy('customer_id')
             ->map(function ($sales, $customerId) {
                 $customer = $sales->first()->customer;
@@ -774,9 +916,13 @@ class Reports extends Component
 
     public function getExpenseReport()
     {
-        $expenses = Expense::whereBetween('date', [$this->reportStartDate, $this->reportEndDate])
-            ->orderBy('date', 'desc')
-            ->get();
+        $query = Expense::whereBetween('date', [$this->reportStartDate, $this->reportEndDate]);
+        
+        if ($this->isStaff()) {
+            $query->where('user_id', Auth::id());
+        }
+
+        $expenses = $query->orderBy('date', 'desc')->get();
 
         $byCategory = $expenses->groupBy('category')->map(function ($items, $category) {
             return [
@@ -795,11 +941,19 @@ class Reports extends Component
 
     public function getCommissionReport()
     {
-        return StaffBonus::with(['staff', 'product', 'sale'])
+        $query = StaffBonus::with(['staff', 'product', 'sale'])
             ->whereHas('sale', function($q) {
                 $q->whereBetween('created_at', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
-            })
-            ->get()
+                if ($this->isStaff()) {
+                    $q->where('user_id', Auth::id());
+                }
+            });
+
+        if ($this->isStaff()) {
+            $query->where('staff_id', Auth::id());
+        }
+
+        return $query->get()
             ->groupBy('staff_id')
             ->map(function ($bonuses, $staffId) {
                 $staff = $bonuses->first()->staff;
@@ -814,8 +968,15 @@ class Reports extends Component
 
     public function getPaymentModeReport()
     {
-        $payments = Payment::whereBetween('payment_date', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59'])
-            ->get();
+        $query = Payment::whereBetween('payment_date', [$this->reportStartDate, $this->reportEndDate . ' 23:59:59']);
+
+        if ($this->isStaff()) {
+            $query->whereHas('sale', function($q) {
+                $q->where('user_id', Auth::id());
+            });
+        }
+
+        $payments = $query->get();
 
         $byMode = $payments->groupBy('payment_method')->map(function ($items, $method) {
             return [
@@ -896,6 +1057,10 @@ class Reports extends Component
             ->select('users.name', 'salaries.net_salary', 'salaries.salary_month', 'salaries.payment_status')
             ->orderBy('salaries.salary_month', 'desc');
 
+        if ($this->isStaff()) {
+            $query->where('salaries.user_id', Auth::id());
+        }
+
         if ($start) $query->whereDate('salaries.salary_month', '>=', $start);
         if ($end) $query->whereDate('salaries.salary_month', '<=', $end);
 
@@ -931,10 +1096,13 @@ class Reports extends Component
                 'users.email',
                 DB::raw('COALESCE(SUM(staff_sales.sold_value), 0) as total_sales'),
                 DB::raw('COALESCE(SUM(staff_sales.sold_quantity), 0) as total_quantity')
-            )
-            ->groupBy('users.id', 'users.name', 'users.email');
+            );
 
-        return $query->get();
+        if ($this->isStaff()) {
+            $query->where('users.id', Auth::id());
+        }
+
+        return $query->groupBy('users.id', 'users.name', 'users.email')->get();
     }
 
     public function getPaymentsReport($start = null, $end = null)
@@ -946,10 +1114,18 @@ class Reports extends Component
             ->orderBy('payment_date', 'desc');
 
         // Fetch all supplier payments with purchaseOrder and supplier relationships
+        // Note: PurchaseOrder doesn't have user_id, so filtering is not possible here
         $supplierPayments = \App\Models\PurchasePayment::with(['purchaseOrder' => function ($query) {
             $query->with('supplier');
         }])
             ->orderBy('payment_date', 'desc');
+
+        if ($this->isStaff()) {
+            $customerPayments->whereHas('sale', function($q) {
+                $q->where('user_id', Auth::id());
+            });
+            // For now, we don't filter supplier payments as there's no direct user link in PurchaseOrder
+        }
 
         if ($start) {
             $customerPayments->whereDate('payment_date', '>=', $start);
@@ -978,6 +1154,10 @@ class Reports extends Component
                 'attendances.status'
             )
             ->orderBy('attendances.date', 'desc');
+
+        if ($this->isStaff()) {
+            $query->where('attendances.user_id', Auth::id());
+        }
 
         if ($start) $query->whereDate('attendances.date', '>=', $start);
         if ($end) $query->whereDate('attendances.date', '<=', $end);

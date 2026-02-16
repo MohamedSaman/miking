@@ -982,3 +982,8 @@
 #67 D:\\WEBXKEY\\MIKING\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('...')
 #68 {main}
 "} 
+[2026-02-12 15:54:43] local.INFO: FIFO Stock Deduction for Product 2 {"quantity":1,"batches_used":1,"average_cost":950.0,"deductions":[{"batch_id":1,"batch_number":"BATCH-2-20260205-001","quantity":1,"supplier_price":"950.00","selling_price":"1295.00","cost":950.0}]} 
+[2026-02-12 15:54:43] local.INFO: Staff Commission skipped: User is not staff or not found. {"user_id":2} 
+[2026-02-12 15:56:28] local.INFO: FIFO Stock Deduction for Product 2 {"quantity":1,"batches_used":1,"average_cost":950.0,"deductions":[{"batch_id":1,"batch_number":"BATCH-2-20260205-001","quantity":1,"supplier_price":"950.00","selling_price":"1295.00","cost":950.0}]} 
+[2026-02-12 15:56:28] local.INFO: Staff Commission skipped: User is not staff or not found. {"user_id":2} 
+[2026-02-13 11:55:04] local.INFO: Auto-closed yesterday's POS session for user: 2  
