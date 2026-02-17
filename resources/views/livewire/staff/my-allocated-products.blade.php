@@ -54,6 +54,7 @@
                                 <th class="text-center">ALLOCATED QTY</th>
                                 <th class="text-center">SOLD QTY</th>
                                 <th class="text-center">AVAILABLE</th>
+                                <th class="text-center" style="width: 120px;">RETURN QTY</th>
                                 <th class="text-end">UNIT PRICE</th>
                                 <th class="text-end">ACTIONS</th>
                             </tr>
@@ -62,13 +63,14 @@
                             @forelse($allocatedProducts as $item)
                             @php
                                 $availableQty = $item->quantity - $item->sold_quantity;
+                                $isSelected = in_array($item->id, $selectedProducts);
                             @endphp
-                            <tr wire:key="staff-prod-{{ $item->id }}">
+                            <tr wire:key="staff-prod-{{ $item->id }}" class="{{ $isSelected ? 'table-primary bg-opacity-10' : '' }}">
                                 <td class="text-center">
                                     <input type="checkbox" 
                                         class="form-check-input" 
                                         wire:click="toggleProduct({{ $item->id }})"
-                                        @if(in_array($item->id, $selectedProducts)) checked @endif>
+                                        @if($isSelected) checked @endif>
                                 </td>
                                 <td>
                                     <div class="fw-semibold">{{ $item->product->name ?? 'N/A' }}</div>
@@ -83,19 +85,39 @@
                                 <td class="text-center">
                                     <span class="badge bg-info-soft text-info fs-6">{{ $availableQty }}</span>
                                 </td>
+                                 <td class="text-center">
+                                     @if($isSelected)
+                                         @php $exceeds = ($returnQtys[$item->id] ?? 0) > $availableQty; @endphp
+                                         <div class="d-flex flex-column align-items-center">
+                                             <input type="number" 
+                                                 wire:model.live.debounce.300ms="returnQtys.{{ $item->id }}" 
+                                                 class="form-control form-control-sm text-center {{ $exceeds ? 'is-invalid border-danger' : '' }}" 
+                                                 style="max-width: 80px;"
+                                                 min="1" 
+                                                 max="{{ $availableQty }}">
+                                             @if($exceeds)
+                                                 <small class="text-danger mt-1" style="font-size: 10px; font-weight: bold;">Exceeds Max!</small>
+                                             @else
+                                                 <small class="text-muted mt-1" style="font-size: 10px;">Max: {{ $availableQty }}</small>
+                                             @endif
+                                         </div>
+                                     @else
+                                         <span class="text-muted small">-</span>
+                                     @endif
+                                 </td>
                                 <td class="text-end fw-bold text-primary">
                                     Rs. {{ number_format($item->unit_price, 2) }}
                                 </td>
                                 <td class="text-end">
                                     <button wire:click="toggleProduct({{ $item->id }})" 
-                                        class="btn btn-sm {{ in_array($item->id, $selectedProducts) ? 'btn-danger' : 'btn-outline-primary' }}">
-                                        {{ in_array($item->id, $selectedProducts) ? 'Deselect' : 'Select for Return' }}
+                                        class="btn btn-sm {{ $isSelected ? 'btn-danger' : 'btn-outline-primary' }}">
+                                        {{ $isSelected ? 'Deselect' : 'Select for Return' }}
                                     </button>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center py-5 text-muted">
+                                <td colspan="8" class="text-center py-5 text-muted">
                                     <i class="bi bi-box-seam display-1 d-block mb-3"></i>
                                     <p class="mb-0">No allocated products with available stock found.</p>
                                 </td>
@@ -117,7 +139,7 @@
         function confirmReturn() {
             Swal.fire({
                 title: 'Are you sure?',
-                text: "You are about to return the selected products to the admin and warehouse!",
+                text: "You are about to return the specified quantities of selected products to the admin!",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',

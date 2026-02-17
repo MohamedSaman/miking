@@ -25,6 +25,7 @@ class MyAllocatedProducts extends Component
     public $statusFilter = 'all';
     public $perPage = 10;
     public $selectedProducts = [];
+    public $returnQtys = []; // To store customized return quantities
     public $canReturnProducts = false;
 
     public function mount()
@@ -64,8 +65,38 @@ class MyAllocatedProducts extends Component
 
         if (in_array($productId, $this->selectedProducts)) {
             $this->selectedProducts = array_diff($this->selectedProducts, [$productId]);
+            unset($this->returnQtys[$productId]);
         } else {
             $this->selectedProducts[] = $productId;
+            
+            // Default return quantity to full available quantity
+            $staffProduct = StaffProduct::find($productId);
+            if ($staffProduct) {
+                $this->returnQtys[$productId] = $staffProduct->quantity - $staffProduct->sold_quantity;
+            }
+        }
+    }
+
+    public function updatedReturnQtys($value, $key)
+    {
+        $staffProductId = $key;
+        $staffProduct = StaffProduct::find($staffProductId);
+        
+        if ($staffProduct) {
+            $availableQty = $staffProduct->quantity - $staffProduct->sold_quantity;
+            
+            if ($value > $availableQty) {
+                $this->js("Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Quantity',
+                    text: 'Return quantity cannot exceed available stock (' + $availableQty + ')!',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });");
+            }
         }
     }
 
@@ -81,6 +112,22 @@ class MyAllocatedProducts extends Component
             return;
         }
 
+        // Validate all selected quantities before processing
+        foreach ($this->selectedProducts as $id) {
+            $staffProd = StaffProduct::find($id);
+            $qty = (int)($this->returnQtys[$id] ?? 0);
+            $available = $staffProd->quantity - $staffProd->sold_quantity;
+
+            if ($qty > $available) {
+                $this->js("Swal.fire('Validation Error', 'One or more items exceed available stock. Please correct highlighted quantities.', 'error');");
+                return;
+            }
+            if ($qty < 1) {
+                $this->js("Swal.fire('Validation Error', 'Return quantity must be at least 1.', 'error');");
+                return;
+            }
+        }
+
         try {
             DB::beginTransaction();
 
@@ -93,32 +140,37 @@ class MyAllocatedProducts extends Component
                 
                 if (!$staffProduct) continue;
 
-                // Calculate available quantity
+                // Get custom return quantity and cast to int
+                $requestedQty = isset($this->returnQtys[$staffProductId]) ? (int)$this->returnQtys[$staffProductId] : 0;
+                
+                // Ensure requested quantity doesn't exceed available
                 $availableQty = $staffProduct->quantity - $staffProduct->sold_quantity;
+                if ($requestedQty > $availableQty) {
+                    $requestedQty = $availableQty;
+                }
 
-                if ($availableQty > 0) {
+                if ($requestedQty > 0) {
                     // Create a pending return request
                     \App\Models\StaffProductReturn::create([
                         'staff_id' => $staffId,
                         'product_id' => $staffProduct->product_id,
-                        'return_quantity' => $availableQty,
+                        'return_quantity' => $requestedQty,
                         'status' => 'pending',
-                        'notes' => 'Returned by staff from allocated products'
+                        'notes' => 'Returned by staff from allocated products (Custom Qty)'
                     ]);
 
                     // Deduct from staff's allocated quantity
-                    // Note: We used to deduct here, but maybe it's better to wait for admin approval?
-                    // Actually, the previous implementation deducted immediately to prevent double selling.
-                    $staffProduct->quantity -= $availableQty;
+                    $staffProduct->quantity -= $requestedQty;
                     $staffProduct->save();
 
-                    Log::info("Product return requested by staff: Staff {$staffId}, Product {$staffProduct->product_id}, Qty: {$availableQty}");
+                    Log::info("Product return requested by staff: Staff {$staffId}, Product {$staffProduct->product_id}, Qty: {$requestedQty}");
                 }
             }
 
             DB::commit();
 
             $this->selectedProducts = [];
+            $this->returnQtys = [];
             $this->js("Swal.fire({
                 icon: 'success',
                 title: 'Return Requested',

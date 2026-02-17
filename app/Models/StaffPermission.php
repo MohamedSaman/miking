@@ -125,10 +125,11 @@ class StaffPermission extends Model
             'menu_analytics' => 'Analytics Dashboard',
             
             // Staff Product Management
-            'staff_product_return' => 'Return Assigned Stock',
-            'staff_my_allocated_products' => 'My Allocated Stock',
-            // 'menu_staff_allocation_list' => 'Staff Allocation List',
-            // 'menu_staff_return_requests' => 'Staff Return Requests',
+            'staff_my_allocated_products' => 'View My Allocated Products (Staff)',
+            'staff_product_return' => 'Return Assigned Stock (Staff)',
+            'menu_staff_product_allocation' => 'Staff Product Allocation Management',
+            'menu_staff_allocation_list' => 'View Staff Allocation List',
+            'menu_staff_return_requests' => 'Manage Staff Return Requests',
             // // 'menu_staff_attendance' => 'Staff Attendance',
             // // 'menu_staff_salary' => 'Staff Salary (Calculations)',
             // 'menu_staff_salary_management' => 'Staff Salary Management',
@@ -157,7 +158,6 @@ class StaffPermission extends Model
                 'menu_products_brand',
                 'menu_products_category',
                 'menu_stock',
-                'staff_my_allocated_products',
             ],
             'Sales Management' => [
                 'menu_sales',
@@ -196,7 +196,11 @@ class StaffPermission extends Model
                 'menu_people_staff',
             ],
             'Staff Management' => [
+                'staff_my_allocated_products',
                 'staff_product_return',
+                'menu_staff_product_allocation',
+                'menu_staff_allocation_list',
+                'menu_staff_return_requests',
             ],
             'Expenses Management' => [
                 'menu_expenses',
