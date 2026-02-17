@@ -1,4 +1,74 @@
-<div>
+<div x-data="{
+    init() {
+        window.addEventListener('keydown', (e) => {
+            // Alt + N: New Purchase Order
+            if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+                e.preventDefault();
+                const modal = new bootstrap.Modal(document.getElementById('addPurchaseOrderModal'));
+                modal.show();
+            }
+
+            // F1: Focus search if modal is open
+            if (e.key === 'F1') {
+                const addModal = document.getElementById('addPurchaseOrderModal');
+                const editModal = document.getElementById('editOrderModal');
+                if (addModal.classList.contains('show')) {
+                    e.preventDefault();
+                    document.getElementById('poProductSearchInput').focus();
+                } else if (editModal.classList.contains('show')) {
+                    e.preventDefault();
+                    document.getElementById('editPoProductSearchInput').focus();
+                }
+            }
+
+            // F2: Save Purchase Order if modal is open
+            if (e.key === 'F2') {
+                const addModal = document.getElementById('addPurchaseOrderModal');
+                const editModal = document.getElementById('editOrderModal');
+                if (addModal.classList.contains('show')) {
+                    e.preventDefault();
+                    @this.call('saveOrder');
+                } else if (editModal.classList.contains('show')) {
+                    e.preventDefault();
+                    @this.call('updateOrder');
+                }
+            }
+        });
+
+        // Focus search input when modal opens
+        const poModal = document.getElementById('addPurchaseOrderModal');
+        if (poModal) {
+            poModal.addEventListener('shown.bs.modal', () => {
+                const input = document.getElementById('poProductSearchInput');
+                if (input) {
+                    input.focus();
+                }
+            });
+        }
+
+        const editPoModal = document.getElementById('editOrderModal');
+        if (editPoModal) {
+            editPoModal.addEventListener('shown.bs.modal', () => {
+                const input = document.getElementById('editPoProductSearchInput');
+                if (input) {
+                    input.focus();
+                }
+            });
+        }
+
+        window.addEventListener('focus-po-field', (e) => {
+            setTimeout(() => {
+                let { index, field, mode } = e.detail;
+                let idPrefix = mode === 'edit' ? 'edit-po' : 'po';
+                let input = document.getElementById(`${idPrefix}-${field}-${index}`);
+                if (input) {
+                    input.focus();
+                    if(input.select) input.select();
+                }
+            }, 50);
+        });
+    }
+}">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div>
@@ -8,8 +78,8 @@
             <p class="text-muted mb-0">Create and manage purchase orders from suppliers</p>
         </div>
         <div>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPurchaseOrderModal">
-                <i class="bi bi-plus-circle me-2"></i> New Purchase Order
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPurchaseOrderModal" title="Alt + N">
+                <i class="bi bi-plus-circle me-2"></i> New Purchase Order (Alt + N)
             </button>
         </div>
     </div>
@@ -285,17 +355,21 @@
                         <div class="col-md-12 position-relative">
                             <label class="form-label fw-semibold">Search & Add Product</label>
                             <input type="text"
+                                id="poProductSearchInput"
                                 class="form-control"
                                 wire:model.live.debounce.300ms="searchProduct"
-                                placeholder="Type product name or code (min 2 characters)..."
+                                wire:keydown.arrow-down.prevent="selectNextProduct"
+                                wire:keydown.arrow-up.prevent="selectPreviousProduct"
+                                wire:keydown.enter.prevent="selectHighlightedProduct"
+                                placeholder="Type product name or code (min 2 characters)... [F1]"
                                 autocomplete="off">
                             @if(!empty($products) && count($products) > 0)
-                            <ul class="list-group mt-1 position-absolute w-100 z-3 shadow-lg" style="max-height: 300px; overflow-y: auto;">
-                                @foreach($products as $product)
-                                <li class="list-group-item list-group-item-action p-2"
+                            <ul class="list-group mt-1 position-absolute w-100 shadow-lg" style="max-height: 300px; overflow-y: auto; z-index: 2000; background: white;">
+                                @foreach($products as $index => $product)
+                                <li class="list-group-item list-group-item-action p-2 {{ $selectedProductIndex === $index ? 'bg-primary bg-opacity-10 border-primary' : '' }}"
                                     wire:key="search-product-{{ $product->id }}"
                                     wire:click="selectProduct({{ $product->id }})"
-                                    style="cursor: pointer;">
+                                    style="cursor: pointer; {{ $selectedProductIndex === $index ? 'border-left: 4px solid #0d6efd;' : '' }}">
                                     <div class="d-flex align-items-center">
                                         <img src="{{ $product->image ? asset($product->image) : asset('images/product.jpg') }}"
                                             alt="{{ $product->name }}"
@@ -311,7 +385,7 @@
                                             </small>
                                         </div>
                                         <div class="text-end">
-                                            <span class="badge bg-success">Click to Add</span>
+                                            <span class="badge bg-success">Enter to Add</span>
                                         </div>
                                     </div>
                                 </li>
@@ -355,17 +429,28 @@
                                 </td>
                                 <td>
                                     <input type="number"
+                                        id="po-quantity-{{ $index }}"
                                         class="form-control form-control-sm"
                                         wire:model.live.debounce.300ms="orderItems.{{ $index }}.quantity"
                                         wire:change="updateOrderItemQuantity({{ $index }}, $event.target.value)"
+                                        x-on:keydown.enter.prevent="document.getElementById('poProductSearchInput').focus()"
+                                        x-on:keydown.arrow-right.prevent="$dispatch('focus-po-field', { index: {{ $index }}, field: 'price' })"
+                                        x-on:keydown.arrow-left.prevent="document.getElementById('poProductSearchInput').focus()"
+                                        x-on:keydown.arrow-down.prevent="$dispatch('focus-po-field', { index: {{ $index + 1 }}, field: 'quantity' })"
+                                        x-on:keydown.arrow-up.prevent="$dispatch('focus-po-field', { index: {{ $index - 1 }}, field: 'quantity' })"
                                         min="1"
                                         style="width: 100%;">
                                 </td>
                                 <td>
                                     <input type="number"
+                                        id="po-price-{{ $index }}"
                                         class="form-control form-control-sm"
                                         wire:model.live.debounce.300ms="orderItems.{{ $index }}.supplier_price"
                                         wire:change="updateOrderItemPrice({{ $index }}, $event.target.value)"
+                                        x-on:keydown.enter.prevent="document.getElementById('poProductSearchInput').focus()"
+                                        x-on:keydown.arrow-left.prevent="$dispatch('focus-po-field', { index: {{ $index }}, field: 'quantity' })"
+                                        x-on:keydown.arrow-down.prevent="$dispatch('focus-po-field', { index: {{ $index + 1 }}, field: 'price' })"
+                                        x-on:keydown.arrow-up.prevent="$dispatch('focus-po-field', { index: {{ $index - 1 }}, field: 'price' })"
                                         min="0"
                                         step="0.01"
                                         style="width: 100%;">
@@ -415,7 +500,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" wire:click="saveOrder">
-                    <i class="bi bi-save me-1"></i> Save Purchase Order
+                    <i class="bi bi-save me-1"></i> Save Purchase Order (F2)
                 </button>
             </div>
         </div>
@@ -508,7 +593,7 @@
                                         wire:model.live="grnItems.{{ $index }}.name"
                                         placeholder="Search by name or code...">
                                     @if(isset($searchResults[$index]) && count($searchResults[$index]) > 0)
-                                    <ul class="list-group position-absolute z-10 shadow-lg mt-1" style="min-width: 350px; max-width: 450px; left: 0;">
+                                    <ul class="list-group position-absolute shadow-lg mt-1" style="min-width: 350px; max-width: 450px; left: 0; z-index: 2000; background: white;">
                                         @foreach($searchResults[$index] as $product)
                                         <li class="list-group-item list-group-item-action p-2"
                                             wire:key="grn-search-{{ $index }}-{{ $product->id }}"
@@ -762,17 +847,21 @@
                     <div class="col-md-12 position-relative">
                         <label class="form-label fw-semibold">Search & Add Product</label>
                         <input type="text"
+                            id="editPoProductSearchInput"
                             class="form-control"
                             wire:model.live.debounce.300ms="searchProduct"
-                            placeholder="Type product name or code (min 2 characters)..."
+                            wire:keydown.arrow-down.prevent="selectNextProduct"
+                            wire:keydown.arrow-up.prevent="selectPreviousProduct"
+                            wire:keydown.enter.prevent="selectHighlightedProduct"
+                            placeholder="Type product name or code (min 2 characters)... [F1]"
                             autocomplete="off">
                         @if(!empty($products) && count($products) > 0)
-                        <ul class="list-group mt-1 position-absolute w-100 z-3 shadow-lg" style="max-height: 300px; overflow-y: auto;">
-                            @foreach($products as $product)
-                            <li class="list-group-item list-group-item-action p-2"
+                        <ul class="list-group mt-1 position-absolute w-100 shadow-lg" style="max-height: 300px; overflow-y: auto; z-index: 2000; background: white;">
+                            @foreach($products as $index => $product)
+                            <li class="list-group-item list-group-item-action p-2 {{ $selectedProductIndex === $index ? 'bg-primary bg-opacity-10 border-primary' : '' }}"
                                 wire:key="edit-search-product-{{ $product->id }}"
                                 wire:click="addProductToEdit({{ $product->id }})"
-                                style="cursor: pointer;">
+                                style="cursor: pointer; {{ $selectedProductIndex === $index ? 'border-left: 4px solid #0d6efd;' : '' }}">
                                 <div class="d-flex align-items-center">
                                     <img src="{{ $product->image ? asset('storage/' . $product->image) : asset('images/product.jpg') }}"
                                         alt="{{ $product->name }}"
@@ -830,17 +919,28 @@
                             </td>
                             <td>
                                 <input type="number"
+                                    id="edit-po-quantity-{{ $index }}"
                                     class="form-control form-control-sm"
                                     min="1"
                                     wire:model.live.debounce.300ms="editOrderItems.{{ $index }}.quantity"
-                                    wire:change="updateEditItemTotal({{ $index }})">
+                                    wire:change="updateEditItemTotal({{ $index }})"
+                                    x-on:keydown.enter.prevent="document.getElementById('editPoProductSearchInput').focus()"
+                                    x-on:keydown.arrow-right.prevent="$dispatch('focus-po-field', { index: {{ $index }}, field: 'price', mode: 'edit' })"
+                                    x-on:keydown.arrow-left.prevent="document.getElementById('editPoProductSearchInput').focus()"
+                                    x-on:keydown.arrow-down.prevent="$dispatch('focus-po-field', { index: {{ $index + 1 }}, field: 'quantity', mode: 'edit' })"
+                                    x-on:keydown.arrow-up.prevent="$dispatch('focus-po-field', { index: {{ $index - 1 }}, field: 'quantity', mode: 'edit' })">
                             </td>
                             <td>
                                 <input type="number"
+                                    id="edit-po-price-{{ $index }}"
                                     class="form-control form-control-sm"
                                     step="0.01"
                                     wire:model.live.debounce.300ms="editOrderItems.{{ $index }}.unit_price"
-                                    wire:change="updateEditItemTotal({{ $index }})">
+                                    wire:change="updateEditItemTotal({{ $index }})"
+                                    x-on:keydown.enter.prevent="document.getElementById('editPoProductSearchInput').focus()"
+                                    x-on:keydown.arrow-left.prevent="$dispatch('focus-po-field', { index: {{ $index }}, field: 'quantity', mode: 'edit' })"
+                                    x-on:keydown.arrow-down.prevent="$dispatch('focus-po-field', { index: {{ $index + 1 }}, field: 'price', mode: 'edit' })"
+                                    x-on:keydown.arrow-up.prevent="$dispatch('focus-po-field', { index: {{ $index - 1 }}, field: 'price', mode: 'edit' })">
                             </td>
                             <td class="text-end">
                                 <strong class="text-success">
@@ -891,7 +991,7 @@
         <div class="modal-footer">
             <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button class="btn btn-primary" wire:click="updateOrder">
-                <i class="bi bi-save me-1"></i> Save Changes
+                <i class="bi bi-save me-1"></i> Save Changes (F2)
             </button>
         </div>
     </div>

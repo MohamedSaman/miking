@@ -61,6 +61,7 @@ class PurchaseOrderList extends Component
     // Add this property to track new products
     public $newProducts = [];
     public $perPage = 10;
+    public $selectedProductIndex = 0;
 
     public $commissionItemIndex = null;
     public $commissionCash = 0;
@@ -100,6 +101,7 @@ class PurchaseOrderList extends Component
     // Separate method for product search in modals
     public function updatedSearchProduct()
     {
+        $this->selectedProductIndex = 0;
         if (strlen($this->searchProduct) >= 2) {
             $this->products = ProductDetail::where('name', 'like', '%' . $this->searchProduct . '%')
                 ->orWhere('code', 'like', '%' . $this->searchProduct . '%')
@@ -108,6 +110,27 @@ class PurchaseOrderList extends Component
                 ->get();
         } else {
             $this->products = [];
+        }
+    }
+
+    public function selectNextProduct()
+    {
+        if (count($this->products) > 0) {
+            $this->selectedProductIndex = ($this->selectedProductIndex + 1) % count($this->products);
+        }
+    }
+
+    public function selectPreviousProduct()
+    {
+        if (count($this->products) > 0) {
+            $this->selectedProductIndex = ($this->selectedProductIndex - 1 + count($this->products)) % count($this->products);
+        }
+    }
+
+    public function selectHighlightedProduct()
+    {
+        if (count($this->products) > 0 && isset($this->products[$this->selectedProductIndex])) {
+            $this->selectProduct($this->products[$this->selectedProductIndex]->id);
         }
     }
 
@@ -178,6 +201,9 @@ class PurchaseOrderList extends Component
         $this->products = [];
         $this->searchProduct = '';
         $this->calculateGrandTotal();
+
+        // Focus the quantity input of the first item (newly added)
+        $this->dispatch('focus-po-field', index: 0, field: 'quantity');
 
         Log::info("Product added: " . $product->name . ", Price: " . $price);
     }
@@ -559,6 +585,7 @@ class PurchaseOrderList extends Component
         // Clear search
         $this->products = [];
         $this->searchProduct = '';
+        $this->dispatch('focus-po-field', index: 0, field: 'quantity', mode: 'edit');
 
         Log::info("Product added to edit order: " . $product->name);
     }
