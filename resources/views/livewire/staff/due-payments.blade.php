@@ -1,4 +1,15 @@
-<div>
+<div
+    x-data="{
+        init() {
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'F1') {
+                    e.preventDefault();
+                    const inp = document.getElementById('staffDueSearchInput');
+                    if (inp) { inp.focus(); inp.select(); }
+                }
+            });
+        }
+    }">
     <div class="container-fluid py-4">
         <!-- Page Header with Stats -->
         <div class="row mb-4">
@@ -122,7 +133,8 @@
                                     <i class="bi bi-search text-primary"></i>
                                 </span>
                                 <input type="text" class="form-control border-0 py-2"
-                                    placeholder="Search invoices or customers..."
+                                    id="staffDueSearchInput"
+                                    placeholder="Search invoices or customers... [F1]"
                                     wire:model.live.debounce.300ms="search">
                             </div>
 
@@ -613,6 +625,13 @@
 
         .bg-gradient-primary {
             background: linear-gradient(45deg, rgba(var(--bs-primary-rgb), 1), rgba(var(--bs-primary-rgb), 0.8)) !important;
+        }
+
+        .dropdown-menu {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            background-color: white !important;
         }
     </style>
     @endpush

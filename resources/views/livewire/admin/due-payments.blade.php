@@ -1,4 +1,15 @@
-<div class="container-fluid py-3">
+<div class="container-fluid py-3"
+    x-data="{
+        init() {
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'F1') {
+                    e.preventDefault();
+                    const inp = document.getElementById('duePaymentsSearchInput');
+                    if (inp) { inp.focus(); inp.select(); }
+                }
+            });
+        }
+    }">
     {{-- Header --}}
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
@@ -103,7 +114,8 @@
                             <i class="bi bi-search text-muted"></i>
                         </span>
                         <input type="text" class="form-control border-start-0" 
-                               placeholder="Search invoices or customers..."
+                               id="duePaymentsSearchInput"
+                               placeholder="Search invoices or customers... [F1]"
                                wire:model.live.debounce.300ms="search">
                     </div>
                 </div>
@@ -669,6 +681,7 @@
         border: none;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
         padding: 0.5rem;
+        background-color: white !important;
     }
 
     .btn-group .btn {

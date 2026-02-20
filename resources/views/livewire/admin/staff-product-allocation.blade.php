@@ -1,4 +1,57 @@
-<div class="container-fluid py-3">
+<div class="container-fluid py-3"
+    x-data="{
+        init() {
+            window.addEventListener('keydown', (e) => {
+                // F1: Focus search bar
+                if (e.key === 'F1') {
+                    e.preventDefault();
+                    const inp = document.getElementById('allocationSearchInput');
+                    if (inp) { inp.focus(); inp.select(); }
+                }
+                // F2: Submit / Allocate
+                if (e.key === 'F2') {
+                    e.preventDefault();
+                    const btn = document.getElementById('allocateBtn');
+                    if (btn && !btn.disabled) btn.click();
+                }
+            });
+
+            window.addEventListener('focus-search', () => {
+                setTimeout(() => {
+                    const inp = document.getElementById('allocationSearchInput');
+                    if (inp) { inp.focus(); inp.select(); }
+                }, 100);
+            });
+
+            window.addEventListener('focus-qty', (e) => {
+                setTimeout(() => {
+                    let index = e.detail.index !== undefined ? e.detail.index : 0;
+                    let qtyInput = document.getElementById('alloc-qty-' + index);
+                    if (qtyInput) { qtyInput.focus(); qtyInput.select(); }
+                }, 150);
+            });
+
+            window.addEventListener('focus-pos-field', (e) => {
+                setTimeout(() => {
+                    let { index, field } = e.detail;
+                    let input = document.getElementById(`alloc-${field}-${index}`);
+                    if (input) { input.focus(); if (input.select) input.select(); }
+                }, 50);
+            });
+
+            window.addEventListener('scroll-to-result', (e) => {
+                const index = e.detail.index;
+                const container = document.getElementById('alloc-search-results');
+                const element = document.getElementById('alloc-result-' + index);
+                if (container && element) {
+                    const cr = container.getBoundingClientRect();
+                    const er = element.getBoundingClientRect();
+                    if (er.bottom > cr.bottom) container.scrollTop += (er.bottom - cr.bottom);
+                    else if (er.top < cr.top) container.scrollTop -= (cr.top - er.top);
+                }
+            });
+        }
+    }">
     {{-- Top Header with Staff Selection --}}
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0 fw-bold">Staff Product Allocation</h5>
@@ -28,21 +81,30 @@
                 <i class="bi bi-search text-muted" style="font-size: 20px;"></i>
             </span>
             <input type="text" class="form-control search-input" style="font-size: 16px; padding: 12px 15px;"
+                id="allocationSearchInput"
                 wire:model.live="search"
                 wire:input="searchProducts"
-                placeholder="Search by code, model, barcode, brand or name..."
+                wire:keydown.arrow-down.prevent="selectNextResult"
+                wire:keydown.arrow-up.prevent="selectPreviousResult"
+                wire:keydown.enter.prevent="addSelectedResult"
+                wire:keydown.escape.prevent="$set('search', '')"
+                placeholder="Search by code, model, barcode, brand or name... [F1]"
                 @if(!$staffId) disabled @endif>
         </div>
 
         {{-- Search Results Dropdown --}}
         @if($search && count($searchResults) > 0)
-        <div class="search-results mt-2 position-absolute w-100 shadow-lg" style="max-height: 300px; z-index: 1055; top: 100%; left: 0;">
-            @foreach($searchResults as $product)
+        <div class="search-results mt-2 position-absolute w-100 shadow-lg bg-white" 
+            id="alloc-search-results"
+            style="max-height: 300px; z-index: 1055; top: 100%; left: 0; overflow-y: auto;">
+            @foreach($searchResults as $index => $product)
                 @php
                     $stock = App\Models\ProductStock::where('product_id', $product->id)->sum('available_stock');
                 @endphp
-                <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white"
-                    wire:key="product-{{ $product->id }}">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white {{ $selectedResultIndex === $index ? 'bg-primary bg-opacity-10' : '' }}"
+                    id="alloc-result-{{ $index }}"
+                    wire:key="product-{{ $product->id }}"
+                    style="{{ $selectedResultIndex === $index ? 'border-left: 4px solid #0d6efd;' : '' }}">
                     <div>
                         <h6 class="mb-1 fw-semibold">{{ $product->name }}</h6>
                         <p class="text-muted small mb-0">
@@ -94,16 +156,26 @@
                             </td>
                             <td class="py-3 fw-bold">Rs.{{ number_format($item['unit_price'], 2) }}</td>
                             <td class="py-3">
-                                <div class="input-group input-group-sm" style="width: 140px;">
-                                    <input type="number" class="form-control" min="1" max="{{ $item['available_stock'] }}"
+                                <div class="input-group input-group-sm" style="width: 155px;">
+                                    <input type="number" class="form-control text-center" min="1" max="{{ $item['available_stock'] }}"
+                                        id="alloc-qty-{{ $index }}"
                                         wire:change="updateQuantity('{{ $index }}', $event.target.value)"
+                                        wire:keydown.enter.prevent="$dispatch('focus-search')"
+                                        x-on:keydown.arrow-right.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'discount' })"
+                                        x-on:keydown.arrow-down.prevent="$dispatch('focus-pos-field', { index: {{ $index + 1 }}, field: 'qty' })"
+                                        x-on:keydown.arrow-up.prevent="$dispatch('focus-pos-field', { index: {{ $index - 1 }}, field: 'qty' })"
                                         value="{{ $item['quantity'] }}">
                                     <span class="input-group-text bg-light" style="font-size: 11px;">/ {{ $item['available_stock'] }}</span>
                                 </div>
                             </td>
                             <td class="py-3">
                                 <input type="number" class="form-control form-control-sm" style="width: 120px;"
+                                    id="alloc-discount-{{ $index }}"
                                     wire:change="updateDiscount('{{ $index }}', $event.target.value)"
+                                    wire:keydown.enter.prevent="$dispatch('focus-search')"
+                                    x-on:keydown.arrow-left.prevent="$dispatch('focus-pos-field', { index: {{ $index }}, field: 'qty' })"
+                                    x-on:keydown.arrow-down.prevent="$dispatch('focus-pos-field', { index: {{ $index + 1 }}, field: 'discount' })"
+                                    x-on:keydown.arrow-up.prevent="$dispatch('focus-pos-field', { index: {{ $index - 1 }}, field: 'discount' })"
                                     value="{{ $item['discount'] }}" min="0" step="0.01">
                             </td>
                             <td class="py-3 fw-bold">Rs.{{ number_format($item['total'], 2) }}</td>
@@ -199,8 +271,9 @@
                         </div>
 
                         <button class="btn btn-success w-100 btn-lg" wire:click="allocateProducts"
+                            id="allocateBtn"
                             {{ count($cart) == 0 || !$staffId ? 'disabled' : '' }}>
-                            <i class="bi bi-check-circle me-2"></i>Allocate Products
+                            <i class="bi bi-check-circle me-2"></i>Allocate Products [F2]
                         </button>
                     </div>
                 </div>
@@ -265,7 +338,16 @@
         </div>
     </div>
 
+    {{-- Keyboard Shortcut Legend --}}
+    <div class="position-fixed bottom-0 end-0 m-3 d-none d-lg-block" style="z-index: 1050;">
+        <div class="bg-dark text-white p-2 rounded shadow-lg opacity-85 small">
+            <div class="mb-1"><span class="badge bg-primary">F1</span> Focus Search</div>
+            <div class="mb-1"><span class="badge bg-success">F2</span> Allocate</div>
+            <div class="mb-1"><span class="badge bg-secondary">↑↓</span> Navigate Results</div>
+            <div><span class="badge bg-secondary">Enter</span> Add to Cart</div>
+        </div>
     </div>
+
 </div>
 
 @push('styles')

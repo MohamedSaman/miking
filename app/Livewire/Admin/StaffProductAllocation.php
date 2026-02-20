@@ -26,6 +26,7 @@ class StaffProductAllocation extends Component
     // Basic Properties
     public $search = '';
     public $searchResults = [];
+    public $selectedResultIndex = 0;
     public $staffId = '';
 
     // Import file
@@ -70,6 +71,8 @@ class StaffProductAllocation extends Component
     // Search products
     public function searchProducts()
     {
+        $this->selectedResultIndex = 0;
+
         if (strlen($this->search) < 2) {
             $this->searchResults = [];
             return;
@@ -82,6 +85,32 @@ class StaffProductAllocation extends Component
             ->with(['brand', 'category', 'price'])
             ->limit(10)
             ->get();
+    }
+
+    // Keyboard navigation: move highlight down through search results
+    public function selectNextResult()
+    {
+        if (count($this->searchResults) > 0) {
+            $this->selectedResultIndex = ($this->selectedResultIndex + 1) % count($this->searchResults);
+            $this->dispatch('scroll-to-result', index: $this->selectedResultIndex);
+        }
+    }
+
+    // Keyboard navigation: move highlight up through search results
+    public function selectPreviousResult()
+    {
+        if (count($this->searchResults) > 0) {
+            $this->selectedResultIndex = ($this->selectedResultIndex - 1 + count($this->searchResults)) % count($this->searchResults);
+            $this->dispatch('scroll-to-result', index: $this->selectedResultIndex);
+        }
+    }
+
+    // Keyboard navigation: add the currently highlighted search result to cart
+    public function addSelectedResult()
+    {
+        if (count($this->searchResults) > 0 && isset($this->searchResults[$this->selectedResultIndex])) {
+            $this->addToCart($this->searchResults[$this->selectedResultIndex]->id);
+        }
     }
 
     // Add product to cart
@@ -144,6 +173,11 @@ class StaffProductAllocation extends Component
 
         $this->search = '';
         $this->searchResults = [];
+        $this->selectedResultIndex = 0;
+
+        // Focus qty field of last added item
+        $lastIndex = count($this->cart) - 1;
+        $this->dispatch('focus-qty', index: $lastIndex);
     }
 
     // Update quantity in cart
