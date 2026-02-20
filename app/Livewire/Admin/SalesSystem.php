@@ -570,20 +570,21 @@ class SalesSystem extends Component
                 try {
                     $fifoResult = FIFOStockService::deductStock($item['id'], $item['quantity']);
 
-                    // Create sale items based on batch deductions
-                    // Each batch deduction creates a separate sale item with its selling price
+                    // Create sale items using the actual cart price (what was charged to the customer)
+                    // $item['price'] = the price shown/entered in the sales UI
+                    // $deduction['selling_price'] = the batch reference price (used for FIFO cost tracking only)
                     foreach ($fifoResult['deductions'] as $deduction) {
                         SaleItem::create([
-                            'sale_id' => $sale->id,
-                            'product_id' => $item['id'],
-                            'product_code' => $item['code'],
-                            'product_name' => $item['name'],
-                            'product_model' => $item['model'],
-                            'quantity' => $deduction['quantity'],
-                            'unit_price' => $deduction['selling_price'], // Use batch selling price
-                            'discount_per_unit' => $item['discount'],
-                            'total_discount' => $item['discount'] * $deduction['quantity'],
-                            'total' => ($deduction['selling_price'] - $item['discount']) * $deduction['quantity']
+                            'sale_id'          => $sale->id,
+                            'product_id'       => $item['id'],
+                            'product_code'     => $item['code'],
+                            'product_name'     => $item['name'],
+                            'product_model'    => $item['model'],
+                            'quantity'         => $deduction['quantity'],
+                            'unit_price'       => $item['price'], // Actual sale price from the cart UI
+                            'discount_per_unit'=> $item['discount'],
+                            'total_discount'   => $item['discount'] * $deduction['quantity'],
+                            'total'            => ($item['price'] - $item['discount']) * $deduction['quantity']
                         ]);
                     }
 
@@ -628,7 +629,12 @@ class SalesSystem extends Component
             $this->js("Swal.fire('success', 'Sale created successfully! Payment status: Pending', 'success')");
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->js("Swal.fire('error', 'Failed to create sale: ' , 'error')");
+            Log::error('Failed to create sale: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'cart' => $this->cart,
+                'exception' => $e,
+            ]);
+            $this->js("Swal.fire('error', 'Failed to create sale: " . addslashes($e->getMessage()) . "', 'error')");
         }
     }
 
