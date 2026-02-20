@@ -7,7 +7,7 @@
                 Allocated Products
             </h2>
             <button type="button" 
-                onclick="confirmReturn()"
+                wire:click="openReviewModal"
                 class="btn btn-primary" 
                 @if(empty($selectedProducts)) disabled @endif>
                 <i class="bi bi-arrow-return-left me-1"></i> Return Selected to Admin
@@ -135,21 +135,65 @@
         </div>
     </div>
 
-    <script>
-        function confirmReturn() {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You are about to return the specified quantities of selected products to the admin!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, return stock!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    @this.returnProducts();
-                }
-            })
-        }
-    </script>
+    {{-- Review Return Modal --}}
+    @if($showReviewModal)
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-card-checklist me-2"></i> Review Return Request
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" wire:click="closeReviewModal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted mb-4">Please review the products and quantities you are about to return to the admin.</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th class="text-center">Available Stock</th>
+                                    <th class="text-center" style="width: 150px;">Return Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($returnReviewItems as $item)
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">{{ $item['name'] }}</div>
+                                            <small class="text-muted">{{ $item['code'] }}</small>
+                                        </td>
+                                        <td class="text-center font-monospace">{{ $item['available_qty'] }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary fs-6 px-3 py-2">{{ $item['requested_qty'] }}</span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info border-0 shadow-sm mt-3 mb-0">
+                        <div class="d-flex">
+                            <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                            <div>
+                                <strong>Important Note:</strong> Once confirmed, these quantities will be deducted from your allocated stock and sent to the admin for re-entry into the main inventory.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-secondary px-4" wire:click="closeReviewModal">
+                        <i class="bi bi-x-lg me-1"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary px-4" wire:click="returnProducts">
+                        <i class="bi bi-check2-circle me-1"></i> Confirm & Submit Return
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>

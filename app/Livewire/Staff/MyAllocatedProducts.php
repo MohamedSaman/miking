@@ -27,6 +27,8 @@ class MyAllocatedProducts extends Component
     public $selectedProducts = [];
     public $returnQtys = []; // To store customized return quantities
     public $canReturnProducts = false;
+    public $showReviewModal = false;
+    public $returnReviewItems = [];
 
     public function mount()
     {
@@ -100,6 +102,52 @@ class MyAllocatedProducts extends Component
         }
     }
 
+    public function openReviewModal()
+    {
+        if (!$this->canReturnProducts) {
+            $this->js("Swal.fire('Permission Denied', 'You do not have permission to return products!', 'error');");
+            return;
+        }
+
+        if (empty($this->selectedProducts)) {
+            $this->js("Swal.fire('Error', 'Please select at least one product to return!', 'error');");
+            return;
+        }
+
+        $this->returnReviewItems = [];
+        foreach ($this->selectedProducts as $id) {
+            $staffProd = StaffProduct::with('product')->find($id);
+            if ($staffProd) {
+                $qty = (int)($this->returnQtys[$id] ?? 0);
+                $available = (int)($staffProd->quantity - $staffProd->sold_quantity);
+
+                if ($qty > $available) {
+                    $this->js("Swal.fire('Validation Error', 'Quantity for {$staffProd->product->name} exceeds available stock.', 'error');");
+                    return;
+                }
+                if ($qty < 1) {
+                    $this->js("Swal.fire('Validation Error', 'Quantity for {$staffProd->product->name} must be at least 1.', 'error');");
+                    return;
+                }
+
+                $this->returnReviewItems[] = [
+                    'id' => $id,
+                    'name' => $staffProd->product->name,
+                    'code' => $staffProd->product->code,
+                    'requested_qty' => $qty,
+                    'available_qty' => $available
+                ];
+            }
+        }
+
+        $this->showReviewModal = true;
+    }
+
+    public function closeReviewModal()
+    {
+        $this->showReviewModal = false;
+    }
+
     public function returnProducts()
     {
         if (!$this->canReturnProducts) {
@@ -171,6 +219,8 @@ class MyAllocatedProducts extends Component
 
             $this->selectedProducts = [];
             $this->returnQtys = [];
+            $this->showReviewModal = false;
+            $this->returnReviewItems = [];
             $this->js("Swal.fire({
                 icon: 'success',
                 title: 'Return Requested',
