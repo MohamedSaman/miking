@@ -118,29 +118,48 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
+                        <div class="mb-3 position-relative" x-data="{ open: false }" @click.away="open = false">
                             <label class="form-label fw-semibold">Select Customer *</label>
-                            <select class="form-select shadow-sm" wire:model.live="customerId">
-                                @foreach($customers as $customer)
-                                <option value="{{ $customer->id }}" {{ $customer->name === 'Walking Customer' ? 'selected' : '' }}>
-                                    {{ $customer->name }}
-                                    @if($customer->phone)
-                                    - {{ $customer->phone }}
-                                    @endif
-                                    @if($customer->name === 'Walking Customer')
-                                    (Default)
-                                    @endif
-                                </option>
+                            <div class="input-group">
+                                <input type="text" class="form-control shadow-sm" 
+                                    placeholder="Search customer by name, phone or business..." 
+                                    wire:model.live="customerSearch" 
+                                    @focus="$wire.set('customerSearch', ''); open = true"
+                                    @input="open = true"
+                                    wire:keydown.arrow-down.prevent="selectNextCustomer"
+                                    wire:keydown.arrow-up.prevent="selectPreviousCustomer"
+                                    wire:keydown.enter.prevent="selectSelectedCustomer">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            </div>
+                            
+                            @if(count($customerSearchResults) > 0)
+                            <div class="position-absolute w-100 mt-1 shadow-lg bg-white border rounded-3" 
+                                style="z-index: 1060; max-height: 250px; overflow-y: auto;" 
+                                x-show="open">
+                                @foreach($customerSearchResults as $index => $customer)
+                                <div class="p-3 border-bottom cursor-pointer {{ $selectedCustomerIndex === $index ? 'bg-light' : 'hover-bg-light' }}" 
+                                    style="cursor: pointer; {{ $selectedCustomerIndex === $index ? 'border: 1px solid #0d6efd; border-left: 5px solid #0d6efd;' : '' }}"
+                                    wire:click="selectCustomer({{ $customer->id }}); open = false"
+                                    @click="open = false">
+                                    <div class="fw-bold text-primary">{{ $customer->name }}</div>
+                                    <div class="small text-muted">
+                                        {{ $customer->phone ? 'Phone: ' . $customer->phone : '' }}
+                                        {{ $customer->business_name ? ' | Business: ' . $customer->business_name : '' }}
+                                    </div>
+                                </div>
                                 @endforeach
-                            </select>
+                            </div>
+                            @endif
 
                             <div class="form-text mt-2">
-                                @if($selectedCustomer && $selectedCustomer->name === 'Walking Customer')
-                                <span class="text-info">
-                                    <i class="bi bi-info-circle me-1"></i> Using default walking customer
+                                @if($selectedCustomer)
+                                <span class="text-success fw-bold">
+                                    <i class="bi bi-person-check me-1"></i> Selected: {{ $selectedCustomer->name }}
                                 </span>
                                 @else
-                                Select an existing customer or add a new one.
+                                <span class="text-info">
+                                    <i class="bi bi-info-circle me-1"></i> Search and select a customer.
+                                </span>
                                 @endif
                             </div>
                         </div>
@@ -514,7 +533,7 @@
                                 {{-- Right:  & Invoice --}}
                                 <div class="text-end" style="flex: 0 0 150px;">
                                     <h5 class="mb-0 fw-bold"></h5>
-                                    <h6 class="mb-0 text-muted">INVOICE</h6>
+                                    <h6 class="mb-0 text-muted">{{ $createdSale->sale_price_type === 'cash' ? 'CASH INVOICE' : 'CREDIT INVOICE' }}</h6>
                                 </div>
                             </div>
                             <hr class="my-2" style="border-top: 2px solid #000;">

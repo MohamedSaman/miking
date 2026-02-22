@@ -267,8 +267,12 @@
                                     <td class="fw-bold">Date:</td>
                                     <td>{{ \Carbon\Carbon::parse($selectedSale->created_at)->format('d M, Y H:i') }}</td>
                                 </tr>
-                                <tr>
-                                    <td class="fw-bold">Status:</td>
+                                 <tr>
+                                     <td class="fw-bold">Sale Type:</td>
+                                     <td>{{ $selectedSale->sale_price_type === 'cash' ? 'Cash Invoice' : 'Credit Invoice' }}</td>
+                                 </tr>
+                                 <tr>
+                                     <td class="fw-bold">Status:</td>
                                     <td>
                                         @php
                                             $statusClass = match($selectedSale->status) {

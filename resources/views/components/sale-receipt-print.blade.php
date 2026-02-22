@@ -16,6 +16,10 @@
                     <td>{{ $sale->invoice_number }}</td>
                 </tr>
                 <tr>
+                    <td style="padding-right: 15px;"><strong>Sale Type</strong></td>
+                    <td>Invoice</td>
+                </tr>
+                <tr>
                     <td style="padding-right: 15px;"><strong>Sale ID</strong></td>
                     <td>{{ $sale->sale_id }}</td>
                 </tr>

@@ -361,10 +361,14 @@
                                         </div>
                                         <div class="card-body">
                                             <div class="row g-2">
-                                                <div class="col-12">
-                                                    <label class="form-label fw-semibold text-muted small">Invoice</label>
-                                                    <p class="fw-bold text-dark mb-0">{{ $selectedPayment->sale->invoice_number }}</p>
-                                                </div>
+                                                 <div class="col-12">
+                                                     <label class="form-label fw-semibold text-muted small">Invoice</label>
+                                                     <p class="fw-bold text-dark mb-0">{{ $selectedPayment->sale->invoice_number }}</p>
+                                                 </div>
+                                                 <div class="col-12">
+                                                     <label class="form-label fw-semibold text-muted small">Sale Type</label>
+                                                     <p class="fw-bold text-dark mb-0">{{ $selectedPayment->sale->sale_price_type === 'cash' ? 'Cash Invoice' : 'Credit Invoice' }}</p>
+                                                 </div>
                                                 <div class="col-12">
                                                     <label class="form-label fw-semibold text-muted small">Sale Date</label>
                                                     <p class="fw-bold text-dark mb-0">{{ $selectedPayment->sale->created_at->format('d/m/Y h:i A') }}</p>

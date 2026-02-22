@@ -279,10 +279,14 @@
                                         </div>
 
                                         <div class="row g-2">
-                                            <div class="col-12">
-                                                <label class="form-label fw-semibold text-muted small">Invoice</label>
-                                                <p class="fw-medium text-dark mb-0">{{ $saleDetail->invoice_number }}</p>
-                                            </div>
+                                             <div class="col-12">
+                                                 <label class="form-label fw-semibold text-muted small">Invoice</label>
+                                                 <p class="fw-medium text-dark mb-0">{{ $saleDetail->invoice_number }}</p>
+                                             </div>
+                                             <div class="col-12">
+                                                 <label class="form-label fw-semibold text-muted small">Sale Type</label>
+                                                 <p class="fw-medium text-dark mb-0">{{ $saleDetail->sale_price_type === 'cash' ? 'Cash Invoice' : 'Credit Invoice' }}</p>
+                                             </div>
                                             <div class="col-12">
                                                 <label class="form-label fw-semibold text-muted small">Sale Date</label>
                                                 <p class="fw-medium text-dark mb-0">{{ $saleDetail->created_at->format('d/m/Y') }}</p>

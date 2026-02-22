@@ -117,8 +117,9 @@
                                     <th class="text-center" style="width: 80px;">INV. NO</th>
                                     <th style="width: 150px;">PAY. REF.</th>
                                     <th>CUSTOMER NAME</th>
-                                    <th class="text-center" style="width: 150px;">INV. DATE</th>
-                                    <th class="text-center" style="width: 150px;">PAY. DATE</th>
+                                     <th class="text-center" style="width: 150px;">INV. DATE</th>
+                                     <th class="text-center" style="width: 150px;">SALE TYPE</th>
+                                     <th class="text-center" style="width: 150px;">PAY. DATE</th>
                                     <th class="text-end" style="width: 120px;">PAID</th>
                                 </tr>
                             </thead>
@@ -134,12 +135,17 @@
                                     <td>
                                         <strong>{{ $payment->sale->customer->name ?? 'N/A' }}</strong>
                                     </td>
-                                    <td class="text-center">
-                                        <small>{{ $payment->sale->created_at ? $payment->sale->created_at->format('Y-m-d H:i:s') : 'N/A' }}</small>
-                                    </td>
-                                    <td class="text-center">
-                                        <small>{{ $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('Y-m-d H:i:s') : 'N/A' }}</small>
-                                    </td>
+                                     <td class="text-center">
+                                         <small>{{ $payment->sale->created_at ? $payment->sale->created_at->format('Y-m-d H:i:s') : 'N/A' }}</small>
+                                     </td>
+                                     <td class="text-center">
+                                         <span class="badge border {{ $payment->sale && $payment->sale->sale_price_type === 'cash' ? 'border-success text-success' : 'border-info text-info' }}">
+                                             {{ $payment->sale && $payment->sale->sale_price_type === 'cash' ? 'CASH' : 'CREDIT' }}
+                                         </span>
+                                     </td>
+                                     <td class="text-center">
+                                         <small>{{ $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('Y-m-d H:i:s') : 'N/A' }}</small>
+                                     </td>
                                     <td class="text-end">
                                         <strong class="text-success">Rs.{{ number_format($payment->amount, 2) }}</strong>
                                     </td>
@@ -147,8 +153,8 @@
                                 @endforeach
                             </tbody>
                             <tfoot class="table-light">
-                                <tr>
-                                    <th colspan="5" class="text-end">TOTAL:</th>
+                                 <tr>
+                                     <th colspan="6" class="text-end">TOTAL:</th>
                                     <th class="text-end">
                                         <strong class="text-white fs-5">Rs.{{ number_format($cashPayments->sum('amount'), 2) }}</strong>
                                     </th>

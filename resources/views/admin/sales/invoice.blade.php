@@ -320,7 +320,7 @@
                     </td>
                     <td class="invoice-section">
                         <span style="font-size:10pt; font-weight:bold;"></span>
-                        <span style="font-size:9pt; font-weight:bold; color:#666; margin-left:8px;">INVOICE</span>
+                        <span style="font-size:9pt; font-weight:bold; color:#666; margin-left:8px;">{{ in_array($sale->sale_price_type ?? '', ['cash', 'cash_credit']) ? 'CASH INVOICE' : 'CREDIT INVOICE' }}</span>
                     </td>
                 </tr>
             </table>
@@ -344,6 +344,10 @@
                             <tr>
                                 <td><strong>Invoice #</strong></td>
                                 <td>{{ $sale->invoice_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Sale Type</strong></td>
+                                <td>Invoice</td>
                             </tr>
                             <tr>
                                 <td><strong>Sale ID</strong></td>

@@ -44,6 +44,9 @@ class StoreBilling extends Component
     public $searchResults = [];
     public $selectedResultIndex = 0;
     public $customerId = '';
+    public $customerSearch = '';
+    public $customerSearchResults = [];
+    public $selectedCustomerIndex = 0;
 
     // Cart Items
     public $cart = [];
@@ -265,6 +268,7 @@ class StoreBilling extends Component
 
         $this->customerId = $walkingCustomer->id;
         $this->selectedCustomer = $walkingCustomer;
+        $this->customerSearch = $walkingCustomer->name;
     }
 
     // Load customers for dropdown
@@ -356,18 +360,53 @@ class StoreBilling extends Component
         }
     }
 
-    // When customer is selected from dropdown
-    public function updatedCustomerId($value)
+
+
+    public function updatedCustomerSearch()
     {
-        if ($value) {
-            $customer = Customer::find($value);
-            if ($customer) {
-                $this->selectedCustomer = $customer;
-            }
+        $this->selectedCustomerIndex = 0;
+        if (strlen($this->customerSearch) >= 1) {
+            $this->customerSearchResults = Customer::where('name', 'like', '%' . $this->customerSearch . '%')
+                ->orWhere('phone', 'like', '%' . $this->customerSearch . '%')
+                ->orWhere('business_name', 'like', '%' . $this->customerSearch . '%')
+                ->orderBy('name')
+                ->take(10)
+                ->get();
         } else {
-            // If customer is deselected, set back to walking customer
-            $this->setDefaultCustomer();
+            $this->customerSearchResults = [];
         }
+    }
+
+    public function selectNextCustomer()
+    {
+        if (count($this->customerSearchResults) > 0) {
+            $this->selectedCustomerIndex = ($this->selectedCustomerIndex + 1) % count($this->customerSearchResults);
+        }
+    }
+
+    public function selectPreviousCustomer()
+    {
+        if (count($this->customerSearchResults) > 0) {
+            $this->selectedCustomerIndex = ($this->selectedCustomerIndex - 1 + count($this->customerSearchResults)) % count($this->customerSearchResults);
+        }
+    }
+
+    public function selectSelectedCustomer()
+    {
+        if (count($this->customerSearchResults) > 0 && isset($this->customerSearchResults[$this->selectedCustomerIndex])) {
+            $this->selectCustomer($this->customerSearchResults[$this->selectedCustomerIndex]['id']);
+        }
+    }
+
+    public function selectCustomer($id)
+    {
+        $this->customerId = $id;
+        $customer = Customer::find($id);
+        if ($customer) {
+            $this->selectedCustomer = $customer;
+            $this->customerSearch = $customer->name;
+        }
+        $this->customerSearchResults = [];
     }
 
     // When sale price type is changed, recalculate all cart prices
@@ -527,6 +566,7 @@ class StoreBilling extends Component
             $this->loadCustomers();
             $this->customerId = $customer->id;
             $this->selectedCustomer = $customer;
+            $this->customerSearch = $customer->name;
             $this->closeCustomerModal();
 
             // Set success message in session

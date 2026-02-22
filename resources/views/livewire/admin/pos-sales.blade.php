@@ -326,7 +326,7 @@ use App\Models\Sale;
                         {{-- Right:  & Invoice --}}
                         <div class="text-end" style="flex: 0 0 150px;">
                             <h5 class="mb-0 fw-bold"></h5>
-                            <h6 class="mb-0 text-muted">INVOICE</h6>
+                            <h6 class="mb-0 text-muted">{{ $selectedSale->sale_price_type === 'cash' ? 'CASH INVOICE' : 'CREDIT INVOICE' }}</h6>
                         </div>
                     </div>
                     <hr class="my-2" style="border-top: 2px solid #000;">
@@ -356,10 +356,14 @@ use App\Models\Sale;
                                     <td><strong>Date</strong></td>
                                     <td>{{ $selectedSale->created_at->format('M d, Y h:i A') }}</td>
                                 </tr>
-                                <tr>
-                                    <td><strong>Sale Type</strong></td>
-                                    <td><span class="badge bg-primary">{{ strtoupper($selectedSale->sale_type) }}</span></td>
-                                </tr>
+                                 <tr>
+                                     <td><strong>Invoice Type</strong></td>
+                                     <td><span class="badge border border-primary text-primary">{{ $selectedSale->sale_price_type === 'cash' ? 'Cash Invoice' : 'Credit Invoice' }}</span></td>
+                                 </tr>
+                                 <tr>
+                                     <td><strong>Sale Type</strong></td>
+                                     <td><span class="badge bg-primary">{{ strtoupper($selectedSale->sale_type) }}</span></td>
+                                 </tr>
                                 <tr>
                                     <td><strong>Created By</strong></td>
                                     <td>{{ $selectedSale->user->name ?? 'System' }}</td>
