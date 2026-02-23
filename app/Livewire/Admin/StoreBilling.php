@@ -98,8 +98,22 @@ class StoreBilling extends Component
     public $createdSale = null;
     public $pendingDueAmount = 0;
 
-    public function mount()
+    // Editing Sale
+    public $editSaleId = null;
+    public $isEditing = false;
+    public $originalSale = null;
+    public $existingPaidAmount = 0; // Payments already recorded before editing
+
+    public function mount($saleId = null)
     {
+        // Load customers
+        $this->loadCustomers();
+
+        if ($saleId) {
+            $this->loadSaleForEditing($saleId);
+        } else {
+            $this->setDefaultCustomer();
+        }
         // Check for yesterday's open session - auto-close it
         $yesterdaySession = POSSession::where('user_id', Auth::id())
             ->whereDate('session_date', now()->subDay()->toDateString())
@@ -194,8 +208,67 @@ class StoreBilling extends Component
         }
 
         $this->loadCustomers();
-        $this->setDefaultCustomer();
+        if (!$saleId) {
+            $this->setDefaultCustomer();
+        }
         $this->tempChequeDate = now()->format('Y-m-d');
+    }
+
+    public function loadSaleForEditing($saleId)
+    {
+        $sale = Sale::with(['items.product.stock', 'items.product.price', 'customer', 'payments'])->find($saleId);
+        
+        if (!$sale) {
+            $this->js("Swal.fire('error', 'Sale not found!', 'error')");
+            $this->setDefaultCustomer();
+            return;
+        }
+
+        $this->editSaleId = $sale->id;
+        $this->isEditing = true;
+        $this->originalSale = $sale;
+
+        $this->customerId = $sale->customer_id;
+        $this->selectedCustomer = $sale->customer;
+        $this->customerSearch = $sale->customer->name ?? '';
+        $this->notes = $sale->notes;
+        $this->salePriceType = $sale->sale_price_type;
+        $this->additionalDiscount = $sale->discount_amount;
+        $this->additionalDiscountType = 'fixed';
+        $this->paymentMethod = $sale->payment_method;
+
+        // Load items into cart
+        $this->cart = [];
+        foreach ($sale->items as $item) {
+            $product = $item->product;
+            if (!$product) continue;
+
+            $this->cart[] = [
+                'key' => uniqid('cart_'),
+                'id' => $product->id,
+                'name' => $item->product_name,
+                'code' => $item->product_code,
+                'model' => $item->product_model,
+                'price' => $item->unit_price,
+                'cash_price' => $product->price->cash_price ?? $item->unit_price,
+                'credit_price' => $product->price->credit_price ?? $item->unit_price,
+                'cash_credit_price' => $product->price->cash_credit_price ?? $product->price->cash_price ?? $item->unit_price,
+                'quantity' => $item->quantity,
+                'discount' => $item->discount_per_unit,
+                'total' => $item->total,
+                'stock' => ($product->stock->available_stock ?? 0) + $item->quantity
+            ];
+        }
+
+        // Load already-paid amount from existing payments (non-rejected)
+        $this->existingPaidAmount = $sale->payments
+            ->where('status', '!=', 'rejected')
+            ->sum('amount');
+
+        // Reset new payment input fields — staff can add more payment if still due
+        $this->cashAmount = 0;
+        $this->cheques = [];
+        $this->bankTransferAmount = 0;
     }
 
     /**
@@ -315,25 +388,26 @@ class StoreBilling extends Component
 
     public function getTotalPaidAmountProperty()
     {
-        $total = 0;
+        $newPayment = 0;
 
         if ($this->paymentMethod === 'cash') {
-            $total = $this->cashAmount;
+            $newPayment = $this->cashAmount;
         } elseif ($this->paymentMethod === 'cheque') {
-            $total = collect($this->cheques)->sum('amount');
+            $newPayment = collect($this->cheques)->sum('amount');
         } elseif ($this->paymentMethod === 'bank_transfer') {
-            $total = $this->bankTransferAmount;
+            $newPayment = $this->bankTransferAmount;
         }
 
-        return $total;
+        // When editing, add any existing payments already on record
+        return $this->existingPaidAmount + $newPayment;
     }
 
     public function getDueAmountProperty()
     {
-        if ($this->paymentMethod === 'credit') {
+        if ($this->paymentMethod === 'credit' && !$this->isEditing) {
             return $this->grandTotal;
         }
-        return max(0, $this->grandTotal - (int)$this->totalPaidAmount);
+        return max(0, $this->grandTotal - $this->totalPaidAmount);
     }
 
     public function getPaymentStatusProperty()
@@ -838,49 +912,50 @@ class StoreBilling extends Component
             return;
         }
 
-        // If no customer selected, use walking customer
         if (!$this->selectedCustomer && !$this->customerId) {
             $this->js("Swal.fire('error', 'Please select a customer.', 'error')");
             return;
-            $this->setDefaultCustomer();
         }
+
+        // Remaining balance after existing payments (relevant when editing)
+        $remainingDue = max(0, $this->grandTotal - $this->existingPaidAmount);
 
         // Validate payment method specific fields
         if ($this->paymentMethod === 'cash') {
             if ($this->cashAmount < 0) {
-                $this->js("Swal.fire('error', 'Please enter cash amount.', 'error')");
+                $this->js("Swal.fire('error', 'Please enter a valid cash amount.', 'error')");
                 return;
             }
         } elseif ($this->paymentMethod === 'cheque') {
-            if (empty($this->cheques)) {
+            // Only require cheques if there is still an outstanding balance
+            if (empty($this->cheques) && $remainingDue > 0) {
                 $this->js("Swal.fire('error', 'Please add at least one cheque.', 'error')");
                 return;
             }
-
-            // Validate that total cheque amount does not exceed grand total
+            // New cheques must not exceed the grand total
             $totalChequeAmount = collect($this->cheques)->sum('amount');
             if ($totalChequeAmount > $this->grandTotal) {
                 $this->js("Swal.fire('error', 'Total cheque amount (Rs. " . number_format($totalChequeAmount, 2) . ") cannot be greater than the grand total (Rs. " . number_format($this->grandTotal, 2) . ").', 'error')");
                 return;
             }
         } elseif ($this->paymentMethod === 'bank_transfer') {
-            if ($this->bankTransferAmount <= 0) {
+            // Only require bank amount if there is still an outstanding balance
+            if ($this->bankTransferAmount <= 0 && $remainingDue > 0) {
                 $this->js("Swal.fire('error', 'Please enter bank transfer amount.', 'error')");
                 return;
             }
         }
 
-        // Check if payment amount matches grand total (except for credit)
+        // Check if total payments (existing + new) fully cover the grand total
         if ($this->paymentMethod !== 'credit') {
-            if ((int)$this->totalPaidAmount < $this->grandTotal) {
-                // Show confirmation modal for due amount
-                $this->pendingDueAmount = $this->grandTotal - (int)$this->totalPaidAmount;
+            if ($this->totalPaidAmount < $this->grandTotal) {
+                // Show confirmation modal with the remaining due
+                $this->pendingDueAmount = $this->grandTotal - $this->totalPaidAmount;
                 $this->showPaymentConfirmModal = true;
                 return;
             }
         }
 
-        // Proceed to create sale
         $this->createSale();
     }
 
@@ -901,6 +976,12 @@ class StoreBilling extends Component
     // Create Sale
     public function createSale()
     {
+        // If editing, delegate to updateSale (which manages its own DB transaction)
+        if ($this->isEditing) {
+            $this->updateSale();
+            return;
+        }
+
         try {
             DB::beginTransaction();
 
@@ -1042,7 +1123,155 @@ class StoreBilling extends Component
             $this->js("Swal.fire('success', '$statusMessage', 'success')");
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->js("Swal.fire('error', 'Failed to create sale: " . $e->getMessage() . "', 'error')");
+            $this->js("Swal.fire('error', 'Failed to create sale: " . addslashes($e->getMessage()) . "', 'error')");
+        }
+    }
+
+    public function updateSale()
+    {
+        try {
+            DB::beginTransaction();
+
+            $sale = Sale::find($this->editSaleId);
+            if (!$sale) {
+                throw new \Exception("Sale not found.");
+            }
+
+            // 1. Revert stock
+            foreach ($sale->items as $item) {
+                $productStock = \App\Models\ProductStock::where('product_id', $item->product_id)->first();
+                if ($productStock) {
+                    $productStock->available_stock += $item->quantity;
+                    if ($productStock->sold_count >= $item->quantity) {
+                        $productStock->sold_count -= $item->quantity;
+                    }
+                    $productStock->save();
+                }
+            }
+
+            // 2. Delete old items and bonuses
+            $sale->items()->delete();
+            \App\Models\StaffBonus::where('sale_id', $sale->id)->delete();
+
+            // 3. Calculate totals — new additional payment entered by staff
+            $customer = $this->selectedCustomer ?: Customer::find($this->customerId);
+
+            // Only the newly entered payment (not counting what was already paid before)
+            $newPaymentAmount = $this->totalPaidAmount - $this->existingPaidAmount;
+            $newPaymentAmount = max(0, $newPaymentAmount); // safety: never negative
+
+            // Total paid after this update (existing + new)
+            $totalPaidAfterUpdate = $this->existingPaidAmount + $newPaymentAmount;
+            $newDueAmount = max(0, $this->grandTotal - $totalPaidAfterUpdate);
+
+            if ($newDueAmount <= 0) {
+                $paymentStatus = 'paid';
+            } elseif ($totalPaidAfterUpdate > 0) {
+                $paymentStatus = 'partial';
+            } else {
+                $paymentStatus = 'pending';
+            }
+
+            $sale->update([
+                'customer_id'    => $customer->id,
+                'customer_type'  => $customer->type,
+                'subtotal'       => $this->subtotal,
+                'discount_amount'=> $this->additionalDiscountAmount,
+                'total_amount'   => $this->grandTotal,
+                'due_amount'     => $newDueAmount,
+                'payment_status' => $paymentStatus,
+                'notes'          => $this->notes,
+                'sale_price_type'=> $this->salePriceType,
+            ]);
+
+            // 4. Create new items and deduct stock
+            foreach ($this->cart as $item) {
+                $fifoResult = FIFOStockService::deductStock($item['id'], $item['quantity']);
+                foreach ($fifoResult['deductions'] as $deduction) {
+                    SaleItem::create([
+                        'sale_id'          => $sale->id,
+                        'product_id'       => $item['id'],
+                        'product_code'     => $item['code'],
+                        'product_name'     => $item['name'],
+                        'product_model'    => $item['model'],
+                        'quantity'         => $deduction['quantity'],
+                        'unit_price'       => $item['price'],
+                        'discount_per_unit'=> $item['discount'],
+                        'total_discount'   => $item['discount'] * $deduction['quantity'],
+                        'total'            => ($item['price'] - $item['discount']) * $deduction['quantity']
+                    ]);
+                }
+            }
+
+            // 5. Create a new Payment record if additional payment was entered
+            if ($this->paymentMethod !== 'credit' && $newPaymentAmount > 0) {
+                $payment = Payment::create([
+                    'customer_id'    => $customer->id,
+                    'sale_id'        => $sale->id,
+                    'amount'         => $newPaymentAmount,
+                    'payment_method' => $this->paymentMethod,
+                    'payment_date'   => now(),
+                    'is_completed'   => true,
+                    'status'         => 'paid',
+                ]);
+
+                if ($this->paymentMethod === 'cash') {
+                    $payment->update([
+                        'payment_reference' => 'CASH-' . now()->format('YmdHis'),
+                    ]);
+                    // Update cash in hands for the new cash received
+                    $this->updateCashInHands($newPaymentAmount);
+                } elseif ($this->paymentMethod === 'cheque') {
+                    foreach ($this->cheques as $cheque) {
+                        Cheque::create([
+                            'cheque_number' => $cheque['number'],
+                            'cheque_date'   => $cheque['date'],
+                            'bank_name'     => $cheque['bank_name'],
+                            'cheque_amount' => $cheque['amount'],
+                            'status'        => 'pending',
+                            'customer_id'   => $customer->id,
+                            'payment_id'    => $payment->id,
+                        ]);
+                    }
+                    $payment->update([
+                        'payment_reference' => 'CHQ-' . collect($this->cheques)->pluck('number')->implode(','),
+                        'bank_name'         => collect($this->cheques)->pluck('bank_name')->unique()->implode(', '),
+                    ]);
+                } elseif ($this->paymentMethod === 'bank_transfer') {
+                    $payment->update([
+                        'payment_reference' => $this->bankTransferReferenceNumber ?: 'BANK-' . now()->format('YmdHis'),
+                        'bank_name'         => $this->bankTransferBankName,
+                        'transfer_date'     => now(),
+                        'transfer_reference'=> $this->bankTransferReferenceNumber,
+                    ]);
+                }
+            }
+
+            // 6. Recalculate bonuses
+            \App\Services\StaffBonusService::calculateBonusesForSale($sale);
+
+            DB::commit();
+
+            // Update POS session
+            $this->currentSession = POSSession::getTodaySession(Auth::id());
+            if ($this->currentSession) {
+                try {
+                    $this->currentSession->updateFromSales();
+                    $this->currentSession->calculateDifference();
+                } catch (\Exception $e) {
+                    Log::error('Failed to update POS session after sale update: ' . $e->getMessage());
+                }
+            }
+
+            $this->lastSaleId = $sale->id;
+            $this->createdSale = Sale::with(['customer', 'items', 'payments'])->find($sale->id);
+            $this->showSaleModal = true;
+
+            $this->js("Swal.fire('success', 'Sale updated successfully!', 'success')");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to update sale: ' . $e->getMessage());
+            $this->js("Swal.fire('error', 'Failed to update sale: " . addslashes($e->getMessage()) . "', 'error')");
         }
     }
 

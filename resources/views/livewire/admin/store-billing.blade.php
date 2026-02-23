@@ -509,6 +509,45 @@
                     </h5>
                 </div>
                 <div class="card-body">
+
+                    {{-- Existing Payment Summary (shown when editing a sale that has payments) --}}
+                    @if($isEditing && $existingPaidAmount > 0)
+                    <div class="alert rounded-0 mb-3 p-3" style="background: #e8f4fd; border-left: 4px solid #2a83df;">
+                        <h6 class="fw-bold mb-2" style="color:#2a83df;">
+                            <i class="bi bi-receipt me-1"></i> Existing Payments on This Invoice
+                        </h6>
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span class="text-muted">Already Paid:</span>
+                            <span class="fw-bold text-success">Rs.{{ number_format($existingPaidAmount, 2) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span class="text-muted">New Grand Total:</span>
+                            <span class="fw-bold" style="color:#2a83df;">Rs.{{ number_format($grandTotal, 2) }}</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between small">
+                            <span class="text-muted fw-bold">Remaining Balance:</span>
+                            @php $remainingBalance = max(0, $grandTotal - $existingPaidAmount); @endphp
+                            @if($remainingBalance > 0)
+                                <span class="fw-bold text-danger">Rs.{{ number_format($remainingBalance, 2) }}</span>
+                            @else
+                                <span class="fw-bold text-success"><i class="bi bi-check-circle me-1"></i>Fully Paid</span>
+                            @endif
+                        </div>
+                        @if($remainingBalance > 0)
+                        <div class="mt-2 small text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Add a payment below to record an additional payment, or update items and save.
+                        </div>
+                        @else
+                        <div class="mt-2 small text-success">
+                            <i class="bi bi-check-circle me-1"></i>
+                            This invoice is fully paid. No additional payment needed.
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label fw-semibold" style="color:#2a83df;">Payment Method * <small class="text-muted">[Alt+P]</small></label>
@@ -737,10 +776,15 @@
     <div class="col-12">
         <div class="card border-0 shadow-sm">
             <div class="card-body text-center bg-light py-4">
-                <button class="btn btn-lg px-5 rounded-0 fw-bold text-white" style="background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%); border-color:#2a83df;" wire:click="validateAndCreateSale"
+                @if($isEditing)
+                    <div class="alert alert-warning mb-3">
+                        <i class="bi bi-pencil-square me-2"></i><strong>Editing Mode:</strong> You are modifying Invoice #{{ $originalSale->invoice_number }}
+                    </div>
+                @endif
+                <button class="btn btn-lg px-5 rounded-0 fw-bold text-white" style="background: {{ $isEditing ? 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)' : 'linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%)' }}; border-color:{{ $isEditing ? '#ff9800' : '#2a83df' }};" wire:click="validateAndCreateSale"
                     id="completeSaleButton"
                     {{ count($cart) == 0 ? 'disabled' : '' }}>
-                    <i class="bi bi-cart-check me-2"></i>Complete Sale [F2]
+                    <i class="bi bi-{{ $isEditing ? 'save' : 'cart-check' }} me-2"></i>{{ $isEditing ? 'Update Sale' : 'Complete Sale' }} [F2]
                 </button>
             </div>
         </div>
@@ -1027,9 +1071,15 @@
 
                 {{-- Footer Buttons --}}
                 <div class="modal-footer justify-content-center">
+                    @if($isEditing)
+                    <a href="{{ request()->is('admin/*') ? '/admin/pos-sales' : '/staff/pos-sales' }}" class="btn btn-secondary me-2">
+                        <i class="bi bi-arrow-left me-2"></i>Back to POS Sales
+                    </a>
+                    @else
                     <button type="button" class="btn btn-outline-secondary me-2" wire:click="createNewSale">
                         <i class="bi bi-x-circle me-2"></i>Close
                     </button>
+                    @endif
                     <button type="button" class="btn btn-outline-primary me-2" wire:click="printSaleReceipt">
                         <i class="bi bi-printer me-2"></i>Print
                     </button>

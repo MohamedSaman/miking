@@ -180,8 +180,18 @@
                                         <i class="bi bi-gear-fill"></i> Actions
                                     </button>
 
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <!-- Download Invoice -->
+                                     <ul class="dropdown-menu dropdown-menu-end">
+                                         <!-- Edit Items -->
+                                         <li>
+                                             @php
+                                                 $editRoute = auth()->user()->isStaff() ? 'staff.sales-system' : 'admin.sales-system';
+                                             @endphp
+                                             <a class="dropdown-item" href="{{ route($editRoute, ['saleId' => $sale->id]) }}">
+                                                 <i class="bi bi-pencil-square text-primary me-2"></i>
+                                                 Edit Items
+                                             </a>
+                                         </li>
+                                         <!-- Download Invoice -->
                                         <li>
                                             <button class="dropdown-item"
                                                 wire:click="downloadInvoice({{ $sale->id }})"

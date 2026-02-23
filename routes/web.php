@@ -174,14 +174,14 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
         Route::get('/view-payments', ViewPayments::class)->name('view-payments');
         Route::get('/admin/staff/{staffId}/reentry', \App\Livewire\Admin\StockReentry::class)->name('staff.reentry');
-        Route::get('/store-billing', StoreBilling::class)->name('store-billing');
+        Route::get('/store-billing/{saleId?}', StoreBilling::class)->name('store-billing');
         Route::get('/print/sale/{id}', [PrintController::class, 'printSale'])->name('print.sale');
         Route::get('/due-payments', AdminDuePayments::class)->name('due-payments');
         Route::get('/staff-attendance', StaffAttendance::class)->name('staff-attendance');
         Route::get('/staff-tracking', \App\Livewire\Admin\StaffSessionTracking::class)->name('staff-tracking');
         Route::get('/staff-salary', StaffSallary::class)->name('staff-salary');
         Route::get('/loan-management', LoanManage::class)->name('loan-management');
-        Route::get('/sales-system', SalesSystem::class)->name('sales-system');
+        Route::get('/sales-system/{saleId?}', SalesSystem::class)->name('sales-system');
         Route::get('/staff-product-allocation', StaffProductAllocation::class)->name('staff-product-allocation');
         Route::get('/staff-sales', StaffSalesView::class)->name('staff-sales');
         Route::get('/staff-payment-approval', StaffPaymentApproval::class)->name('staff-payment-approval');
@@ -248,10 +248,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         // Sales
         Route::get('/billing', Billing::class)->name('billing');
         Route::get('/billing-page', BillingPage::class)->name('billing-page');
-        Route::get('/sales-system', SalesSystem::class)->name('sales-system');
+        Route::get('/sales-system/{saleId?}', SalesSystem::class)->name('sales-system');
         Route::get('/pos-sales', PosSales::class)->name('pos-sales');
         Route::get('/sales-list', SalesList::class)->name('sales-list');
-        Route::get('/store-billing', StoreBilling::class)->name('store-billing');
+        Route::get('/store-billing/{saleId?}', StoreBilling::class)->name('store-billing');
 
         // Customers
         Route::get('/manage-customer', ManageCustomer::class)->name('manage-customer');

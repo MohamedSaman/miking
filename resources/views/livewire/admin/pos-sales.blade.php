@@ -209,6 +209,16 @@ use App\Models\Sale;
                                     </button>
 
                                     <ul class="dropdown-menu dropdown-menu-end">
+                                        <!-- Edit Items -->
+                                        <li>
+                                            @php
+                                                $editRoute = auth()->user()->isStaff() ? 'staff.store-billing' : 'admin.store-billing';
+                                            @endphp
+                                            <a class="dropdown-item" href="{{ route($editRoute, ['saleId' => $sale->id]) }}">
+                                                <i class="bi bi-pencil-square text-primary me-2"></i>
+                                                Edit Items
+                                            </a>
+                                        </li>
                                         <!-- Download Invoice -->
                                         <li>
                                             <button class="dropdown-item"

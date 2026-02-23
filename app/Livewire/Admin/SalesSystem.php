@@ -66,10 +66,66 @@ class SalesSystem extends Component
     // POS Session (to track/update daily totals)
     public $currentSession = null;
 
-    public function mount()
+    // Editing Sale
+    public $editSaleId = null;
+    public $isEditing = false;
+    public $originalSale = null;
+
+    public function mount($saleId = null)
     {
         $this->loadCustomers();
-        $this->setDefaultCustomer();
+        
+        if ($saleId) {
+            $this->loadSaleForEditing($saleId);
+        } else {
+            $this->setDefaultCustomer();
+        }
+    }
+
+    public function loadSaleForEditing($saleId)
+    {
+        $sale = Sale::with(['items.product.stock', 'items.product.price', 'customer'])->find($saleId);
+        
+        if (!$sale) {
+            $this->js("Swal.fire('error', 'Sale not found!', 'error')");
+            $this->setDefaultCustomer();
+            return;
+        }
+
+        $this->editSaleId = $sale->id;
+        $this->isEditing = true;
+        $this->originalSale = $sale;
+
+        $this->customerId = $sale->customer_id;
+        $this->selectedCustomer = $sale->customer;
+        $this->customerSearch = $sale->customer->name ?? '';
+        $this->notes = $sale->notes;
+        $this->salePriceType = $sale->sale_price_type;
+        $this->additionalDiscount = $sale->discount_amount;
+        $this->additionalDiscountType = 'fixed'; // We'll use fixed for simplicity upon loading
+
+        // Load items into cart
+        $this->cart = [];
+        foreach ($sale->items as $item) {
+            $product = $item->product;
+            if (!$product) continue;
+
+            $this->cart[] = [
+                'key' => uniqid('cart_'),
+                'id' => $product->id,
+                'name' => $item->product_name,
+                'code' => $item->product_code,
+                'model' => $item->product_model,
+                'price' => $item->unit_price,
+                'cash_price' => $product->price->cash_price ?? $item->unit_price,
+                'credit_price' => $product->price->credit_price ?? $item->unit_price,
+                'cash_credit_price' => $product->price->cash_credit_price ?? $product->price->cash_price ?? $item->unit_price,
+                'quantity' => $item->quantity,
+                'discount' => $item->discount_per_unit,
+                'total' => $item->total,
+                'stock' => ($product->stock->available_stock ?? 0) + $item->quantity // Add back original qty for stock check
+            ];
+        }
     }
 
     // Set default walking customer
@@ -568,6 +624,12 @@ class SalesSystem extends Component
             $this->setDefaultCustomer();
         }
 
+        // If editing, delegate to updateSale (which manages its own DB transaction)
+        if ($this->isEditing) {
+            $this->updateSale();
+            return;
+        }
+
         try {
             DB::beginTransaction();
 
@@ -673,7 +735,93 @@ class SalesSystem extends Component
                 'cart' => $this->cart,
                 'exception' => $e,
             ]);
-            $this->js("Swal.fire('error', 'Failed to create sale: " . addslashes($e->getMessage()) . "', 'error')");
+        }
+    }
+
+    public function updateSale()
+    {
+        try {
+            DB::beginTransaction();
+
+            $sale = Sale::find($this->editSaleId);
+            if (!$sale) {
+                throw new \Exception("Sale not found.");
+            }
+
+            // 1. Revert stock
+            foreach ($sale->items as $item) {
+                $productStock = \App\Models\ProductStock::where('product_id', $item->product_id)->first();
+                if ($productStock) {
+                    $productStock->available_stock += $item->quantity;
+                    if ($productStock->sold_count >= $item->quantity) {
+                        $productStock->sold_count -= $item->quantity;
+                    }
+                    $productStock->save();
+                }
+            }
+
+            // 2. Delete old items and bonuses
+            $sale->items()->delete();
+            \App\Models\StaffBonus::where('sale_id', $sale->id)->delete();
+
+            // 3. Update sale header
+            $customer = $this->selectedCustomer ?: Customer::find($this->customerId);
+            
+            // Calculate new totals and due amount based on existing payments
+            $totalPayments = $sale->payments()->where('status', '!=', 'rejected')->sum('amount');
+            $newDueAmount = max(0, $this->grandTotal - $totalPayments);
+
+            $sale->update([
+                'customer_id' => $customer->id,
+                'customer_type' => $customer->type,
+                'subtotal' => $this->subtotal,
+                'discount_amount' => $this->additionalDiscountAmount,
+                'total_amount' => $this->grandTotal,
+                'due_amount' => $newDueAmount,
+                'payment_status' => $newDueAmount <= 0 ? 'paid' : ($totalPayments > 0 ? 'partial' : 'pending'),
+                'notes' => $this->notes,
+                'sale_price_type' => $this->salePriceType,
+            ]);
+
+            // 4. Create new items and deduct stock
+            foreach ($this->cart as $item) {
+                $fifoResult = FIFOStockService::deductStock($item['id'], $item['quantity']);
+                foreach ($fifoResult['deductions'] as $deduction) {
+                    SaleItem::create([
+                        'sale_id'          => $sale->id,
+                        'product_id'       => $item['id'],
+                        'product_code'     => $item['code'],
+                        'product_name'     => $item['name'],
+                        'product_model'    => $item['model'],
+                        'quantity'         => $deduction['quantity'],
+                        'unit_price'       => $item['price'],
+                        'discount_per_unit'=> $item['discount'],
+                        'total_discount'   => $item['discount'] * $deduction['quantity'],
+                        'total'            => ($item['price'] - $item['discount']) * $deduction['quantity']
+                    ]);
+                }
+            }
+
+            // 5. Recalculate bonuses
+            StaffBonusService::calculateBonusesForSale($sale);
+
+            DB::commit();
+
+            // Update POS session if needed
+            $this->currentSession = POSSession::getTodaySession(Auth::id());
+            if ($this->currentSession) {
+                $this->currentSession->updateFromSales();
+            }
+
+            $this->lastSaleId = $sale->id;
+            $this->createdSale = Sale::with(['customer', 'items'])->find($sale->id);
+            $this->showSaleModal = true;
+
+            $this->js("Swal.fire('success', 'Sale updated successfully!', 'success')");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to update sale: ' . $e->getMessage());
+            $this->js("Swal.fire('error', 'Failed to update sale: " . addslashes($e->getMessage()) . "', 'error')");
         }
     }
 

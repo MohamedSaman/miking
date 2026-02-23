@@ -433,10 +433,15 @@
                         <div class="fw-bold fs-5">Grand Total</div>
                         <div class="fw-bold fs-5 text-primary">Rs.{{ number_format($grandTotal, 2) }}</div>
                     </div>
-                    <button class="btn btn-success btn-lg px-5" wire:click="createSale"
+                    @if($isEditing)
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-pencil-square me-2"></i><strong>Editing Mode:</strong> You are modifying Invoice #{{ $originalSale->invoice_number }}
+                        </div>
+                    @endif
+                    <button class="btn btn-{{ $isEditing ? 'warning' : 'success' }} btn-lg px-5" wire:click="createSale"
                         id="completeSaleButton"
                         {{ count($cart) == 0 ? 'disabled' : '' }}>
-                        <i class="bi bi-cart-check me-2"></i>Complete Sale [F2]
+                        <i class="bi bi-{{ $isEditing ? 'save' : 'cart-check' }} me-2"></i>{{ $isEditing ? 'Update Sale' : 'Complete Sale' }} [F2]
                     </button>
                 </div>
             </div>
@@ -654,6 +659,11 @@
 
                 {{-- Footer Buttons --}}
                 <div class="modal-footer justify-content-center">
+                    @if($isEditing)
+                    <a href="{{ request()->is('admin/*') ? '/admin/sales-list' : '/staff/sales-list' }}" class="btn btn-secondary me-2">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Sales List
+                    </a>
+                    @endif
                     <button type="button" class="btn btn-outline-primary me-2" onclick="openPrintWindow({{ $createdSale->id }})">
                         <i class="bi bi-printer me-2"></i>Print
                     </button>
