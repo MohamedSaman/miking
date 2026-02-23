@@ -276,7 +276,7 @@
                 <!-- Right:  & Invoice -->
                 <div style="flex: 0 0 150px; text-align: right;">
                     <h5 style="margin-bottom: 0; font-weight: bold;"></h5>
-                     <h6 style="margin-bottom: 0; color: #666;">INVOICE</h6>
+                     <h6 style="margin-bottom: 0; color: #666;">{{ in_array($sale->sale_price_type ?? '', ['cash', 'cash_credit']) ? 'CASH INVOICE' : 'CREDIT INVOICE' }}</h6>
                 </div>
             </div>
             <hr style="border-top: 2px solid #000; margin: 0.5rem 0;">
@@ -288,7 +288,7 @@
                 <h4 class="text-muted mb-2">INVOICE DETAILS</h4>
                 <p class="mb-1"><strong>Invoice Number:</strong> {{ $sale->invoice_number }}</p>
                 <p class="mb-1"><strong>Date:</strong> {{ $sale->created_at->format('d/m/Y h:i A') }}</p>
-                 <p class="mb-1"><strong>Sale Type:</strong> Invoice</p>
+                 <p class="mb-1"><strong>Sale Type:</strong> {{ in_array($sale->sale_price_type ?? '', ['cash', 'cash_credit']) ? 'Cash Invoice' : 'Credit Invoice' }}</p>
                  <p class="mb-1">
                      <strong>Payment Status:</strong> {{ ucfirst($sale->payment_status) }}
                  </p>

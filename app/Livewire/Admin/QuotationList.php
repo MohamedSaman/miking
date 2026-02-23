@@ -473,7 +473,7 @@ class QuotationList extends Component
                         'phone' => $this->selectedQuotation->customer_phone,
                         'email' => $this->selectedQuotation->customer_email,
                         'address' => $this->selectedQuotation->customer_address,
-                        'type' => $this->selectedQuotation->customer_type,
+                        'type' => 'retail',
                         'user_id' => Auth::id(),
                     ]);
                 }

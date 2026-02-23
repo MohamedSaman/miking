@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('quotations', function (Blueprint $table) {
+            $table->dropColumn(['customer_type', 'sale_type']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('quotations', function (Blueprint $table) {
+            $table->enum('customer_type', ['retail', 'wholesale'])->default('retail')->after('customer_id');
+            $table->enum('sale_type', ['retail', 'wholesale', 'cash'])->default('retail')->after('customer_type');
+        });
+    }
+};

@@ -217,7 +217,6 @@
             @if($quotation->customer_email)
                 Email: {{ $quotation->customer_email }}<br>
             @endif
-            Customer Type: {{ ucfirst($quotation->customer_type) }}
         </div>
         
         <div class="quotation-details">

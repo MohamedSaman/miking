@@ -17,100 +17,30 @@ class FIFOStockService
      */
     public static function deductStock($productId, $quantity)
     {
-        $deductions  = [];
-        $totalCost   = 0;
+        $deductions = [];
+        $totalCost = 0;
 
-        // Get active batches in FIFO order (oldest first)
+        // 1. Get ultimate capacity from ProductStock (Source of truth for total quantity)
+        // This ensures UI consistency as UI shows stock from this table.
+        $totalStockAvailable = ProductStock::where('product_id', $productId)->sum('available_stock');
+
+        if ($totalStockAvailable < $quantity) {
+            throw new \Exception("Insufficient stock. Required: {$quantity}, Available: {$totalStockAvailable}");
+        }
+
+        // 2. Get active batches (for FIFO cost and accounting)
         $batches = ProductBatch::getActiveBatches($productId);
-
-        // ----------------------------------------------------------------
-        // FALLBACK: No active batches → use ProductStock available stock
-        // ----------------------------------------------------------------
-        if ($batches->isEmpty()) {
-            // Use sum() across all stock rows for this product (matches addToCart logic)
-            $totalAvailableStock = ProductStock::where('product_id', $productId)->sum('available_stock');
-
-            if ($totalAvailableStock < $quantity) {
-                throw new \Exception(
-                    "Insufficient stock. Required: {$quantity}, Available: {$totalAvailableStock}"
-                );
-            }
-
-            // Use the product's current price record as the selling price
-            $productPrice  = ProductPrice::where('product_id', $productId)->first();
-            $sellingPrice  = $productPrice ? (float) $productPrice->selling_price  : 0;
-            $supplierPrice = $productPrice ? (float) $productPrice->supplier_price : 0;
-
-            // Deduct from all ProductStock rows proportionally (FIFO across rows)
-            $remainingToDeduct = $quantity;
-            $stockRows = ProductStock::where('product_id', $productId)
-                ->where('available_stock', '>', 0)
-                ->orderBy('id', 'asc')
-                ->get();
-
-            foreach ($stockRows as $stockRow) {
-                if ($remainingToDeduct <= 0) break;
-
-                $deductFromRow = min($remainingToDeduct, $stockRow->available_stock);
-                $stockRow->available_stock -= $deductFromRow;
-                $stockRow->sold_count      += $deductFromRow;
-                $stockRow->total_stock      = $stockRow->available_stock + $stockRow->damage_stock;
-                $stockRow->save();
-
-                $remainingToDeduct -= $deductFromRow;
-            }
-
-            $deductions[] = [
-                'batch_id'       => null,
-                'batch_number'   => 'DIRECT',
-                'quantity'       => $quantity,
-                'supplier_price' => $supplierPrice,
-                'selling_price'  => $sellingPrice,
-                'cost'           => $supplierPrice * $quantity,
-            ];
-
-            $totalCost = $supplierPrice * $quantity;
-
-            Log::info("Direct stock deduction (no active batches) for Product #{$productId}", [
-                'quantity'      => $quantity,
-                'selling_price' => $sellingPrice,
-                'remaining'     => $totalAvailableStock - $quantity,
-            ]);
-
-            return [
-                'success'      => true,
-                'deductions'   => $deductions,
-                'total_cost'   => $totalCost,
-                'average_cost' => $quantity > 0 ? $totalCost / $quantity : 0,
-                'source'       => 'direct', // indicates no-batch path was used
-            ];
-        }
-
-        // ----------------------------------------------------------------
-        // NORMAL PATH: FIFO batch deduction
-        // ----------------------------------------------------------------
-
-        // Check if we have enough total stock across batches
-        $totalAvailable = $batches->sum('remaining_quantity');
-        if ($totalAvailable < $quantity) {
-            throw new \Exception("Insufficient stock. Required: {$quantity}, Available: {$totalAvailable}");
-        }
-
-        $remainingQty  = $quantity;
+        $remainingToDeductFromAccounting = $quantity;
         $batchDepleted = false;
 
+        // 3. Deduct from batches first (FIFO Accounting)
         foreach ($batches as $batch) {
-            if ($remainingQty <= 0) break;
+            if ($remainingToDeductFromAccounting <= 0) break;
 
-            $deductQty = min($remainingQty, $batch->remaining_quantity);
-
-            // Check if this batch will be depleted
-            $willBeDepleted = ($deductQty == $batch->remaining_quantity);
-
-            // Deduct from batch
+            $deductQty = min($remainingToDeductFromAccounting, $batch->remaining_quantity);
             $batch->deduct($deductQty);
 
-            if ($willBeDepleted) {
+            if ($batch->remaining_quantity == 0) {
                 $batchDepleted = true;
             }
 
@@ -123,20 +53,51 @@ class FIFOStockService
                 'cost'           => $batch->supplier_price * $deductQty,
             ];
 
-            $totalCost    += $batch->supplier_price * $deductQty;
-            $remainingQty -= $deductQty;
+            $totalCost += (float) $batch->supplier_price * $deductQty;
+            $remainingToDeductFromAccounting -= $deductQty;
         }
 
-        // Update product stock totals
-        $stock = ProductStock::where('product_id', $productId)->first();
-        if ($stock) {
-            $stock->available_stock -= $quantity;
-            $stock->sold_count      += $quantity;
-            $stock->total_stock      = $stock->available_stock + $stock->damage_stock;
-            $stock->save();
+        // 4. Handle cases where ProductStock > Batches (Direct Deduction for out-of-sync stock)
+        if ($remainingToDeductFromAccounting > 0) {
+            $productPrice = ProductPrice::where('product_id', $productId)->first();
+            $sellingPrice = $productPrice ? (float) $productPrice->selling_price : 0;
+            $supplierPrice = $productPrice ? (float) $productPrice->supplier_price : 0;
+
+            $deductions[] = [
+                'batch_id'       => null,
+                'batch_number'   => 'DIRECT',
+                'quantity'       => $remainingToDeductFromAccounting,
+                'supplier_price' => $supplierPrice,
+                'selling_price'  => $sellingPrice,
+                'cost'           => $supplierPrice * $remainingToDeductFromAccounting,
+            ];
+
+            $totalCost += $supplierPrice * $remainingToDeductFromAccounting;
+            
+            Log::info("Mixed stock deduction for Product #{$productId}. Direct part: {$remainingToDeductFromAccounting}");
         }
 
-        // If any batch was depleted, update the main product price to the next batch
+        // 5. Update ProductStock table rows (FIFO across rows if multiple)
+        $stockRows = ProductStock::where('product_id', $productId)
+            ->where('available_stock', '>', 0)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $remainingToDeductFromRows = $quantity;
+        foreach ($stockRows as $row) {
+            if ($remainingToDeductFromRows <= 0) break;
+            
+            $deductFromRow = min($remainingToDeductFromRows, $row->available_stock);
+            
+            $row->available_stock -= $deductFromRow;
+            $row->sold_count      += $deductFromRow;
+            $row->total_stock      = $row->available_stock + $row->damage_stock;
+            $row->save();
+            
+            $remainingToDeductFromRows -= $deductFromRow;
+        }
+
+        // 6. Update main prices if any batch was emptied
         if ($batchDepleted) {
             self::updateMainPrices($productId);
         }
@@ -144,9 +105,9 @@ class FIFOStockService
         return [
             'success'      => true,
             'deductions'   => $deductions,
-            'total_cost'   => $totalCost,
-            'average_cost' => $quantity > 0 ? $totalCost / $quantity : 0,
-            'source'       => 'fifo',
+            'total_cost'   => (float) $totalCost,
+            'average_cost' => $quantity > 0 ? (float) ($totalCost / $quantity) : 0,
+            'source'       => count($batches) > 0 ? ($remainingToDeductFromAccounting > 0 ? 'mixed' : 'fifo') : 'direct',
         ];
     }
 

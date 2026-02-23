@@ -347,7 +347,7 @@
                             </tr>
                             <tr>
                                 <td><strong>Sale Type</strong></td>
-                                <td>Invoice</td>
+                                <td>{{ in_array($sale->sale_price_type ?? '', ['cash', 'cash_credit']) ? 'Cash Invoice' : 'Credit Invoice' }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Sale ID</strong></td>

@@ -560,7 +560,6 @@ class StaffQuotationSystem extends Component
             $quotation = Quotation::create([
                 'quotation_number' => Quotation::generateQuotationNumber(),
                 'customer_id' => $customer->id,
-                'customer_type' => $customer->type,
                 'customer_name' => $customer->name,
                 'customer_phone' => $customer->phone,
                 'customer_email' => $customer->email,
@@ -579,7 +578,6 @@ class StaffQuotationSystem extends Component
                 'terms_conditions' => $this->termsConditions,
                 'notes' => $this->notes,
                 'status' => 'draft',
-                'sale_type' => $this->salePriceType,
                 'created_by' => Auth::id(),
                 'user_id' => Auth::id(),
             ]);

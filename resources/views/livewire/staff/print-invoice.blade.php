@@ -75,7 +75,7 @@
 
 <body>
     <div class="header">
-        <h2>{{ $sale->sale_price_type === 'cash' ? 'CASH INVOICE' : 'CREDIT INVOICE' }}</h2>
+        <h2>{{ in_array($sale->sale_price_type ?? '', ['cash', 'cash_credit']) ? 'CASH INVOICE' : 'CREDIT INVOICE' }}</h2>
     </div>
 
     <table class="invoice-info">
@@ -88,7 +88,7 @@
             </td>
             <td class="invoice-details">
                 <strong>Invoice #:</strong> {{ $sale->invoice_number }}<br>
-                <strong>Sale Type:</strong> {{ $sale->sale_price_type === 'cash' ? 'Cash Invoice' : 'Credit Invoice' }}<br>
+                <strong>Sale Type:</strong> {{ in_array($sale->sale_price_type ?? '', ['cash', 'cash_credit']) ? 'Cash Invoice' : 'Credit Invoice' }}<br>
                 <strong>Date:</strong> {{ \Carbon\Carbon::parse($sale->created_at)->format('d M Y') }}<br>
                 <strong>Payment Status:</strong> {{ ucfirst($sale->payment_status) }}
             </td>

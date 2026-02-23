@@ -263,6 +263,7 @@
     <div wire:ignore.self class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-lg">
             <div class="modal-content" id="printableInvoice">
+                @if($selectedSale)
                 {{-- Screen Only Header (visible on screen, hidden on print) --}}
                 <div class="screen-only-header p-4">
                     <div class="d-flex align-items-center justify-content-between mb-3">
@@ -280,13 +281,12 @@
                         {{-- Right:  & Invoice --}}
                         <div class="text-end" style="flex: 0 0 150px;">
                             <h5 class="mb-0 fw-bold"></h5>
-                            <h6 class="mb-0 text-muted">{{ ($selectedSale->sale_price_type ?? '') === 'cash' ? 'CASH INVOICE' : 'CREDIT INVOICE' }}</h6>
+                            <h6 class="mb-0 text-muted">{{ ($selectedSale->sale_price_type ?? 'cash') === 'cash' ? 'CASH INVOICE' : 'CREDIT INVOICE' }}</h6>
                         </div>
                     </div>
                     <hr class="my-2" style="border-top: 2px solid #000;">
                 </div>
 
-                @if($selectedSale)
                 <div class="modal-body">
                     {{-- ==================== CUSTOMER + INVOICE INFO ==================== --}}
                     <div class="row mb-3">
@@ -312,7 +312,7 @@
                                  </tr>
                                  <tr>
                                      <td><strong>Sale Type</strong></td>
-                                     <td><span class="badge bg-primary">{{ ($selectedSale->sale_price_type ?? '') === 'cash' ? 'Cash Invoice' : 'Credit Invoice' }}</span></td>
+                                     <td><span class="badge bg-primary">{{ in_array($selectedSale->sale_price_type ?? '', ['cash', 'cash_credit']) ? 'Cash Invoice' : 'Credit Invoice' }}</span></td>
                                  </tr>
                             </table>
                         </div>
@@ -536,7 +536,7 @@
                         <div class="card">
                             <div class="card-body">
                                  <p><strong>Invoice:</strong> {{ $selectedSale->invoice_number }}</p>
-                                 <p><strong>Sale Type:</strong> {{ ($selectedSale->sale_price_type ?? '') === 'cash' ? 'Cash Invoice' : 'Credit Invoice' }}</p>
+                                 <p><strong>Sale Type:</strong> {{ in_array($selectedSale->sale_price_type ?? '', ['cash', 'cash_credit']) ? 'Cash Invoice' : 'Credit Invoice' }}</p>
                                  <p><strong>Customer:</strong> {{ $selectedSale->customer->name ?? 'Walk-in Customer' }}</p>
                                 <p><strong>Amount:</strong> Rs.{{ number_format($selectedSale->total_amount, 2) }}</p>
                                 <p><strong>Date:</strong> {{ $selectedSale->created_at->format('M d, Y') }}</p>

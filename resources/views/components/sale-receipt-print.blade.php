@@ -1,4 +1,4 @@
-<x-print-layout title="Sale Receipt - {{ $sale->invoice_number }}" :documentType="'INVOICE'">
+<x-print-layout title="Sale Receipt - {{ $sale->invoice_number }}" :documentType="in_array($sale->sale_price_type ?? '', ['cash', 'cash_credit']) ? 'CASH INVOICE' : 'CREDIT INVOICE'">
     <!-- Sale Receipt Content -->
 
     <!-- Customer & Sale Details -->
@@ -17,7 +17,7 @@
                 </tr>
                 <tr>
                     <td style="padding-right: 15px;"><strong>Sale Type</strong></td>
-                    <td>Invoice</td>
+                    <td>{{ in_array($sale->sale_price_type ?? '', ['cash', 'cash_credit']) ? 'Cash Invoice' : 'Credit Invoice' }}</td>
                 </tr>
                 <tr>
                     <td style="padding-right: 15px;"><strong>Sale ID</strong></td>

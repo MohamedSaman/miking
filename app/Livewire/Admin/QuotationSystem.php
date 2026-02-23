@@ -586,12 +586,10 @@ class QuotationSystem extends Component
             $quotation = Quotation::create([
                 'quotation_number' => Quotation::generateQuotationNumber(),
                 'customer_id' => $customer->id,
-                'customer_type' => $customer->type,
                 'customer_name' => $customer->name,
                 'customer_phone' => $customer->phone,
                 'customer_email' => $customer->email,
                 'customer_address' => $customer->address,
-                'sale_type' => $this->salePriceType,
                 'quotation_date' => now(),
                 'valid_until' => $this->validUntil,
                 'subtotal' => $this->subtotal,
