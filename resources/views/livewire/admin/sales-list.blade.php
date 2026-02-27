@@ -500,8 +500,9 @@
                             <p class="text-center" style="font-size: 11px;"><strong>Goods return will be accepted within 10 days only. Electrical and body parts non-returnable.</strong></p>
                         </div>
                     </div>
-                    @endif
-                    {{-- ==================== FOOTER BUTTONS ==================== --}}
+                </div>
+                @endif
+                {{-- ==================== FOOTER BUTTONS ==================== --}}
                     <div class="modal-footer bg-light justify-content-between">
                         <button type="button" class="btn btn-secondary" wire:click="closeModals">
                             <i class="bi bi-x-circle me-1"></i> Close
