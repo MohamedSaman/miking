@@ -91,9 +91,11 @@ class StaffSalary extends Component
                         : $userDetail->allowance;
                     
                     // Calculate allowance sum
-                    $allowance = is_array($allowanceData) 
-                        ? array_sum($allowanceData) 
-                        : (is_numeric($allowanceData) ? $allowanceData : 0);
+                    if (is_array($allowanceData)) {
+                        $allowance = array_sum(array_filter($allowanceData, fn($val) => is_numeric($val)));
+                    } else {
+                        $allowance = is_numeric($allowanceData) ? $allowanceData : 0;
+                    }
                 }
                 
                 // Calculate sales bonus for this month
