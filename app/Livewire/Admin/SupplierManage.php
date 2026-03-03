@@ -9,6 +9,7 @@ use Livewire\Component;
 use App\Models\ProductSupplier;
 use Livewire\WithPagination;
 use App\Livewire\Concerns\WithDynamicLayout;
+use Illuminate\Support\Facades\Auth;
 
 #[Title("Supplier Management")]
 class SupplierManage extends Component
@@ -26,11 +27,19 @@ class SupplierManage extends Component
     public $phone;
     public $status = 'active';
     public $notes;
-    
+
     public $showCreateModal = false;
     public $showEditModal = false;
     public $showViewModal = false;
     public $perPage= 10;
+
+    public function boot()
+    {
+        // Only admin can manage suppliers (inventory control)
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Only administrators can manage suppliers.');
+        }
+    }
 
     protected $rules = [
         'name' => 'required|string|max:255',
@@ -163,7 +172,7 @@ class SupplierManage extends Component
     public function confirmDelete($id)
     {
         $this->supplierId = $id;
-        
+
         $this->dispatch('swal:confirm', [
             'title' => 'Are you sure?',
             'text' => 'You won\'t be able to revert this!',

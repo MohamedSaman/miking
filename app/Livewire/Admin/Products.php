@@ -41,6 +41,8 @@ class Products extends Component
 
     public $search = '';
     public $stockFilter = 'all';
+    public $sortBy = 'code';
+    public $sortDirection = 'asc';
 
     // Create form fields
     public $code, $name, $model, $brand, $category, $image, $description, $barcode, $status, $supplier, $unit;
@@ -52,9 +54,9 @@ class Products extends Component
 
     // Edit form fields
     public $editId, $editCode, $editName, $editModel, $editBrand, $editCategory, $editImage, $existingImage,
-        $editDescription, $editBarcode, $editStatus, $editUnit, 
+        $editDescription, $editBarcode, $editStatus, $editUnit,
         $editCashCommission, $editCreditCommission,
-        $editSupplierPrice, $editSellingPrice, $editCashPrice, $editCreditPrice, 
+        $editSupplierPrice, $editSellingPrice, $editCashPrice, $editCreditPrice,
         $editCashCreditPrice, $editOpeningStockRate, $editDamageStock;
 
     // Stock Adjustment fields
@@ -74,6 +76,11 @@ class Products extends Component
 
     public function mount()
     {
+        // Only admin can access product management
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Only administrators can manage inventory.');
+        }
+
         $this->setDefaultIds();
         $this->setDefaultValues();
     }
@@ -168,6 +175,107 @@ class Products extends Component
         $this->cash_credit_price = 0;
     }
 
+    /**
+     * Sort products by column
+     */
+    public function sortProducts($column)
+    {
+        if ($this->sortBy === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDirection = 'asc';
+        }
+    }
+
+    /**
+     * Get sort column for query
+     */
+    private function getSortColumn()
+    {
+        $sortMap = [
+            'code' => 'product_details.code',
+            'name' => 'product_details.name',
+            'price' => 'product_prices.selling_price',
+            'stock' => 'product_stocks.available_stock',
+            'brand' => 'brand_lists.brand_name',
+            'category' => 'category_lists.category_name',
+        ];
+        
+        return $sortMap[$this->sortBy] ?? 'product_details.code';
+    }
+
+    /**
+     * Export products to Excel
+     */
+    public function exportExcel()
+    {
+        return Excel::download(
+            new \App\Exports\ProductsListExport($this->search, $this->stockFilter, $this->sortBy, $this->sortDirection),
+            'products_list_' . date('Y-m-d_His') . '.xlsx'
+        );
+    }
+
+    /**
+     * Export products to PDF
+     */
+    public function exportPdf()
+    {
+        $products = $this->getProductsForExport();
+        
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.products-pdf', [
+            'products' => $products,
+            'title' => 'Products List',
+            'date' => now()->format('d M Y, h:i A'),
+            'stockFilter' => $this->stockFilter,
+        ]);
+        
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->output();
+        }, 'products_list_' . date('Y-m-d_His') . '.pdf');
+    }
+
+    /**
+     * Get products for export (without pagination)
+     */
+    private function getProductsForExport()
+    {
+        return ProductDetail::join('product_prices', 'product_details.id', '=', 'product_prices.product_id')
+            ->join('product_stocks', 'product_details.id', '=', 'product_stocks.product_id')
+            ->leftJoin('brand_lists', 'product_details.brand_id', '=', 'brand_lists.id')
+            ->leftJoin('category_lists', 'product_details.category_id', '=', 'category_lists.id')
+            ->select(
+                'product_details.code',
+                'product_details.name as product_name',
+                'product_details.model',
+                'brand_lists.brand_name as brand',
+                'category_lists.category_name as category',
+                'product_prices.supplier_price',
+                'product_prices.selling_price',
+                'product_prices.cash_price',
+                'product_prices.credit_price',
+                'product_stocks.available_stock',
+                'product_stocks.damage_stock'
+            )
+            ->where(function ($query) {
+                $query->where('product_details.name', 'like', '%' . $this->search . '%')
+                    ->orWhere('product_details.code', 'like', '%' . $this->search . '%')
+                    ->orWhere('product_details.model', 'like', '%' . $this->search . '%');
+            })
+            ->when($this->stockFilter === 'low', function ($query) {
+                $query->where('product_stocks.available_stock', '>', 0)
+                      ->where('product_stocks.available_stock', '<', 5);
+            })
+            ->when($this->stockFilter === 'out', function ($query) {
+                $query->where('product_stocks.available_stock', '=', 0);
+            })
+            ->when($this->stockFilter === 'in_stock', function ($query) {
+                $query->where('product_stocks.available_stock', '>', 0);
+            })
+            ->orderBy($this->getSortColumn(), $this->sortDirection)
+            ->get();
+    }
+
     public function render()
     {
         $brands = BrandList::orderBy('brand_name')->get();
@@ -218,8 +326,7 @@ class Products extends Component
                 ->when($this->stockFilter === 'in_stock', function ($query) {
                     $query->havingRaw('available_stock > 0');
                 })
-                ->orderByRaw("CASE WHEN product_details.code LIKE 'G-%' THEN 1 ELSE 0 END ASC")
-                ->orderBy('product_details.code', 'asc')
+                ->orderBy($this->getSortColumn(), $this->sortDirection)
                 ->paginate($this->perPage);
         } else {
             // Admin sees all products
@@ -264,8 +371,7 @@ class Products extends Component
                 ->when($this->stockFilter === 'in_stock', function ($query) {
                     $query->where('product_stocks.available_stock', '>', 0);
                 })
-                ->orderByRaw("CASE WHEN product_details.code LIKE 'G-%' THEN 1 ELSE 0 END ASC")
-                ->orderBy('product_details.code', 'asc')
+                ->orderBy($this->getSortColumn(), $this->sortDirection)
                 ->paginate($this->perPage);
         }
 

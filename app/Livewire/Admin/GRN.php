@@ -15,12 +15,20 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use App\Livewire\Concerns\WithDynamicLayout;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\Auth;
 
 #[Title("Goods Receive Note")]
 class GRN extends Component
 {
     use WithDynamicLayout, WithPagination;
 
+    public function boot()
+    {
+        // Only admin can access GRN (inventory management)
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Only administrators can manage inventory.');
+        }
+    }
 
     public $selectedPO = null;
     public $grnItems = [];

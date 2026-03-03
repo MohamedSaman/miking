@@ -10,6 +10,7 @@ use App\Models\ProductStock;
 use App\Models\ProductDetail;
 use App\Livewire\Concerns\WithDynamicLayout;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\Auth;
 
 #[Title('Product Stock Details')]
 class ProductStockDetails extends Component
@@ -17,6 +18,14 @@ class ProductStockDetails extends Component
     use WithDynamicLayout , WithPagination;
     public $search;
     public $perPage = 10;
+
+    public function boot()
+    {
+        // Only admin can view main inventory stock details
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Only administrators can access inventory details.');
+        }
+    }
 
     public function render()
     {
@@ -33,7 +42,7 @@ class ProductStockDetails extends Component
             ->where(function ($query) {
                 $query->where('product_details.name', 'like', '%' . $this->search . '%')
                     ->orWhere('product_details.code', 'like', '%' . $this->search . '%');
-                    
+
             })
             ->orderby('product_stocks.available_stock', 'desc')
             ->paginate($this->perPage);
@@ -71,7 +80,7 @@ class ProductStockDetails extends Component
             return;
         }
 
-        
+
         // Generate filename with date
         $fileName = 'Product_stock_' . date('Y-m-d_His') . '.csv';
 

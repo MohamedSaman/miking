@@ -57,6 +57,11 @@ class StaffProductAllocation extends Component
 
     public function mount()
     {
+        // Only admin can allocate stock to staff
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Only administrators can allocate inventory.');
+        }
+
         $this->loadStaff();
     }
 
@@ -332,7 +337,7 @@ class StaffProductAllocation extends Component
                     // Update existing allocation - add to quantity
                     $newQuantity = $existingAllocation->quantity + $item['quantity'];
                     $newSubtotal = $newQuantity * $item['unit_price'];
-                    
+
                     if ($item['discount_type'] === 'percentage') {
                         $newTotalDiscount = ($newSubtotal * $item['discount']) / 100;
                     } else {
@@ -428,7 +433,7 @@ class StaffProductAllocation extends Component
 
             if ($skipCount > 0) {
                 $message .= "⚠️ {$skipCount} product(s) skipped. ";
-                
+
                 // Add first few errors for debugging
                 if (!empty($errors)) {
                     $message .= "<br><br><strong>Error details:</strong><br>";
@@ -451,7 +456,7 @@ class StaffProductAllocation extends Component
 
             // Close modal and show appropriate message
             $this->js("$('#importAllocationModal').modal('hide')");
-            
+
             if ($skipCount > 0 && $successCount == 0) {
                 // All failed
                 $this->js("Swal.fire({

@@ -7,6 +7,7 @@ use App\Models\StaffProduct;
 use App\Models\ProductStock;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 use App\Livewire\Concerns\WithDynamicLayout;
@@ -27,6 +28,11 @@ class StockReentry extends Component
 
     public function mount($staffId)
     {
+        // Only admin can manage stock reentry
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Only administrators can manage inventory.');
+        }
+
         $this->staffId = $staffId;
         $this->staff = User::findOrFail($staffId);
     }

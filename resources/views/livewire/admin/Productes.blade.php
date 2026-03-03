@@ -521,31 +521,64 @@
             <div class="row g-4">
                 <div class="col-12">
                     <div class="card h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <div>
-                                <h5 class="fw-bold text-dark mb-1">
-                                    <i class="bi bi-list-ul text-primary me-2"></i> Products List
-                                </h5>
-                                <p class="text-muted small mb-0">View and manage all products in your inventory</p>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <label class="text-sm text-muted fw-medium">Stock</label>
-                                <select wire:model.live="stockFilter" class="form-select form-select-sm" style="width: 160px;">
-                                    <option value="all">All</option>
-                                    <option value="low">Low Stock (&lt; 5)</option>
-                                    <option value="out">Out of Stock</option>
-                                    <option value="in_stock">Available Stock</option>
-                                </select>
-                                <label class="text-sm text-muted fw-medium ms-2">Show</label>
-                                <select wire:model.live="perPage" class="form-select form-select-sm" style="width: 80px;">
-                                    <option value="10">10</option>
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                    <option value="200">200</option>
-                                    <option value="500">500</option>
-                                </select>
-                                <span class="text-sm text-muted">entries</span>
+                        <div class="card-header">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-1">
+                                        <i class="bi bi-list-ul text-primary me-2"></i> Products List
+                                    </h5>
+                                    <p class="text-muted small mb-0">View and manage all products in your inventory</p>
+                                </div>
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <!-- Sort By -->
+                                    <label class="text-sm text-muted fw-medium">Sort</label>
+                                    <select wire:model.live="sortBy" class="form-select form-select-sm" style="width: 130px;">
+                                        <option value="code">Code</option>
+                                        <option value="name">Name</option>
+                                        <option value="price">Price</option>
+                                        <option value="stock">Stock</option>
+                                        <option value="brand">Brand</option>
+                                        <option value="category">Category</option>
+                                    </select>
+                                    <select wire:model.live="sortDirection" class="form-select form-select-sm" style="width: 90px;">
+                                        <option value="asc">A-Z / Low</option>
+                                        <option value="desc">Z-A / High</option>
+                                    </select>
+
+                                    <!-- Stock Filter -->
+                                    <label class="text-sm text-muted fw-medium ms-2">Stock</label>
+                                    <select wire:model.live="stockFilter" class="form-select form-select-sm" style="width: 140px;">
+                                        <option value="all">All</option>
+                                        <option value="low">Low Stock (&lt; 5)</option>
+                                        <option value="out">Out of Stock</option>
+                                        <option value="in_stock">Available Stock</option>
+                                    </select>
+                                    
+                                    <!-- Per Page -->
+                                    <label class="text-sm text-muted fw-medium ms-2">Show</label>
+                                    <select wire:model.live="perPage" class="form-select form-select-sm" style="width: 70px;">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                        <option value="200">200</option>
+                                        <option value="500">500</option>
+                                    </select>
+
+                                    <!-- Export Buttons -->
+                                    @if (!$isStaff)
+                                    <div class="btn-group ms-2">
+                                        <button wire:click="exportExcel" class="btn btn-sm btn-outline-success" title="Export to Excel">
+                                            <i class="bi bi-file-earmark-excel"></i>
+                                            <span class="d-none d-xl-inline ms-1">Excel</span>
+                                        </button>
+                                        <button wire:click="exportPdf" class="btn btn-sm btn-outline-danger" title="Export to PDF">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                            <span class="d-none d-xl-inline ms-1">PDF</span>
+                                        </button>
+                                    </div>
+                                    @endif
+                                </div>
                             </div>
                         </div>
 
@@ -668,13 +701,21 @@
 
                                                         <!-- History Button -->
                                                         <li>
-                                                            <a class="dropdown-item"
-                                                                href="{{ route('test.product-history', $product->id) }}"
-                                                                target="_blank">
-                                                                <i class="bi bi-clock-history text-info me-2"></i>
-                                                                View History
-                                                                <i class="bi bi-box-arrow-up-right ms-2 small"></i>
-                                                            </a>
+                                                            <button class="dropdown-item"
+                                                                wire:click="openProductHistory({{ $product->id }})"
+                                                                wire:loading.attr="disabled"
+                                                                wire:target="openProductHistory({{ $product->id }})">
+                                                                <span wire:loading
+                                                                    wire:target="openProductHistory({{ $product->id }})">
+                                                                    <i class="spinner-border spinner-border-sm me-2"></i>
+                                                                    Loading...
+                                                                </span>
+                                                                <span wire:loading.remove
+                                                                    wire:target="openProductHistory({{ $product->id }})">
+                                                                    <i class="bi bi-clock-history text-info me-2"></i>
+                                                                    View History
+                                                                </span>
+                                                            </button>
                                                         </li>
 
                                                         <li>
@@ -2164,8 +2205,9 @@
         </div>
 
         <!-- ✅ Product History Modal (single copy only) -->
-        <div wire:ignore.self class="modal fade" id="productHistoryModal" tabindex="-1"
-            aria-labelledby="productHistoryModalLabel" aria-hidden="true">
+        <style>[x-cloak] { display: none !important; }</style>
+        <div class="modal fade" id="productHistoryModal" tabindex="-1"
+            aria-labelledby="productHistoryModalLabel" aria-hidden="true" data-bs-backdrop="static">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow-lg">
 
@@ -2183,47 +2225,56 @@
                     <div class="modal-body p-0">
                         @if($historyProductId)
 
-                        <!-- Tabs -->
-                        <div class="border-bottom bg-light">
-                            <ul class="nav nav-tabs border-0 px-3" role="tablist">
-                                <li class="nav-item">
-                                    <button class="nav-link {{ $historyTab === 'sales' ? 'active' : '' }}"
-                                        wire:click="switchHistoryTab('sales')" type="button">
-                                        Sales <span class="badge bg-primary ms-1">{{ count($salesHistory ?? []) }}</span>
-                                    </button>
-                                </li>
-                                <li class="nav-item">
-                                    <button class="nav-link {{ $historyTab === 'purchases' ? 'active' : '' }}"
-                                        wire:click="switchHistoryTab('purchases')" type="button">
-                                        Purchases <span class="badge bg-success ms-1">{{ count($purchasesHistory ?? []) }}</span>
-                                    </button>
-                                </li>
-                                <li class="nav-item">
-                                    <button class="nav-link {{ $historyTab === 'returns' ? 'active' : '' }}"
-                                        wire:click="switchHistoryTab('returns')" type="button">
-                                        Returns <span class="badge bg-warning ms-1">{{ count($returnsHistory ?? []) }}</span>
-                                    </button>
-                                </li>
-                                <li class="nav-item">
-                                    <button class="nav-link {{ $historyTab === 'quotations' ? 'active' : '' }}"
-                                        wire:click="switchHistoryTab('quotations')" type="button">
-                                        Quotations <span class="badge bg-info ms-1">{{ count($quotationsHistory ?? []) }}</span>
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
+                        <!-- Tabs with Alpine.js for reliable switching -->
+                        <div x-data="{ activeTab: 'sales' }">
+                            <div class="border-bottom bg-light">
+                                <ul class="nav nav-tabs border-0 px-3" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" 
+                                            :class="activeTab === 'sales' ? 'active bg-primary text-white' : 'text-dark'" 
+                                            @click="activeTab = 'sales'" type="button">
+                                            Sales <span class="badge ms-1" :class="activeTab === 'sales' ? 'bg-white text-primary' : 'bg-primary'">{{ count($salesHistory ?? []) }}</span>
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" 
+                                            :class="activeTab === 'purchases' ? 'active bg-success text-white' : 'text-dark'" 
+                                            @click="activeTab = 'purchases'" type="button">
+                                            Purchases <span class="badge ms-1" :class="activeTab === 'purchases' ? 'bg-white text-success' : 'bg-success'">{{ count($purchasesHistory ?? []) }}</span>
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" 
+                                            :class="activeTab === 'returns' ? 'active bg-warning text-dark' : 'text-dark'" 
+                                            @click="activeTab = 'returns'" type="button">
+                                            Returns <span class="badge ms-1" :class="activeTab === 'returns' ? 'bg-dark text-warning' : 'bg-warning text-dark'">{{ count($returnsHistory ?? []) }}</span>
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" 
+                                            :class="activeTab === 'quotations' ? 'active bg-info text-white' : 'text-dark'" 
+                                            @click="activeTab = 'quotations'" type="button">
+                                            Quotations <span class="badge ms-1" :class="activeTab === 'quotations' ? 'bg-white text-info' : 'bg-info'">{{ count($quotationsHistory ?? []) }}</span>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
 
-                        <!-- Tab Content -->
-                        <div class="tab-content p-4" wire:key="tab-{{ $historyTab }}" style="max-height: 500px; overflow-y: auto;">
-                            @if($historyTab === 'sales')
-                            @include('livewire.admin.partials.sales-history')
-                            @elseif($historyTab === 'purchases')
-                            @include('livewire.admin.partials.purchases-history')
-                            @elseif($historyTab === 'returns')
-                            @include('livewire.admin.partials.returns-history')
-                            @elseif($historyTab === 'quotations')
-                            @include('livewire.admin.partials.quotations-history')
-                            @endif
+                            <!-- Tab Content -->
+                            <div class="p-4" style="max-height: 500px; overflow-y: auto;">
+                                <div x-show="activeTab === 'sales'" x-cloak>
+                                    @include('livewire.admin.partials.sales-history')
+                                </div>
+                                <div x-show="activeTab === 'purchases'" x-cloak>
+                                    @include('livewire.admin.partials.purchases-history')
+                                </div>
+                                <div x-show="activeTab === 'returns'" x-cloak>
+                                    @include('livewire.admin.partials.returns-history')
+                                </div>
+                                <div x-show="activeTab === 'quotations'" x-cloak>
+                                    @include('livewire.admin.partials.quotations-history')
+                                </div>
+                            </div>
                         </div>
 
                         @else
@@ -2340,12 +2391,37 @@
             if (historyModal) {
                 historyModal.addEventListener('shown.bs.modal', function() {
                     console.log('📊 Product History Modal is now visible');
+                    // Initialize Bootstrap tabs when modal is shown
+                    initializeHistoryTabs();
                 });
 
                 historyModal.addEventListener('hidden.bs.modal', function() {
                     console.log('🔒 Product History Modal closed');
                 });
             }
+
+            // Function to initialize Bootstrap tabs
+            function initializeHistoryTabs() {
+                const tabList = document.querySelectorAll('#historyTabs button[data-bs-toggle="tab"]');
+                tabList.forEach(tabEl => {
+                    // Ensure Bootstrap tab events work
+                    tabEl.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        const tabTrigger = new bootstrap.Tab(this);
+                        tabTrigger.show();
+                    });
+                });
+                console.log('✅ History tabs initialized');
+            }
+
+            // Reinitialize tabs when Livewire updates the component
+            Livewire.hook('morph.updated', ({ el }) => {
+                if (el.id === 'productHistoryModal' || el.closest('#productHistoryModal')) {
+                    setTimeout(() => {
+                        initializeHistoryTabs();
+                    }, 50);
+                }
+            });
 
             // Global error handler
             window.addEventListener('error', function(event) {

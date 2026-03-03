@@ -74,7 +74,7 @@ class SalesSystem extends Component
     public function mount($saleId = null)
     {
         $this->loadCustomers();
-        
+
         if ($saleId) {
             $this->loadSaleForEditing($saleId);
         } else {
@@ -85,7 +85,7 @@ class SalesSystem extends Component
     public function loadSaleForEditing($saleId)
     {
         $sale = Sale::with(['items.product.stock', 'items.product.price', 'customer'])->find($saleId);
-        
+
         if (!$sale) {
             $this->js("Swal.fire('error', 'Sale not found!', 'error')");
             $this->setDefaultCustomer();
@@ -248,7 +248,7 @@ class SalesSystem extends Component
     {
         foreach ($this->cart as $index => $item) {
             $price = 0;
-            
+
             switch ($value) {
                 case 'cash':
                     $price = $item['cash_price'] ?? $item['price'];
@@ -262,7 +262,7 @@ class SalesSystem extends Component
                 default:
                     $price = $item['cash_price'] ?? $item['price'];
             }
-            
+
             $this->cart[$index]['price'] = $price;
             $this->cart[$index]['total'] = ($price - $this->cart[$index]['discount']) * $this->cart[$index]['quantity'];
         }
@@ -448,13 +448,13 @@ class SalesSystem extends Component
         } else {
             // Get product price details
             $productDetail = ProductDetail::with('price')->find($product['id']);
-            
+
             // Determine which price to use based on salePriceType
             $finalPrice = $product['price']; // default
             $cashPrice = $productDetail->price->cash_price ?? $product['price'];
             $creditPrice = $productDetail->price->credit_price ?? $product['price'];
             $cashCreditPrice = $productDetail->price->cash_credit_price ?? $cashPrice;
-            
+
             switch ($this->salePriceType) {
                 case 'cash':
                     $finalPrice = $cashPrice;
@@ -665,39 +665,80 @@ class SalesSystem extends Component
                 'sale_price_type' => $this->salePriceType,
             ]);
 
-            // Create sale items and update stock using FIFO
+            // Create sale items and update stock
             foreach ($this->cart as $item) {
-                // Update product stock using FIFO method
                 try {
-                    $fifoResult = FIFOStockService::deductStock($item['id'], $item['quantity']);
+                    if ($this->isStaff()) {
+                        // Staff: deduct from their allocated StaffProduct instead of main inventory
+                        $staffProduct = \App\Models\StaffProduct::where('staff_id', auth()->id())
+                            ->where('product_id', $item['id'])
+                            ->first();
 
-                    // Create sale items using the actual cart price (what was charged to the customer)
-                    // $item['price'] = the price shown/entered in the sales UI
-                    // $deduction['selling_price'] = the batch reference price (used for FIFO cost tracking only)
-                    foreach ($fifoResult['deductions'] as $deduction) {
+                        if (!$staffProduct) {
+                            throw new \Exception("Product not allocated to staff.");
+                        }
+
+                        $availableQty = $staffProduct->quantity - $staffProduct->sold_quantity;
+                        if ($availableQty < $item['quantity']) {
+                            throw new \Exception("Insufficient allocated stock. Required: {$item['quantity']}, Available: {$availableQty}");
+                        }
+
+                        // Update staff product sold quantity
+                        $staffProduct->sold_quantity += $item['quantity'];
+                        $staffProduct->sold_value += ($item['price'] - $item['discount']) * $item['quantity'];
+                        $staffProduct->save();
+
+                        // Create single sale item for staff (no FIFO batching needed)
                         SaleItem::create([
                             'sale_id'          => $sale->id,
                             'product_id'       => $item['id'],
                             'product_code'     => $item['code'],
                             'product_name'     => $item['name'],
                             'product_model'    => $item['model'],
-                            'quantity'         => $deduction['quantity'],
-                            'unit_price'       => $item['price'], // Actual sale price from the cart UI
+                            'quantity'         => $item['quantity'],
+                            'unit_price'       => $item['price'],
                             'discount_per_unit'=> $item['discount'],
-                            'total_discount'   => $item['discount'] * $deduction['quantity'],
-                            'total'            => ($item['price'] - $item['discount']) * $deduction['quantity']
+                            'total_discount'   => $item['discount'] * $item['quantity'],
+                            'total'            => ($item['price'] - $item['discount']) * $item['quantity']
+                        ]);
+
+                        Log::info("Staff Sale Stock Deduction for Product {$item['id']}", [
+                            'staff_id' => auth()->id(),
+                            'quantity' => $item['quantity'],
+                            'remaining_allocated' => $staffProduct->quantity - $staffProduct->sold_quantity
+                        ]);
+                    } else {
+                        // Admin: use FIFO method to deduct from main inventory
+                        $fifoResult = FIFOStockService::deductStock($item['id'], $item['quantity']);
+
+                        // Create sale items using the actual cart price (what was charged to the customer)
+                        // $item['price'] = the price shown/entered in the sales UI
+                        // $deduction['selling_price'] = the batch reference price (used for FIFO cost tracking only)
+                        foreach ($fifoResult['deductions'] as $deduction) {
+                            SaleItem::create([
+                                'sale_id'          => $sale->id,
+                                'product_id'       => $item['id'],
+                                'product_code'     => $item['code'],
+                                'product_name'     => $item['name'],
+                                'product_model'    => $item['model'],
+                                'quantity'         => $deduction['quantity'],
+                                'unit_price'       => $item['price'], // Actual sale price from the cart UI
+                                'discount_per_unit'=> $item['discount'],
+                                'total_discount'   => $item['discount'] * $deduction['quantity'],
+                                'total'            => ($item['price'] - $item['discount']) * $deduction['quantity']
+                            ]);
+                        }
+
+                        // Log FIFO deduction details
+                        Log::info("FIFO Stock Deduction for Product {$item['id']}", [
+                            'quantity' => $item['quantity'],
+                            'batches_used' => count($fifoResult['deductions']),
+                            'average_cost' => $fifoResult['average_cost'],
+                            'deductions' => $fifoResult['deductions']
                         ]);
                     }
-
-                    // Log FIFO deduction details
-                    Log::info("FIFO Stock Deduction for Product {$item['id']}", [
-                        'quantity' => $item['quantity'],
-                        'batches_used' => count($fifoResult['deductions']),
-                        'average_cost' => $fifoResult['average_cost'],
-                        'deductions' => $fifoResult['deductions']
-                    ]);
                 } catch (\Exception $e) {
-                    // If FIFO fails, throw exception to rollback transaction
+                    // If stock deduction fails, throw exception to rollback transaction
                     throw new \Exception("Failed to deduct stock for {$item['name']}: " . $e->getMessage());
                 }
             }
@@ -750,13 +791,26 @@ class SalesSystem extends Component
 
             // 1. Revert stock
             foreach ($sale->items as $item) {
-                $productStock = \App\Models\ProductStock::where('product_id', $item->product_id)->first();
-                if ($productStock) {
-                    $productStock->available_stock += $item->quantity;
-                    if ($productStock->sold_count >= $item->quantity) {
-                        $productStock->sold_count -= $item->quantity;
+                if ($this->isStaff()) {
+                    // Staff: revert to StaffProduct allocation
+                    $staffProduct = \App\Models\StaffProduct::where('staff_id', auth()->id())
+                        ->where('product_id', $item->product_id)
+                        ->first();
+                    if ($staffProduct) {
+                        $staffProduct->sold_quantity -= $item->quantity;
+                        $staffProduct->sold_value -= $item->total;
+                        $staffProduct->save();
                     }
-                    $productStock->save();
+                } else {
+                    // Admin: revert to main inventory
+                    $productStock = \App\Models\ProductStock::where('product_id', $item->product_id)->first();
+                    if ($productStock) {
+                        $productStock->available_stock += $item->quantity;
+                        if ($productStock->sold_count >= $item->quantity) {
+                            $productStock->sold_count -= $item->quantity;
+                        }
+                        $productStock->save();
+                    }
                 }
             }
 
@@ -766,7 +820,7 @@ class SalesSystem extends Component
 
             // 3. Update sale header
             $customer = $this->selectedCustomer ?: Customer::find($this->customerId);
-            
+
             // Calculate new totals and due amount based on existing payments
             $totalPayments = $sale->payments()->where('status', '!=', 'rejected')->sum('amount');
             $newDueAmount = max(0, $this->grandTotal - $totalPayments);
@@ -785,20 +839,54 @@ class SalesSystem extends Component
 
             // 4. Create new items and deduct stock
             foreach ($this->cart as $item) {
-                $fifoResult = FIFOStockService::deductStock($item['id'], $item['quantity']);
-                foreach ($fifoResult['deductions'] as $deduction) {
+                if ($this->isStaff()) {
+                    // Staff: deduct from their allocated StaffProduct
+                    $staffProduct = \App\Models\StaffProduct::where('staff_id', auth()->id())
+                        ->where('product_id', $item['id'])
+                        ->first();
+
+                    if (!$staffProduct) {
+                        throw new \Exception("Product not allocated to staff.");
+                    }
+
+                    $availableQty = $staffProduct->quantity - $staffProduct->sold_quantity;
+                    if ($availableQty < $item['quantity']) {
+                        throw new \Exception("Insufficient allocated stock. Required: {$item['quantity']}, Available: {$availableQty}");
+                    }
+
+                    $staffProduct->sold_quantity += $item['quantity'];
+                    $staffProduct->sold_value += ($item['price'] - $item['discount']) * $item['quantity'];
+                    $staffProduct->save();
+
                     SaleItem::create([
                         'sale_id'          => $sale->id,
                         'product_id'       => $item['id'],
                         'product_code'     => $item['code'],
                         'product_name'     => $item['name'],
                         'product_model'    => $item['model'],
-                        'quantity'         => $deduction['quantity'],
+                        'quantity'         => $item['quantity'],
                         'unit_price'       => $item['price'],
                         'discount_per_unit'=> $item['discount'],
-                        'total_discount'   => $item['discount'] * $deduction['quantity'],
-                        'total'            => ($item['price'] - $item['discount']) * $deduction['quantity']
+                        'total_discount'   => $item['discount'] * $item['quantity'],
+                        'total'            => ($item['price'] - $item['discount']) * $item['quantity']
                     ]);
+                } else {
+                    // Admin: use FIFO method
+                    $fifoResult = FIFOStockService::deductStock($item['id'], $item['quantity']);
+                    foreach ($fifoResult['deductions'] as $deduction) {
+                        SaleItem::create([
+                            'sale_id'          => $sale->id,
+                            'product_id'       => $item['id'],
+                            'product_code'     => $item['code'],
+                            'product_name'     => $item['name'],
+                            'product_model'    => $item['model'],
+                            'quantity'         => $deduction['quantity'],
+                            'unit_price'       => $item['price'],
+                            'discount_per_unit'=> $item['discount'],
+                            'total_discount'   => $item['discount'] * $deduction['quantity'],
+                            'total'            => ($item['price'] - $item['discount']) * $deduction['quantity']
+                        ]);
+                    }
                 }
             }
 

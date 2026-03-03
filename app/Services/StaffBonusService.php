@@ -22,7 +22,7 @@ class StaffBonusService
             // All sales are wholesale - only payment method matters
             $paymentMethod = $sale->payment_method ?? 'cash';
             $staffId = $sale->user_id;
-            
+
             // Check if the user is a staff member. Admins do not get bonuses.
             $user = \App\Models\User::find($staffId);
             if (!$user || $user->role !== 'staff') {
@@ -30,20 +30,25 @@ class StaffBonusService
                 return;
             }
 
+            // Normalize payment method for staff_bonuses table (enum: cash/credit)
+            // Cash-based: cash, bank_transfer, cheque → 'cash'
+            // Credit-based: credit → 'credit'
+            $normalizedPaymentMethod = in_array($paymentMethod, ['cash', 'bank_transfer', 'cheque']) ? 'cash' : 'credit';
+
             // Get all sale items
             $saleItems = $sale->items;
 
             foreach ($saleItems as $item) {
                 // Get product details with commission information
                 $product = ProductDetail::find($item->product_id);
-                
+
                 if (!$product) {
                     continue;
                 }
 
                 // Determine which commission field to use based on payment method
                 $commissionPerUnit = self::getCommissionAmount($product, $paymentMethod);
-                
+
                 // Calculate total commission for this item
                 $totalCommission = $commissionPerUnit * $item->quantity;
 
@@ -54,7 +59,7 @@ class StaffBonusService
                     'product_id' => $product->id,
                     'quantity' => $item->quantity,
                     'sale_type' => 'wholesale', // All sales are wholesale
-                    'payment_method' => $paymentMethod,
+                    'payment_method' => $normalizedPaymentMethod, // Use normalized value for enum
                     'bonus_per_unit' => $commissionPerUnit,
                     'total_bonus' => $totalCommission,
                 ]);
@@ -64,6 +69,7 @@ class StaffBonusService
                     'staff_id' => $staffId,
                     'product_id' => $product->id,
                     'payment_method' => $paymentMethod,
+                    'normalized_payment_method' => $normalizedPaymentMethod,
                     'commission_per_unit' => $commissionPerUnit,
                     'total_commission' => $totalCommission,
                 ]);
@@ -78,7 +84,7 @@ class StaffBonusService
      * Get the appropriate commission amount based on payment method
      * Cash-based: cash, bank_transfer, cheque → use cash_sale_commission
      * Credit-based: credit → use credit_sale_commission
-     * 
+     *
      * For sale_price_type = 'cash_credit', we use cash commission (same as cash)
      *
      * @param ProductDetail $product
@@ -90,7 +96,7 @@ class StaffBonusService
         // Cash-based payment methods: cash, bank_transfer, cheque
         // Note: cash_credit price type is treated as cash for commission purposes
         $cashBasedMethods = ['cash', 'bank_transfer', 'cheque'];
-        
+
         if (in_array($paymentMethod, $cashBasedMethods)) {
             return $product->cash_sale_commission ?? 0;
         } else {

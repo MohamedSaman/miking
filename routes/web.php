@@ -234,18 +234,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->name('admin.check-pos-session')
         ->middleware(['auth', 'role:admin']);
 
-    //!! Staff routes - All admin routes available to staff (permissions control access)
+    //!! Staff routes - Limited access (inventory control is admin-only)
     Route::middleware('role:staff')->prefix('staff')->name('staff.')->group(function () {
         // Dashboard
         Route::get('/dashboard', StaffDashboard::class)->name('dashboard');
 
-        // Products
-        Route::get('/Product-list', Products::class)->name('Productes');
-        Route::get('/add-Product-brand', ProductBrandlist::class)->name('Product-brand');
-        Route::get('/Product-category', ProductCategorylist::class)->name('Product-category');
-        Route::get('/Product-stock-details', ProductStockDetails::class)->name('Product-stock-details');
-
-        // Sales
+        // Sales (from allocated products only)
         Route::get('/billing', Billing::class)->name('billing');
         Route::get('/billing-page', BillingPage::class)->name('billing-page');
         Route::get('/sales-system/{saleId?}', SalesSystem::class)->name('sales-system');
@@ -258,14 +252,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/customer-sale-details', CustomerSaleDetails::class)->name('customer-sale-details');
         Route::get('/customer-sale-management', CustomerSaleManagement::class)->name('customer-sale-management');
 
-        // Stock/Inventory
+        // Stock/Inventory (view only - no add/remove)
         Route::get('/staff-stock-overview', StaffStockOverview::class)->name('staff-stock-overview');
-        Route::get('/staff-stock-details', StaffStockDetails::class)->name('staff-stock-details');
-
-        // Purchases
-        Route::get('/goods-receive-note', GRN::class)->name('grn');
-        Route::get('/purchase-order-list', PurchaseOrderList::class)->name('purchase-order-list');
-        Route::get('/supplier-management', SupplierManage::class)->name('supplier-management');
+        Route::get('/allocated-products', MyAllocatedProducts::class)->name('allocated-products');
 
         // Customers
         Route::get('/manage-customers', \App\Livewire\Staff\ManageCustomer::class)->name('manage-customers');
@@ -291,33 +280,15 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/add-supplier-receipt', AddSupplierReceipt::class)->name('add-supplier-receipt');
         Route::get('/list-supplier-receipt', ListSupplierReceipt::class)->name('list-supplier-receipt');
 
-        // Cheques/Banks
+        // Cheques/Banks (view only)
         Route::get('/cheque-list', ChequeList::class)->name('cheque-list');
-        Route::get('/return-cheque', ReturnCheque::class)->name('return-cheque');
 
-        // Finance
-        Route::get('/expenses', Expenses::class)->name('expenses');
-        Route::get('/income', Income::class)->name('income');
-        Route::get('/loan-management', LoanManage::class)->name('loan-management');
-
-        // HR/Staff Management
-        Route::get('/manage-staff', ManageStaff::class)->name('manage-staff');
-        Route::get('/staff-attendance', StaffAttendance::class)->name('staff-attendance');
-        Route::get('/staff-salary', StaffSallary::class)->name('staff-salary');
-        Route::get('/staff-due-details', StaffDueDetails::class)->name('staff-due-details');
-
-        // Reports & Analytics
+        // Reports & Analytics (with permission middleware)
         Route::get('/reports', Reports::class)->name('reports')->middleware('permission:menu_reports');
         Route::get('/analytics', Analytics::class)->name('analytics')->middleware('permission:menu_analytics');
 
-        // Settings
-        Route::get('/settings', Settings::class)->name('settings');
-
         // Print Sale
         Route::get('/print/sale/{id}', [PrintController::class, 'printSale'])->name('print.sale');
-
-        // Sales Distribution
-        Route::get('/sales-distribution', SalesDistributionManagement::class)->name('sales-distribution');
     });
 
     // !! Export routes (accessible to authenticated users)

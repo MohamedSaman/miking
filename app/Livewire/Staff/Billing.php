@@ -263,7 +263,7 @@ class Billing extends Component
     {
         foreach ($this->cart as $index => $item) {
             $price = 0;
-            
+
             switch ($value) {
                 case 'cash':
                     $price = $item['cash_price'] ?? $item['price'];
@@ -277,7 +277,7 @@ class Billing extends Component
                 default:
                     $price = $item['cash_price'] ?? $item['price'];
             }
-            
+
             $this->cart[$index]['price'] = $price;
             $this->cart[$index]['total'] = ($price - $this->cart[$index]['discount']) * $this->cart[$index]['quantity'];
         }
@@ -399,7 +399,7 @@ class Billing extends Component
             $this->customerId = $customer->id;
             $this->selectedCustomer = $customer;
             $this->customerSearch = $customer->name;
-            
+
             $this->closeCustomerModal();
 
             $this->js("Swal.fire('success', 'Customer created and selected successfully!', 'success')");
@@ -514,15 +514,15 @@ class Billing extends Component
             $staffProduct = StaffProduct::where('staff_id', Auth::id())
                 ->where('product_id', $product['id'])
                 ->first();
-            
+
             // Get product price details
             $productDetail = ProductDetail::with('price')->find($product['id']);
-            
+
             // Determine which price to use based on salePriceType
             $cashPrice = $productDetail->price->cash_price ?? $product['price'];
             $creditPrice = $productDetail->price->credit_price ?? $product['price'];
             $cashCreditPrice = $productDetail->price->cash_credit_price ?? $cashPrice;
-            
+
             switch ($this->salePriceType) {
                 case 'cash':
                     $finalPrice = $cashPrice;
@@ -771,11 +771,16 @@ class Billing extends Component
             // Create sale in sales table with 'staff' type
             // Determine payment status based on payment
             $paymentStatus = $this->paymentStatus; // Uses computed property: paid/partial/pending
-            
+
             // Check if cash payment with 0 amount (treat as credit)
             $isCashZeroForSale = ($this->paymentMethod === 'cash' && $this->cashAmount <= 0);
-            $salePaymentMethod = $isCashZeroForSale ? 'credit' : $this->paymentMethod;
-            
+
+            // Normalize payment method for sales table (enum: cash/credit)
+            // Cash-based payments: cash, bank_transfer, cheque → 'cash'
+            // Credit-based: credit → 'credit'
+            $salePaymentMethod = $isCashZeroForSale ? 'credit' :
+                (in_array($this->paymentMethod, ['cash', 'bank_transfer', 'cheque']) ? 'cash' : 'credit');
+
             $sale = Sale::create([
                 'sale_id' => Sale::generateSaleId(),
                 'invoice_number' => Sale::generateInvoiceNumber(),
@@ -814,7 +819,7 @@ class Billing extends Component
             // Create Payment Record ONLY for actual money payments (cash, cheque, bank_transfer)
             // Skip payment record for credit sales - they're just debt records, no money involved
             $isCashZero = ($this->paymentMethod === 'cash' && $this->cashAmount <= 0);
-            
+
             // Only create payment records for actual money transactions
             if ($this->totalPaidAmount > 0 && $this->paymentMethod !== 'credit' && !$isCashZero) {
                 $payment = Payment::create([
@@ -897,10 +902,10 @@ class Billing extends Component
 
             $this->lastSaleId = $sale->id;
             $this->createdSale = Sale::with(['customer', 'items', 'payments', 'user'])->find($sale->id);
-            
+
             // Calculate and record staff bonuses for this sale
             StaffBonusService::calculateBonusesForSale($this->createdSale);
-            
+
             $this->showSaleModal = true;
 
             // Clear cart and reset
@@ -932,7 +937,7 @@ class Billing extends Component
             $this->js("Swal.fire('error', 'Sale not found.', 'error')");
             return;
         }
-        
+
         $printUrl = route('staff.print.sale', $sale->id);
         $this->js("window.open('$printUrl', '_blank', 'width=800,height=600');");
     }
