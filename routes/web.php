@@ -56,6 +56,7 @@ use App\Livewire\Admin\SalesSystem;
 use App\Livewire\Admin\SalesList;
 use App\Livewire\Admin\PosSales;
 use App\Livewire\Admin\PurchaseOrderList;
+use App\Livewire\Admin\PurchaseHistory;
 use App\Livewire\Admin\StaffProductAllocation;
 use App\Models\Setting as ModelsSetting;
 use App\Livewire\Admin\Settings;
@@ -205,6 +206,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/settings', Settings::class)->name('settings');
         Route::get('/return-product', ReturnProduct::class)->name('return-product');
         Route::get('/purchase-order-list', PurchaseOrderList::class)->name('purchase-order-list');
+        Route::get('/purchase-history', PurchaseHistory::class)->name('purchase-history');
         Route::get('/return-list', ReturnList::class)->name('return-list');
         Route::get('/staff-allocation-list', StaffAllocationList::class)->name('staff-allocation-list');
         Route::get('/staff-return-requests/{staffId?}', StaffReturnRequests::class)->name('staff-return-requests');

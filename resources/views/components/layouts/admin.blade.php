@@ -874,6 +874,11 @@
                                     <i class="bi bi-boxes"></i><span>GRN</span>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2" href="{{ route('admin.purchase-history') }}">
+                                    <i class="bi bi-clock-history"></i> <span>Purchase History</span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </li>
