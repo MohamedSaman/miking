@@ -282,6 +282,17 @@ class Products extends Component
         $categories = CategoryList::orderBy('category_name')->get();
         $suppliers = ProductSupplier::orderBy('name')->get();
 
+        // For the import modal: real defaults and real sample products
+        $defaultBrand    = BrandList::find($this->defaultBrandId);
+        $defaultCategory = CategoryList::find($this->defaultCategoryId);
+        $defaultSupplier = ProductSupplier::find($this->defaultSupplierId);
+
+        $sampleProducts = ProductDetail::with(['price', 'stock'])
+            ->where('status', 'active')
+            ->orderBy('code')
+            ->limit(4)
+            ->get();
+
         // For staff, show only allocated products from staff_products table
         if ($this->isStaff()) {
             $products = StaffProduct::join('product_details', 'staff_products.product_id', '=', 'product_details.id')
@@ -376,11 +387,15 @@ class Products extends Component
         }
 
         return view('livewire.admin.Productes', [
-            'products' => $products,
-            'brands' => $brands,
-            'categories' => $categories,
-            'suppliers' => $suppliers,
-            'isStaff' => $this->isStaff(),
+            'products'        => $products,
+            'brands'          => $brands,
+            'categories'      => $categories,
+            'suppliers'       => $suppliers,
+            'isStaff'         => $this->isStaff(),
+            'defaultBrand'    => $defaultBrand,
+            'defaultCategory' => $defaultCategory,
+            'defaultSupplier' => $defaultSupplier,
+            'sampleProducts'  => $sampleProducts,
         ])->layout($this->layout);
     }
     public function updatedPerPage()

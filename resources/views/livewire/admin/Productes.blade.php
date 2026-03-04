@@ -1672,15 +1672,14 @@
                                 <li><strong>CODE</strong> - Product code (required, unique)</li>
                                 <li><strong>NAME</strong> - Product name (required)</li>
                             </ul>
-                            <p class="mb-2"><strong>Note:</strong> Other product fields will be set to default values:
-                            </p>
+                            <p class="mb-2"><strong>Note:</strong> Other product fields will be set to these system default values:</p>
                             <ul class="mb-0">
-                                <li>Brand: Default Brand</li>
-                                <li>Category: Default Category</li>
-                                <li>Supplier: Default Supplier</li>
-                                <li>Prices: Rs. 0.00</li>
-                                <li>Stock: 0</li>
-                                <li>Status: Active</li>
+                                <li>Brand: <strong>{{ $defaultBrand?->brand_name ?? 'Default Brand' }}</strong></li>
+                                <li>Category: <strong>{{ $defaultCategory?->category_name ?? 'Default Category' }}</strong></li>
+                                <li>Supplier: <strong>{{ $defaultSupplier?->name ?? 'Default Supplier' }}</strong></li>
+                                <li>Prices: <strong>Rs. 0.00</strong></li>
+                                <li>Stock: <strong>0</strong></li>
+                                <li>Status: <strong>Active</strong></li>
                             </ul>
                         </div>
 
@@ -1688,6 +1687,7 @@
                             <div class="card-header bg-light d-flex justify-content-between align-items-center">
                                 <h6 class="card-title mb-0">
                                     <i class="bi bi-table me-2"></i>Excel Format Example
+                                    <span class="text-muted fw-normal small ms-1">(based on your current products)</span>
                                 </h6>
                                 <button type="button" class="btn btn-sm btn-outline-success"
                                     wire:click="downloadTemplate">
@@ -1697,29 +1697,24 @@
                             <div class="card-body p-0">
                                 <div class="table-responsive">
                                     <table class="table table-bordered mb-0">
-                                        <thead class="table-light">
+                                        <thead class="table-primary">
                                             <tr>
                                                 <th>CODE</th>
                                                 <th>NAME</th>
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            @forelse ($sampleProducts as $sp)
                                             <tr>
-                                                <td>USN0001</td>
-                                                <td>Flasher Musical 12 V</td>
+                                                <td class="font-monospace">{{ $sp->code }}</td>
+                                                <td>{{ $sp->name }}</td>
                                             </tr>
+                                            @empty
                                             <tr>
-                                                <td>USN0002</td>
-                                                <td>Flasher Musical 24 V</td>
+                                                <td class="font-monospace text-muted">USN0001</td>
+                                                <td class="text-muted">Example Product Name</td>
                                             </tr>
-                                            <tr>
-                                                <td>USN0003</td>
-                                                <td>Flasher Electrical 12 V</td>
-                                            </tr>
-                                            <tr>
-                                                <td>USN0004</td>
-                                                <td>Flasher Electrical 24 V</td>
-                                            </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
                                 </div>
