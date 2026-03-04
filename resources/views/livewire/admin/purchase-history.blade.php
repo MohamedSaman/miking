@@ -155,8 +155,8 @@
         {{-- Main Table --}}
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                <div class="table-responsive" style="font-size: 0.9rem;">
+                    <table class="table table-hover align-middle mb-0" style="min-width: 1400px;">
                         <thead class="table-light">
                             <tr>
                                 <th class="ps-3">#</th>
@@ -203,19 +203,19 @@
 
                                     {{-- Ordered Qty --}}
                                     <td class="text-center">
-                                        <span class="badge bg-info bg-opacity-10 text-info fw-semibold px-2 py-1">
+                                        <span class="badge bg-info text-white fw-semibold px-2 py-1">
                                             {{ number_format($item->quantity) }}
                                         </span>
                                     </td>
 
                                     {{-- Received Qty --}}
-                                    <td class="text-center">
+                                    <td class="text-center fw-bold">
                                         @php
                                             $received = $item->received_quantity ?? 0;
                                             $ordered  = $item->quantity ?? 0;
                                             $badgeClass = $received >= $ordered ? 'bg-success' : ($received > 0 ? 'bg-warning' : 'bg-danger');
                                         @endphp
-                                        <span class="badge {{ $badgeClass }} bg-opacity-15 text-dark fw-semibold px-2 py-1">
+                                        <span class="badge {{ $badgeClass }} text-white fw-bold px-3 py-2" style="font-size: 1rem;">
                                             {{ number_format($received) }}
                                         </span>
                                     </td>
@@ -366,6 +366,7 @@
                                         <th class="text-end">Discount / Unit</th>
                                         <th class="text-end">Line Total</th>
                                         <th class="text-center">Sale Price Type</th>
+                                        <th class="text-center">Sold By</th>
                                         <th class="text-center">Payment Status</th>
                                         <th class="text-center">Sale Date</th>
                                     </tr>
@@ -384,7 +385,7 @@
 
                                             {{-- Qty Sold --}}
                                             <td class="text-center">
-                                                <span class="badge bg-success bg-opacity-10 text-success fw-semibold px-2 py-1">
+                                                <span class="badge bg-success text-white fw-semibold px-2 py-1">
                                                     {{ number_format($sale['quantity']) }}
                                                 </span>
                                             </td>
@@ -421,6 +422,11 @@
                                                 <span class="badge {{ $sptBg }}">{{ $sptLabel }}</span>
                                             </td>
 
+                                            {{-- Sold By --}}
+                                            <td class="text-center">
+                                                <span class="text-dark fw-semibold">{{ $sale['seller_name'] ?? '—' }}</span>
+                                            </td>
+
                                             {{-- Payment Status --}}
                                             <td class="text-center">
                                                 @php
@@ -444,12 +450,16 @@
                                 </tbody>
                                 <tfoot class="table-light fw-bold">
                                     <tr>
-                                        <td colspan="2" class="ps-3 text-end">Totals</td>
+                                        <td colspan="3" class="ps-3 text-end">Totals</td>
+                                        <td></td>
+                                        <td></td>
                                         <td class="text-center">{{ number_format($totalSoldQty) }}</td>
                                         <td></td>
                                         <td></td>
                                         <td class="text-end text-primary">Rs. {{ number_format($totalSaleValue, 2) }}</td>
-                                        <td colspan="3"></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td colspan="2"></td>
                                     </tr>
                                 </tfoot>
                             </table>

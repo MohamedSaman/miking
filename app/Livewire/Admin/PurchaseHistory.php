@@ -122,6 +122,7 @@ class PurchaseHistory extends Component
 
         $this->productSales = SaleItem::query()
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->leftJoin('users', 'sales.user_id', '=', 'users.id')
             ->where('sale_items.product_id', $productId)
             ->whereNotIn('sales.status', ['cancelled', 'rejected', 'refunded'])
             ->select(
@@ -129,6 +130,8 @@ class PurchaseHistory extends Component
                 'sales.created_at as sale_date',
                 'sales.payment_status',
                 'sales.sale_price_type',
+                'sales.user_id',
+                'users.name as seller_name',
                 'sale_items.quantity',
                 'sale_items.unit_price',
                 'sale_items.total',
