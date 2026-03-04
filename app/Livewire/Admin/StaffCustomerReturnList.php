@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use Livewire\Component;
 use App\Models\StaffReturn;
 use App\Models\ProductStock;
+use App\Models\StaffProduct;
 use App\Models\Sale;
 use Livewire\Attributes\Title;
 use Livewire\WithPagination;
@@ -49,16 +50,47 @@ class StaffCustomerReturnList extends Component
                 $this->selectedStaffReturn->status = 'approved';
                 $this->selectedStaffReturn->save();
 
-                // Restore stock - increase available stock
-                $productStock = ProductStock::where('product_id', $this->selectedStaffReturn->product_id)->first();
-                if ($productStock) {
-                    $productStock->available_stock += $this->selectedStaffReturn->quantity;
-                    if ($productStock->sold_count >= $this->selectedStaffReturn->quantity) {
-                        $productStock->sold_count -= $this->selectedStaffReturn->quantity;
+                $quantity   = $this->selectedStaffReturn->quantity;
+                $productId  = $this->selectedStaffReturn->product_id;
+                $staffId    = $this->selectedStaffReturn->staff_id;
+                $isDamaged  = (bool) $this->selectedStaffReturn->is_damaged;
+
+                if ($isDamaged) {
+                    // ─── Damaged return ─── goes to admin damage stock ───────────────
+                    $productStock = ProductStock::where('product_id', $productId)->first();
+                    if ($productStock) {
+                        $productStock->damage_stock  += $quantity;
+                        // total_stock stays the same; damaged items are already out of available
+                        $productStock->total_stock    = $productStock->available_stock + $productStock->damage_stock;
+                        $productStock->save();
+                    } else {
+                        ProductStock::create([
+                            'product_id'         => $productId,
+                            'available_stock'     => 0,
+                            'damage_stock'        => $quantity,
+                            'total_stock'         => $quantity,
+                            'sold_count'          => 0,
+                            'restocked_quantity'  => 0,
+                        ]);
                     }
-                    // Sync total stock
-                    $productStock->total_stock = $productStock->available_stock + $productStock->damage_stock;
-                    $productStock->save();
+                } else {
+                    // ─── Good return ─── goes back to staff's allocated stock ────────
+                    $staffProduct = StaffProduct::where('staff_id', $staffId)
+                        ->where('product_id', $productId)
+                        ->first();
+
+                    if ($staffProduct) {
+                        $staffProduct->sold_quantity = max(0, $staffProduct->sold_quantity - $quantity);
+                        $staffProduct->sold_value    = max(0, $staffProduct->sold_value - floatval($this->selectedStaffReturn->total_amount));
+
+                        // Update status
+                        if ($staffProduct->sold_quantity <= 0) {
+                            $staffProduct->status = 'assigned';
+                        } elseif ($staffProduct->sold_quantity < $staffProduct->quantity) {
+                            $staffProduct->status = 'partial';
+                        }
+                        $staffProduct->save();
+                    }
                 }
 
                 // Reduce due amount from sale if exists
@@ -66,13 +98,9 @@ class StaffCustomerReturnList extends Component
                     $sale = Sale::find($this->selectedStaffReturn->sale_id);
                     if ($sale && $sale->due_amount > 0) {
                         $returnAmount = floatval($this->selectedStaffReturn->total_amount);
-                        $currentDue = floatval($sale->due_amount);
-                        
-                        // Reduce due amount by return total
-                        $newDue = max(0, $currentDue - $returnAmount);
+                        $currentDue   = floatval($sale->due_amount);
+                        $newDue       = max(0, $currentDue - $returnAmount);
                         $sale->due_amount = $newDue;
-                        
-                        // Update payment status if due is cleared
                         if ($newDue == 0) {
                             $sale->payment_status = 'paid';
                         }
@@ -123,37 +151,64 @@ class StaffCustomerReturnList extends Component
     public function confirmDeleteStaffReturn()
     {
         try {
+            DB::beginTransaction();
+
             if ($this->selectedStaffReturn) {
-                // If it was approved, restore the stock changes
+                // If it was approved, we must undo the stock changes
                 if ($this->selectedStaffReturn->status === 'approved') {
-                    $productStock = ProductStock::where('product_id', $this->selectedStaffReturn->product_id)->first();
-                    if ($productStock) {
-                        $productStock->available_stock -= $this->selectedStaffReturn->quantity;
-                        if ($productStock->sold_count !== null) {
-                            $productStock->sold_count += $this->selectedStaffReturn->quantity;
+                    $quantity  = $this->selectedStaffReturn->quantity;
+                    $productId = $this->selectedStaffReturn->product_id;
+                    $staffId   = $this->selectedStaffReturn->staff_id;
+                    $isDamaged = (bool) $this->selectedStaffReturn->is_damaged;
+
+                    if ($isDamaged) {
+                        // Undo: remove from damage stock
+                        $productStock = ProductStock::where('product_id', $productId)->first();
+                        if ($productStock) {
+                            $productStock->damage_stock  = max(0, $productStock->damage_stock - $quantity);
+                            $productStock->total_stock   = $productStock->available_stock + $productStock->damage_stock;
+                            $productStock->save();
                         }
-                        // Sync total stock
-                        $productStock->total_stock = $productStock->available_stock + $productStock->damage_stock;
-                        $productStock->save();
+                    } else {
+                        // Undo: re-add back to staff sold_quantity (item was returned to staff but now we're deleting that return)
+                        $staffProduct = StaffProduct::where('staff_id', $staffId)
+                            ->where('product_id', $productId)
+                            ->first();
+
+                        if ($staffProduct) {
+                            $staffProduct->sold_quantity = $staffProduct->sold_quantity + $quantity;
+                            $staffProduct->sold_value    = $staffProduct->sold_value + floatval($this->selectedStaffReturn->total_amount);
+
+                            // Update status
+                            if ($staffProduct->sold_quantity >= $staffProduct->quantity) {
+                                $staffProduct->status = 'completed';
+                            } else {
+                                $staffProduct->status = 'partial';
+                            }
+                            $staffProduct->save();
+                        }
                     }
 
-                    // Restore due amount
+                    // Restore due amount on the sale
                     if ($this->selectedStaffReturn->sale_id) {
                         $sale = Sale::find($this->selectedStaffReturn->sale_id);
                         if ($sale) {
-                            $sale->due_amount += floatval($this->selectedStaffReturn->total_amount);
-                            $sale->payment_status = 'partial';
+                            $sale->due_amount    += floatval($this->selectedStaffReturn->total_amount);
+                            $sale->payment_status = $sale->due_amount >= $sale->total_amount ? 'pending' : 'partial';
                             $sale->save();
                         }
                     }
                 }
 
                 $this->selectedStaffReturn->delete();
+                DB::commit();
+
                 $this->dispatch('hideModal', 'deleteStaffReturnModal');
                 $this->js("Swal.fire('Deleted', 'Staff return deleted successfully!', 'success');");
                 $this->selectedStaffReturn = null;
             }
         } catch (\Exception $e) {
+            DB::rollBack();
             $this->js("Swal.fire('Error', 'Error deleting return: " . addslashes($e->getMessage()) . "', 'error');");
         }
     }

@@ -94,6 +94,11 @@ class Sale extends Model
         return $this->hasMany(ReturnsProduct::class, 'sale_id');
     }
 
+    public function staffReturns()
+    {
+        return $this->hasMany(StaffReturn::class, 'sale_id');
+    }
+
     /**
      * Get the staff bonuses associated with this sale
      */

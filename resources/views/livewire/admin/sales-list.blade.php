@@ -435,6 +435,72 @@
                     </div>
                     @endif
 
+                    {{-- ==================== STAFF CUSTOMER RETURNS TABLE ==================== --}}
+                    @if(isset($selectedSale->staffReturns) && $selectedSale->staffReturns->count() > 0)
+                    <div class="mt-4">
+                        <h6 class="text-muted mb-2 d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-return-left text-warning"></i>CUSTOMER RETURNS
+                        </h6>
+                        <div class="table-responsive mb-3">
+                            <table class="table table-bordered table-sm">
+                                <thead style="background: linear-gradient(135deg, #e67e22 0%, #ca6f1e 100%);">
+                                    <tr>
+                                        <th style="color:#fff;">#</th>
+                                        <th style="color:#fff;">Product</th>
+                                        <th class="text-center" style="color:#fff;">Code</th>
+                                        <th class="text-center" style="color:#fff;">Return Qty</th>
+                                        <th class="text-end" style="color:#fff;">Unit Price</th>
+                                        <th class="text-end" style="color:#fff;">Total</th>
+                                        <th class="text-center" style="color:#fff;">Damaged</th>
+                                        <th class="text-center" style="color:#fff;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php $staffReturnTotal = 0; @endphp
+                                    @foreach($selectedSale->staffReturns as $srIdx => $sr)
+                                    @php
+                                        if($sr->status === 'approved') $staffReturnTotal += $sr->total_amount;
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $srIdx + 1 }}</td>
+                                        <td>{{ $sr->product?->name ?? '-' }}</td>
+                                        <td class="text-center">{{ $sr->product?->code ?? '-' }}</td>
+                                        <td class="text-center">{{ $sr->quantity }}</td>
+                                        <td class="text-end">Rs.{{ number_format($sr->unit_price, 2) }}</td>
+                                        <td class="text-end">Rs.{{ number_format($sr->total_amount, 2) }}</td>
+                                        <td class="text-center">
+                                            @if($sr->is_damaged)
+                                                <span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>Damaged</span>
+                                            @else
+                                                <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Good</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            @if($sr->status === 'approved')
+                                                <span class="badge bg-success">Approved</span>
+                                            @elseif($sr->status === 'pending')
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            @else
+                                                <span class="badge bg-danger">Rejected</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                                @if($staffReturnTotal > 0)
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong>Approved Return Amount:</strong></td>
+                                        <td class="text-end text-danger fw-bold">- Rs.{{ number_format($staffReturnTotal, 2) }}</td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                </tfoot>
+                                @endif
+                            </table>
+                        </div>
+                    </div>
+                    @endif
+
                     {{-- ==================== GRAND TOTAL & DUE AMOUNT ==================== --}}
                     <div class="row">
                         <div class="col-7"></div>

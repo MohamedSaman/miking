@@ -11,6 +11,10 @@ use App\Models\Customer;
 use App\Models\SaleItem;
 use App\Models\ProductStock;
 use App\Models\ReturnsProduct;
+use App\Models\User;
+use App\Models\StaffReturn;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -74,7 +78,10 @@ class SalesList extends Component
             'user',
             'returns' => function ($q) {
                 $q->with('product');
-            }
+            },
+            'staffReturns' => function ($q) {
+                $q->with('product');
+            },
         ]);
 
         if ($this->isStaff()) {
