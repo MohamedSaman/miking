@@ -168,6 +168,58 @@
     </div>
 
     @if($showReturnSection && $selectedInvoice)
+    <!-- Previous Returns Section -->
+    @if(!empty($previousReturns))
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-warning">
+                <div class="card-header bg-warning bg-opacity-10 border-bottom border-warning">
+                    <h5 class="fw-bold mb-0 text-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i> Previous Returns for Invoice #{{ $selectedInvoice->invoice_number }}
+                    </h5>
+                </div>
+                <div class="card-body overflow-auto">
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Total Returned</th>
+                                    <th>Total Amount</th>
+                                    <th>Return Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($previousReturns as $productId => $returnData)
+                                <tr>
+                                    <td>{{ $returnData['product_name'] }}</td>
+                                    <td><span class="badge bg-warning">{{ $returnData['total_returned'] }} units</span></td>
+                                    <td class="fw-bold">Rs.{{ number_format($returnData['total_amount'], 2) }}</td>
+                                    <td>
+                                        <small class="text-muted d-block mb-2">
+                                            @forelse($returnData['returns'] as $ret)
+                                                <span class="badge bg-light text-dark me-1 mb-1">
+                                                    {{ $ret['quantity'] }} units on {{ $ret['date'] }}
+                                                    <span class="badge bg-{{ $ret['status'] === 'approved' ? 'success' : ($ret['status'] === 'rejected' ? 'danger' : 'warning') }} ms-1">
+                                                        {{ ucfirst($ret['status']) }}
+                                                    </span>
+                                                </span>
+                                            @empty
+                                                <span class="text-muted">No details</span>
+                                            @endforelse
+                                        </small>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Return Items Selection -->
     <div class="row mb-5">
         <div class="col-12">
@@ -188,7 +240,9 @@
                             <thead class="bg-light text-muted small uppercase">
                                 <tr>
                                     <th class="ps-4 py-3">Product</th>
-                                    <th class="text-center">Orig. Qty</th>
+                                    <th class="text-center">Original Qty</th>
+                                    <th class="text-center">Already Returned</th>
+                                    <th class="text-center">Available for Return</th>
                                     <th class="text-center" style="width: 120px;">Return Qty</th>
                                     <th>Unit Price</th>
                                     <th>Total</th>
@@ -206,14 +260,25 @@
                                     <td class="text-center">
                                         <span class="badge rounded-pill bg-secondary bg-opacity-25 text-dark">{{ $item['original_qty'] }}</span>
                                     </td>
+                                    <td class="text-center">
+                                        @if($item['already_returned'] > 0)
+                                        <span class="badge bg-warning">{{ $item['already_returned'] }}</span>
+                                        @else
+                                        <span class="text-muted">0</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">{{ $item['max_qty'] }}</span>
+                                    </td>
                                     <td class="text-center px-1">
                                         <div class="input-group input-group-sm">
                                             <input type="number" 
                                                 class="form-control text-center fw-bold border-primary shadow-sm" 
                                                 wire:model.live="returnItems.{{ $index }}.return_qty"
                                                 min="0" 
-                                                max="{{ $item['original_qty'] }}"
-                                                placeholder="0">
+                                                max="{{ $item['max_qty'] }}"
+                                                placeholder="0"
+                                                @if($item['max_qty'] == 0) disabled @endif>
                                         </div>
                                     </td>
                                     <td>Rs.{{ number_format($item['unit_price'], 2) }}</td>

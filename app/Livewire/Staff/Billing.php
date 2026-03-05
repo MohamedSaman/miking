@@ -796,7 +796,7 @@ class Billing extends Component
                 'notes' => $this->notes,
                 'user_id' => $staffId,
                 'status' => 'confirm',
-                'sale_type' => 'staff',
+                'sale_type' => 'pos',
                 'sale_price_type' => $this->salePriceType,
             ]);
 
