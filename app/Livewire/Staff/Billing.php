@@ -908,6 +908,10 @@ class Billing extends Component
 
             $this->showSaleModal = true;
 
+            // Capture payment method and cash amount before resetting fields
+            $usedPaymentMethod = $this->paymentMethod;
+            $usedCashAmount = $this->cashAmount;
+
             // Clear cart and reset
             $this->cart = [];
             $this->additionalDiscount = 0;
@@ -917,8 +921,7 @@ class Billing extends Component
             $this->setDefaultCustomer();
 
             // Different success message for credit vs payment sales
-            $isCreditSale = ($this->paymentMethod === 'credit' || ($this->paymentMethod === 'cash' && $this->cashAmount <= 0));
-            if ($isCreditSale) {
+            if ($usedPaymentMethod === 'credit' || ($usedPaymentMethod === 'cash' && $usedCashAmount <= 0)) {
                 $this->js("Swal.fire('success', 'Credit sale created successfully! No payment approval needed.', 'success')");
             } else {
                 $this->js("Swal.fire('success', 'Sale created successfully! Payment pending admin approval.', 'success')");
