@@ -8,6 +8,7 @@ use App\Models\ProductDetail;
 use App\Models\Sale;
 use App\Models\ProductStock;
 use App\Models\ReturnsProduct;
+use App\Services\StaffBonusService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
@@ -389,6 +390,13 @@ class ReturnProduct extends Component
                 ]);
 
                 $this->updateProductStock($item['product_id'], $item['return_qty']);
+
+                // Reduce staff commission for returned items
+                StaffBonusService::reduceCommissionForReturn(
+                    $this->selectedInvoice->id,
+                    $item['product_id'],
+                    $item['return_qty']
+                );
             }
         });
 

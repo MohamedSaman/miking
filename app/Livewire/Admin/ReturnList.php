@@ -7,6 +7,7 @@ use App\Models\ReturnsProduct;
 use App\Models\StaffReturn;
 use App\Models\ProductStock;
 use App\Models\Sale;
+use App\Services\StaffBonusService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -132,6 +133,13 @@ class ReturnList extends Component
             if ($this->selectedReturn) {
                 // Restore the stock before deleting the return record
                 $this->restoreStock($this->selectedReturn);
+
+                // Restore staff commission that was reduced when return was created
+                StaffBonusService::restoreCommissionForReturn(
+                    $this->selectedReturn->sale_id,
+                    $this->selectedReturn->product_id,
+                    $this->selectedReturn->return_quantity
+                );
 
                 $this->selectedReturn->delete();
                 // Refresh lightweight data and reset pagination if needed

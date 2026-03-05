@@ -157,4 +157,120 @@ class StaffBonusService
             'total' => $bonuses->sum('total_bonus'),
         ];
     }
+
+    /**
+     * Reduce staff commission when a product is returned
+     *
+     * @param int $saleId
+     * @param int $productId
+     * @param int $returnQuantity
+     * @return void
+     */
+    public static function reduceCommissionForReturn(int $saleId, int $productId, int $returnQuantity): void
+    {
+        try {
+            $staffBonus = StaffBonus::where('sale_id', $saleId)
+                ->where('product_id', $productId)
+                ->first();
+
+            if (!$staffBonus) {
+                Log::info("No staff commission found to reduce.", [
+                    'sale_id' => $saleId,
+                    'product_id' => $productId,
+                ]);
+                return;
+            }
+
+            $newQuantity = max(0, $staffBonus->quantity - $returnQuantity);
+
+            if ($newQuantity <= 0) {
+                // Remove the entire commission record
+                $staffBonus->delete();
+                Log::info("Staff commission fully removed due to return.", [
+                    'sale_id' => $saleId,
+                    'product_id' => $productId,
+                    'return_quantity' => $returnQuantity,
+                ]);
+            } else {
+                // Reduce the commission proportionally
+                $staffBonus->quantity = $newQuantity;
+                $staffBonus->total_bonus = $staffBonus->bonus_per_unit * $newQuantity;
+                $staffBonus->save();
+                Log::info("Staff commission reduced due to return.", [
+                    'sale_id' => $saleId,
+                    'product_id' => $productId,
+                    'return_quantity' => $returnQuantity,
+                    'new_quantity' => $newQuantity,
+                    'new_total_bonus' => $staffBonus->total_bonus,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error("Failed to reduce staff commission for return: " . $e->getMessage(), [
+                'sale_id' => $saleId,
+                'product_id' => $productId,
+                'return_quantity' => $returnQuantity,
+            ]);
+        }
+    }
+
+    /**
+     * Restore staff commission when a return is deleted/reversed
+     *
+     * @param int $saleId
+     * @param int $productId
+     * @param int $returnQuantity
+     * @return void
+     */
+    public static function restoreCommissionForReturn(int $saleId, int $productId, int $returnQuantity): void
+    {
+        try {
+            $sale = Sale::find($saleId);
+            if (!$sale) return;
+
+            $staffBonus = StaffBonus::where('sale_id', $saleId)
+                ->where('product_id', $productId)
+                ->first();
+
+            if ($staffBonus) {
+                // Existing record — increase quantity back
+                $staffBonus->quantity += $returnQuantity;
+                $staffBonus->total_bonus = $staffBonus->bonus_per_unit * $staffBonus->quantity;
+                $staffBonus->save();
+            } else {
+                // Record was fully deleted — recreate it
+                $user = \App\Models\User::find($sale->user_id);
+                if (!$user || $user->role !== 'staff') return;
+
+                $product = ProductDetail::find($productId);
+                if (!$product) return;
+
+                $paymentMethod = $sale->payment_method ?? 'cash';
+                $commissionPerUnit = self::getCommissionAmount($product, $paymentMethod);
+                $normalizedPaymentMethod = in_array($paymentMethod, ['cash', 'bank_transfer', 'cheque']) ? 'cash' : 'credit';
+
+                StaffBonus::create([
+                    'sale_id' => $saleId,
+                    'staff_id' => $sale->user_id,
+                    'product_id' => $productId,
+                    'quantity' => $returnQuantity,
+                    'sale_type' => 'wholesale',
+                    'payment_method' => $normalizedPaymentMethod,
+                    'bonus_per_unit' => $commissionPerUnit,
+                    'total_bonus' => $commissionPerUnit * $returnQuantity,
+                ]);
+            }
+
+            Log::info("Staff commission restored after return deletion.", [
+                'sale_id' => $saleId,
+                'product_id' => $productId,
+                'restored_quantity' => $returnQuantity,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to restore staff commission after return deletion: " . $e->getMessage(), [
+                'sale_id' => $saleId,
+                'product_id' => $productId,
+                'return_quantity' => $returnQuantity,
+            ]);
+        }
+    }
 }

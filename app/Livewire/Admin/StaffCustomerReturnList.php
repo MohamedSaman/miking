@@ -7,6 +7,7 @@ use App\Models\StaffReturn;
 use App\Models\ProductStock;
 use App\Models\StaffProduct;
 use App\Models\Sale;
+use App\Services\StaffBonusService;
 use Livewire\Attributes\Title;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
@@ -108,6 +109,13 @@ class StaffCustomerReturnList extends Component
                     }
                 }
 
+                // Reduce staff commission for the returned product
+                StaffBonusService::reduceCommissionForReturn(
+                    $this->selectedStaffReturn->sale_id,
+                    $this->selectedStaffReturn->product_id,
+                    $this->selectedStaffReturn->quantity
+                );
+
                 DB::commit();
 
                 $this->dispatch('hideModal', 'approveStaffReturnModal');
@@ -198,6 +206,13 @@ class StaffCustomerReturnList extends Component
                             $sale->save();
                         }
                     }
+
+                    // Restore staff commission that was reduced when return was approved
+                    StaffBonusService::restoreCommissionForReturn(
+                        $this->selectedStaffReturn->sale_id,
+                        $this->selectedStaffReturn->product_id,
+                        $this->selectedStaffReturn->quantity
+                    );
                 }
 
                 $this->selectedStaffReturn->delete();

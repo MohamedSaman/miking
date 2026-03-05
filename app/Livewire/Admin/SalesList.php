@@ -13,6 +13,7 @@ use App\Models\ProductStock;
 use App\Models\ReturnsProduct;
 use App\Models\User;
 use App\Models\StaffReturn;
+use App\Services\StaffBonusService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
@@ -224,6 +225,13 @@ class SalesList extends Component
 
                     // Update stock (increase available stock)
                     $this->updateProductStock($item['product_id'], $item['return_qty']);
+
+                    // Reduce staff commission for returned items
+                    StaffBonusService::reduceCommissionForReturn(
+                        $this->selectedSale->id,
+                        $item['product_id'],
+                        $item['return_qty']
+                    );
                 }
             });
 
