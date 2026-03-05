@@ -155,44 +155,44 @@
         {{-- Main Table --}}
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
-                <div class="table-responsive" style="font-size: 0.9rem;">
-                    <table class="table table-hover align-middle mb-0" style="min-width: 1400px;">
+                <div class="table-responsive" style="font-size: 0.82rem;">
+                    <table class="table table-sm table-hover align-middle mb-0" style="min-width: 1050px;">
                         <thead class="table-light">
                             <tr>
-                                <th class="ps-3">#</th>
-                                <th>PO Number</th>
-                                <th>Product</th>
-                                <th>Supplier</th>
-                                <th class="text-center">Ordered Qty</th>
-                                <th class="text-center">Received Qty</th>
-                                <th class="text-end">Unit Cost</th>
-                                <th class="text-end">Total Cost</th>
-                                <th class="text-center">Purchase Date</th>
-                                <th class="text-center">Received Date</th>
-                                <th class="text-center">Order Status</th>
-                                <th class="text-center">Sales</th>
+                                <th class="ps-2" style="width:3%">#</th>
+                                <th style="width:10%">PO Number</th>
+                                <th style="width:20%">Product</th>
+                                <th style="width:11%">Supplier</th>
+                                <th class="text-center" style="width:7%">Ord. Qty</th>
+                                <th class="text-center" style="width:7%">Recv. Qty</th>
+                                <th class="text-end" style="width:9%">Unit Cost</th>
+                                <th class="text-end" style="width:9%">Total Cost</th>
+                                <th class="text-center" style="width:8%">P. Date</th>
+                                <th class="text-center" style="width:8%">R. Date</th>
+                                <th class="text-center" style="width:7%">Status</th>
+                                <th class="text-center" style="width:7%">Sales</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($items as $index => $item)
                                 <tr>
-                                    <td class="ps-3 text-muted small">{{ $items->firstItem() + $index }}</td>
+                                    <td class="ps-2 text-muted">{{ $items->firstItem() + $index }}</td>
 
                                     {{-- PO Number --}}
                                     <td>
-                                        <span class="badge bg-light text-dark border fw-semibold font-monospace">
+                                        <span class="badge bg-light text-dark border fw-semibold font-monospace" style="font-size:0.75rem;">
                                             {{ $item->order_code ?? '—' }}
                                         </span>
                                     </td>
 
                                     {{-- Product --}}
-                                    <td>
-                                        <div class="fw-semibold text-dark">{{ $item->product_name ?? '—' }}</div>
+                                    <td style="max-width:180px;">
+                                        <div class="fw-semibold text-dark text-truncate" style="max-width:170px;" title="{{ $item->product_name ?? '' }}">{{ $item->product_name ?? '—' }}</div>
                                         @if ($item->product_code)
-                                            <small class="text-muted font-monospace">{{ $item->product_code }}</small>
+                                            <span class="text-muted font-monospace" style="font-size:0.75rem;">{{ $item->product_code }}</span>
                                         @endif
                                         @if ($item->product_model)
-                                            <small class="text-muted d-block">{{ $item->product_model }}</small>
+                                            <span class="text-muted d-block" style="font-size:0.75rem;">{{ $item->product_model }}</span>
                                         @endif
                                     </td>
 
@@ -203,19 +203,19 @@
 
                                     {{-- Ordered Qty --}}
                                     <td class="text-center">
-                                        <span class="badge bg-info text-white fw-semibold px-2 py-1">
+                                        <span class="badge bg-info text-white fw-semibold">
                                             {{ number_format($item->quantity) }}
                                         </span>
                                     </td>
 
                                     {{-- Received Qty --}}
-                                    <td class="text-center fw-bold">
+                                    <td class="text-center">
                                         @php
                                             $received = $item->received_quantity ?? 0;
                                             $ordered  = $item->quantity ?? 0;
                                             $badgeClass = $received >= $ordered ? 'bg-success' : ($received > 0 ? 'bg-warning' : 'bg-danger');
                                         @endphp
-                                        <span class="badge {{ $badgeClass }} text-white fw-bold px-3 py-2" style="font-size: 1rem;">
+                                        <span class="badge {{ $badgeClass }} text-white fw-bold">
                                             {{ number_format($received) }}
                                         </span>
                                     </td>
@@ -232,14 +232,14 @@
 
                                     {{-- Purchase Date --}}
                                     <td class="text-center">
-                                        <span class="text-dark small">
+                                        <span class="text-dark">
                                             {{ $item->order_date ? \Carbon\Carbon::parse($item->order_date)->format('d M Y') : '—' }}
                                         </span>
                                     </td>
 
                                     {{-- Received Date --}}
                                     <td class="text-center">
-                                        <span class="text-dark small">
+                                        <span class="text-dark">
                                             {{ $item->received_date ? \Carbon\Carbon::parse($item->received_date)->format('d M Y') : '—' }}
                                         </span>
                                     </td>
@@ -263,8 +263,9 @@
                                         @if ($item->product_id)
                                             <button
                                                 wire:click="viewProductSales({{ $item->product_id }}, '{{ addslashes($item->product_name ?? '') }}')"
-                                                class="btn btn-sm btn-outline-primary"
+                                                class="btn btn-sm btn-outline-primary px-2 py-1"
                                                 title="View sales invoices for this product"
+                                                style="font-size:0.78rem;"
                                             >
                                                 <i class="bi bi-receipt me-1"></i>Sales
                                             </button>
