@@ -411,15 +411,25 @@ class GRN extends Component
         // Update order received date and status based on received items
         $this->selectedPO->received_date = now();
 
-        // Determine overall order status
-        if ($receivedItemsCount > 0 && $receivedItemsCount === $totalItemsCount) {
-            // All items received - mark as fully received
-            $this->selectedPO->status = 'received';
-        } elseif ($receivedItemsCount > 0) {
-            // Some items received but not all - keep as complete (partial receipt)
+        // Determine overall order status based on ALL order items
+        $allOrderItems = PurchaseOrderItem::where('order_id', $this->selectedPO->id)->get();
+        $totalItemsCount = $allOrderItems->count();
+        $receivedItemsTotal = $allOrderItems->where('status', 'received')->count();
+        $notReceivedItemsTotal = $allOrderItems->where('status', 'notreceived')->count();
+        $pendingItemsTotal = $allOrderItems->whereNotIn('status', ['received', 'notreceived'])->count();
+
+        // If all items are received, mark order as complete
+        if ($receivedItemsTotal === $totalItemsCount && $totalItemsCount > 0) {
             $this->selectedPO->status = 'complete';
         }
-        // If no items received, status remains as it was
+        // If some items are received but others are pending/not received
+        elseif ($receivedItemsTotal > 0 && ($pendingItemsTotal > 0 || $notReceivedItemsTotal > 0)) {
+            $this->selectedPO->status = 'received'; // Partial receipt
+        }
+        // If no items received yet
+        else {
+            $this->selectedPO->status = 'pending';
+        }
 
         $this->selectedPO->save();
 
