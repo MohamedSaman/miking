@@ -501,8 +501,13 @@
                     </div>
                     @endif
 
-                    {{-- ==================== GRAND TOTAL & DUE AMOUNT ==================== --}}
-                    <div class="row">
+                    {{-- ==================== POST-RETURN TOTALS (only when returns exist) ==================== --}}
+                    @php
+                        $hasAnyReturns = (isset($selectedSale->returns) && count($selectedSale->returns) > 0)
+                            || (isset($selectedSale->staffReturns) && $selectedSale->staffReturns->count() > 0);
+                    @endphp
+                    @if($hasAnyReturns)
+                    <div class="row mt-2">
                         <div class="col-7"></div>
                         <div class="col-5">
                             <table class="table table-sm table-borderless">
@@ -515,11 +520,11 @@
                                     <td><strong>Net Amount</strong></td>
                                     <td class="text-end fw-bold">
                                         Rs.@php
-                                        $returnAmount = 0;
-                                        foreach($selectedSale->returns as $return) {
-                                        $returnAmount += $return->total_amount;
-                                        }
-                                        echo number_format(($selectedSale->subtotal - $selectedSale->discount_amount) - $returnAmount, 2);
+                                            $returnAmount = 0;
+                                            foreach($selectedSale->returns as $return) {
+                                                $returnAmount += $return->total_amount;
+                                            }
+                                            echo number_format(($selectedSale->subtotal - $selectedSale->discount_amount) - $returnAmount, 2);
                                         @endphp
                                     </td>
                                 </tr>
@@ -531,6 +536,7 @@
                             </table>
                         </div>
                     </div>
+                    @endif
 
                     @if($selectedSale->notes)
                     <h6 class="text-muted mb-2">NOTES</h6>
