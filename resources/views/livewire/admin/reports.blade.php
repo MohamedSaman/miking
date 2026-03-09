@@ -114,6 +114,38 @@
             color: #475569;
             padding: 12px 15px;
             border-bottom: 2px solid #cbd5e1;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .data-table th:hover {
+            background: #edf0f5;
+            color: #2a83df;
+        }
+
+        .data-table th .sort-icon {
+            display: inline-block;
+            margin-left: 5px;
+            font-size: 11px;
+            opacity: 0.3;
+            vertical-align: middle;
+        }
+
+        .data-table th.sort-asc .sort-icon,
+        .data-table th.sort-desc .sort-icon {
+            opacity: 1;
+            color: #2a83df;
+        }
+
+        .data-table th.no-sort {
+            cursor: default;
+        }
+
+        .data-table th.no-sort:hover {
+            background: #f7f8fb;
+            color: #475569;
         }
 
         .data-table td {
@@ -387,6 +419,10 @@
                     }
                 });
             }
+            // Remove sort icons
+            clonedTable.querySelectorAll('.sort-icon').forEach(function(icon) {
+                icon.remove();
+            });
             // Also remove any cells with only buttons
             clonedTable.querySelectorAll('td').forEach(function(td) {
                 if (td.querySelector('button') && td.innerText.trim() === '') {
@@ -635,6 +671,10 @@
                     }
                 });
             }
+            // Remove sort icons
+            clonedTable.querySelectorAll('.sort-icon').forEach(function(icon) {
+                icon.remove();
+            });
             // Remove buttons from cells
             clonedTable.querySelectorAll('button, a.btn').forEach(function(btn) {
                 btn.remove();
@@ -660,6 +700,147 @@
         if (!dateStr) return '';
         var date = new Date(dateStr + 'T00:00:00');
         return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    // ==================== SORTABLE TABLES ====================
+
+    function initSortableTables() {
+        var tables = document.querySelectorAll('.data-table');
+        tables.forEach(function(table) {
+            // Skip if already initialized
+            if (table.getAttribute('data-sortable') === 'true') return;
+            table.setAttribute('data-sortable', 'true');
+
+            var headers = table.querySelectorAll('thead th');
+            headers.forEach(function(th, colIndex) {
+                // Skip Action columns
+                var text = th.innerText.toLowerCase().trim();
+                if (text === 'action' || text === 'actions' || text === 'notes') {
+                    th.classList.add('no-sort');
+                    return;
+                }
+
+                // Add sort icon
+                if (!th.querySelector('.sort-icon')) {
+                    var icon = document.createElement('span');
+                    icon.className = 'sort-icon';
+                    icon.innerHTML = '&#8597;'; // up-down arrow
+                    th.appendChild(icon);
+                }
+
+                th.addEventListener('click', function() {
+                    sortTable(table, colIndex, th);
+                });
+            });
+        });
+    }
+
+    function sortTable(table, colIndex, clickedTh) {
+        var tbody = table.querySelector('tbody');
+        if (!tbody) return;
+
+        var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+        if (rows.length === 0) return;
+
+        // Determine sort direction
+        var isAsc = clickedTh.classList.contains('sort-asc');
+        var direction = isAsc ? 'desc' : 'asc';
+
+        // Remove sort classes from all headers in this table
+        var allTh = table.querySelectorAll('thead th');
+        allTh.forEach(function(th) {
+            th.classList.remove('sort-asc', 'sort-desc');
+            var icon = th.querySelector('.sort-icon');
+            if (icon) icon.innerHTML = '&#8597;';
+        });
+
+        // Set current sort
+        clickedTh.classList.add('sort-' + direction);
+        var icon = clickedTh.querySelector('.sort-icon');
+        if (icon) icon.innerHTML = direction === 'asc' ? '&#8593;' : '&#8595;';
+
+        // Sort rows
+        rows.sort(function(a, b) {
+            var cellA = a.querySelectorAll('td')[colIndex];
+            var cellB = b.querySelectorAll('td')[colIndex];
+            if (!cellA || !cellB) return 0;
+
+            var valA = getCellSortValue(cellA);
+            var valB = getCellSortValue(cellB);
+
+            // Try numeric comparison
+            var numA = parseNumericValue(valA);
+            var numB = parseNumericValue(valB);
+
+            if (!isNaN(numA) && !isNaN(numB)) {
+                return direction === 'asc' ? numA - numB : numB - numA;
+            }
+
+            // Try date comparison
+            var dateA = parseDateValue(valA);
+            var dateB = parseDateValue(valB);
+            if (dateA && dateB) {
+                return direction === 'asc' ? dateA - dateB : dateB - dateA;
+            }
+
+            // String comparison
+            var strA = valA.toLowerCase();
+            var strB = valB.toLowerCase();
+            if (strA < strB) return direction === 'asc' ? -1 : 1;
+            if (strA > strB) return direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        // Re-append sorted rows
+        rows.forEach(function(row) {
+            tbody.appendChild(row);
+        });
+    }
+
+    function getCellSortValue(cell) {
+        // Get badge text if present
+        var badge = cell.querySelector('.badge');
+        if (badge) return badge.innerText.trim();
+        return cell.innerText.trim();
+    }
+
+    function parseNumericValue(str) {
+        // Remove currency symbols, commas, Rs., %, "items", "days" etc.
+        var cleaned = str.replace(/[Rr][Ss]\.?\s*/g, '').replace(/,/g, '').replace(/%/g, '').replace(/\s*(items|days|units)\s*/gi, '').trim();
+        // Handle parentheses for negative numbers
+        if (cleaned.match(/^\(.*\)$/)) {
+            cleaned = '-' + cleaned.replace(/[()]/g, '');
+        }
+        var num = parseFloat(cleaned);
+        return num;
+    }
+
+    function parseDateValue(str) {
+        // Try common date formats: "01 Jan 2025", "2025-01-01"
+        var d = new Date(str);
+        if (!isNaN(d.getTime()) && str.match(/[a-zA-Z]/) && str.length > 5) {
+            return d.getTime();
+        }
+        return null;
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(initSortableTables, 500);
+    });
+
+    // Re-initialize after Livewire updates
+    document.addEventListener('livewire:init', function() {
+        Livewire.hook('morph.updated', function() {
+            setTimeout(initSortableTables, 300);
+        });
+    });
+
+    // Also listen for generic Livewire v3 events
+    if (typeof Livewire !== 'undefined') {
+        document.addEventListener('livewire:navigated', function() {
+            setTimeout(initSortableTables, 300);
+        });
     }
 </script>
 @endpush

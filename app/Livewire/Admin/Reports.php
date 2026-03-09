@@ -409,7 +409,7 @@ class Reports extends Component
             $query->where('user_id', Auth::id());
         }
 
-        $sales = $query->get();
+        $sales = $query->orderBy('created_at', 'desc')->get();
 
         $totalSales = $sales->sum('total_amount');
         $totalPaid = $sales->flatMap->payments->sum('amount');
@@ -496,7 +496,7 @@ class Reports extends Component
             $query->where('user_id', Auth::id());
         }
 
-        $sales = $query->get()
+        $sales = $query->orderBy('created_at', 'desc')->get()
             ->map(function ($sale) {
                 $daysOverdue = Carbon::parse($sale->created_at)->diffInDays(now());
                 $sale->days_overdue = $daysOverdue;
@@ -552,6 +552,7 @@ class Reports extends Component
     {
         $purchases = PurchaseOrder::with(['supplier', 'items'])
             ->whereBetween('order_date', [$this->reportStartDate, $this->reportEndDate])
+            ->orderBy('order_date', 'desc')
             ->get();
 
         $totalPurchases = $purchases->sum('total_amount');
@@ -584,6 +585,7 @@ class Reports extends Component
             ->whereHas('stock', function($q) {
                 $q->where('available_stock', '>', 0);
             })
+            ->orderBy('name')
             ->get()
             ->map(function ($product) {
                 $costPrice = $product->price->supplier_price ?? 0;
@@ -976,7 +978,7 @@ class Reports extends Component
             });
         }
 
-        $payments = $query->get();
+        $payments = $query->orderBy('payment_date', 'desc')->get();
 
         $byMode = $payments->groupBy('payment_method')->map(function ($items, $method) {
             return [
