@@ -1198,6 +1198,7 @@
     <!-- Include jQuery (required by Bootstrap 4 modal) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+    @livewireScripts
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Define all elements once
