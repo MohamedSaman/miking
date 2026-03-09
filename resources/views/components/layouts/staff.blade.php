@@ -1047,7 +1047,26 @@
                 </li>
                 @endif
 
-                {{-- Expenses Menu - Admin Only --}}
+                {{-- Expenses Menu - Requires Permission --}}
+                @if(auth()->user()->hasPermission('menu_expenses'))
+                <li class="nav-item">
+                    <a class="nav-link dropdown-toggle" href="#expensesSubmenu" data-bs-toggle="collapse" role="button"
+                        aria-expanded="false" aria-controls="expensesSubmenu">
+                        <i class="bi bi-receipt"></i> <span>Expenses</span>
+                    </a>
+                    <div class="collapse" id="expensesSubmenu">
+                        <ul class="nav flex-column ms-3">
+                            @if(auth()->user()->hasPermission('menu_expenses_list'))
+                            <li class="nav-item">
+                                <a class="nav-link py-2" href="{{ route('staff.expenses') }}">
+                                    <i class="bi bi-list-check"></i> <span>List Expenses</span>
+                                </a>
+                            </li>
+                            @endif
+                        </ul>
+                    </div>
+                </li>
+                @endif
 
                 {{-- Payment Management Menu - Requires Permission --}}
                 @if(auth()->user()->hasPermission('menu_payment'))

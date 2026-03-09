@@ -285,6 +285,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         // Cheques/Banks (view only)
         Route::get('/cheque-list', ChequeList::class)->name('cheque-list');
 
+        // Expenses
+        Route::get('/expenses', Expenses::class)->name('expenses')->middleware('permission:menu_expenses');
+
         // Reports & Analytics (with permission middleware)
         Route::get('/reports', Reports::class)->name('reports')->middleware('permission:menu_reports');
         Route::get('/analytics', Analytics::class)->name('analytics')->middleware('permission:menu_analytics');
