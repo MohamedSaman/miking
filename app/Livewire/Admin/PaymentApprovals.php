@@ -83,7 +83,7 @@ class PaymentApprovals extends Component
                     'payment_status' => 'paid',
                 ]);
             }
-            
+
             DB::commit();
             
             $this->dispatch('closeModal', 'payment-approval-modal');

@@ -125,7 +125,11 @@
                                 </span>
                             </td>
                             <td class="text-end pe-4">
-                                @if($cheque->status == 'pending' || $cheque->status == 'overdue')
+                                @if(auth()->user()->role === 'admin' && ($cheque->status == 'pending' || $cheque->status == 'overdue'))
+                                @php
+                                    $paymentApproved = $cheque->payment && in_array($cheque->payment->status, ['approved', 'paid']);
+                                    $chequeDatePassed = $cheque->cheque_date && \Carbon\Carbon::parse($cheque->cheque_date)->startOfDay()->lte(now()->startOfDay());
+                                @endphp
                                 <div class="dropdown">
                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
                                         type="button"
@@ -134,7 +138,8 @@
                                         <i class="bi bi-gear-fill"></i> Actions
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        <!-- Mark as Complete -->
+                                        @if($paymentApproved && $chequeDatePassed)
+                                        <!-- Mark as Complete - only when payment approved AND cheque date has passed -->
                                         <li>
                                             <button class="dropdown-item"
                                                 wire:click="confirmComplete({{ $cheque->id }})">
@@ -142,6 +147,21 @@
                                                 Complete
                                             </button>
                                         </li>
+                                        @elseif(!$paymentApproved)
+                                        <li>
+                                            <span class="dropdown-item text-muted" style="cursor: default;">
+                                                <i class="bi bi-shield-exclamation text-warning me-2"></i>
+                                                Awaiting payment approval
+                                            </span>
+                                        </li>
+                                        @elseif(!$chequeDatePassed)
+                                        <li>
+                                            <span class="dropdown-item text-muted" style="cursor: default;">
+                                                <i class="bi bi-clock text-warning me-2"></i>
+                                                Cheque date: {{ \Carbon\Carbon::parse($cheque->cheque_date)->format('M d, Y') }}
+                                            </span>
+                                        </li>
+                                        @endif
                                         <!-- Return Cheque -->
                                         <li>
                                             <button class="dropdown-item"

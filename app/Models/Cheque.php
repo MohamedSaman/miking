@@ -19,6 +19,10 @@ class Cheque extends Model
         'payment_id',
     ];
 
+    protected $casts = [
+        'cheque_date' => 'date',
+    ];
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);

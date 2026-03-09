@@ -29,7 +29,7 @@ class ChequeList extends Component
     public function getChequesProperty()
     {
         // Show pending cheques first, then others by cheque_date desc
-        $query = Cheque::with('customer')
+        $query = Cheque::with(['customer', 'payment'])
             ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END ASC")
             ->orderByDesc('cheque_date');
 
@@ -118,10 +118,35 @@ class ChequeList extends Component
     public function completeCheque($id)
     {
         try {
-            $cheque = Cheque::find($id);
+            $cheque = Cheque::with('payment')->find($id);
 
             if (!$cheque) {
                 $this->js("Swal.fire('Error', 'Cheque not found!', 'error');");
+                return;
+            }
+
+            // Only admin can mark cheque as complete
+            if (auth()->user()->role !== 'admin') {
+                $this->js("Swal.fire('Error', 'Only admin can mark cheques as complete!', 'error');");
+                return;
+            }
+
+            // Cheque must be in pending status to mark complete
+            if ($cheque->status !== 'pending') {
+                $this->js("Swal.fire('Error', 'This cheque cannot be marked as complete!', 'error');");
+                return;
+            }
+
+            // Check if payment is approved (staff payments: 'approved', admin payments: 'paid')
+            if ($cheque->payment && !in_array($cheque->payment->status, ['approved', 'paid'])) {
+                $this->js("Swal.fire('Error', 'Cannot mark as complete. Payment has not been approved yet!', 'error');");
+                return;
+            }
+
+            // Check if cheque date has passed
+            if ($cheque->cheque_date && \Carbon\Carbon::parse($cheque->cheque_date)->startOfDay()->isAfter(now()->startOfDay())) {
+                $chequeDate = \Carbon\Carbon::parse($cheque->cheque_date)->format('M d, Y');
+                $this->js("Swal.fire('Error', 'Cannot mark as complete before the cheque date (" . $chequeDate . ")!', 'error');");
                 return;
             }
 

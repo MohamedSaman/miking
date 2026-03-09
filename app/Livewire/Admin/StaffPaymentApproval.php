@@ -125,11 +125,11 @@ class StaffPaymentApproval extends Component
                 'is_completed' => true,
             ]);
 
-            // If payment method is cheque, approve cheques too
+            // If payment method is cheque, keep cheques as pending
+            // Admin must manually mark cheques as complete from Cheque List
+            // only after cheque date has passed
             if ($payment->payment_method === 'cheque') {
-                Cheque::where('payment_id', $paymentId)->update([
-                    'status' => 'complete',
-                ]);
+                // Cheques stay 'pending' - completion requires manual action from Cheque List
             }
 
             DB::commit();
