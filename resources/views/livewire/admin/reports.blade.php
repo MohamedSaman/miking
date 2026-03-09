@@ -258,34 +258,32 @@
                         </h5>
                     </div>
                     <div class="date-filter-card">
-                        <div class="row align-items-end">
-                            <div class="col-md-3 mb-2 mb-md-0">
-                                <label class="form-label small fw-bold">Start Date</label>
-                                <input type="date" class="form-control" wire:model.live="reportStartDate">
-                            </div>
-                            <div class="col-md-3 mb-2 mb-md-0">
-                                <label class="form-label small fw-bold">End Date</label>
-                                <input type="date" class="form-control" wire:model.live="reportEndDate">
-                            </div>
-                            <div class="col-md-2 mb-2 mb-md-0">
-                                <label class="form-label small fw-bold d-block">&nbsp;</label>
-                                <button wire:click="clearFilters" class="btn btn-outline-secondary w-100">
-                                    <i class="bi bi-arrow-clockwise me-1"></i> Reset
-                                </button>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold d-block">&nbsp;</label>
-                                <div class="action-buttons d-flex gap-2 justify-content-end">
-                                    <button onclick="printReport()" class="btn btn-outline-primary">
-                                        <i class="bi bi-printer me-1"></i> Print
-                                    </button>
-                                    <button onclick="downloadReport('pdf')" class="btn btn-danger">
-                                        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-                                    </button>
-                                    <button onclick="downloadReport('excel')" class="btn btn-success">
-                                        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+                        <div class="d-flex flex-wrap align-items-end justify-content-between gap-2">
+                            <div class="d-flex flex-wrap align-items-end gap-2">
+                                <div>
+                                    <label class="form-label small fw-bold mb-1">Start Date</label>
+                                    <input type="date" class="form-control" wire:model.live="reportStartDate" style="min-width: 150px;">
+                                </div>
+                                <div>
+                                    <label class="form-label small fw-bold mb-1">End Date</label>
+                                    <input type="date" class="form-control" wire:model.live="reportEndDate" style="min-width: 150px;">
+                                </div>
+                                <div>
+                                    <button wire:click="clearFilters" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-clockwise me-1"></i> Reset
                                     </button>
                                 </div>
+                            </div>
+                            <div class="action-buttons d-flex gap-2">
+                                <button onclick="printReport()" class="btn btn-outline-primary">
+                                    <i class="bi bi-printer me-1"></i> Print
+                                </button>
+                                <button onclick="downloadReport('pdf')" class="btn btn-danger">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+                                </button>
+                                <button onclick="downloadReport('excel')" class="btn btn-success">
+                                    <i class="bi bi-file-earmark-excel me-1"></i> Excel
+                                </button>
                             </div>
                         </div>
 
@@ -334,8 +332,150 @@
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
+    function getReportInfo() {
+        var reportOutput = document.querySelector('.report-output');
+        if (!reportOutput) return null;
+
+        var titleEl = reportOutput.querySelector('h6');
+        var reportTitle = titleEl ? titleEl.innerText.replace(/[\uD83C-\uDBFF\uDC00-\uDFFF]+/g, '').trim() : 'Report';
+
+        var startDateInput = document.querySelector('input[wire\\:model\\.live="reportStartDate"]');
+        var endDateInput = document.querySelector('input[wire\\:model\\.live="reportEndDate"]');
+        var startDate = startDateInput ? startDateInput.value : '';
+        var endDate = endDateInput ? endDateInput.value : '';
+        var dateRange = (startDate && endDate) ? formatDate(startDate) + ' to ' + formatDate(endDate) : 'All Time';
+
+        return { reportOutput: reportOutput, reportTitle: reportTitle, dateRange: dateRange };
+    }
+
+    function getSummaryHTML(reportOutput) {
+        var html = '';
+        var statCards = reportOutput.querySelectorAll('.stat-card');
+        if (statCards.length > 0) {
+            html += '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;"><tr>';
+            statCards.forEach(function(card) {
+                var value = card.querySelector('.stat-value') ? card.querySelector('.stat-value').innerText : '';
+                var label = card.querySelector('.stat-label') ? card.querySelector('.stat-label').innerText : '';
+                html += '<td style="padding:12px 15px;background:#e3f2fd;border:1px solid #90caf9;text-align:center;">';
+                html += '<div style="font-size:14px;font-weight:700;color:#1a5fb8;">' + value + '</div>';
+                html += '<div style="font-size:9px;color:#64748b;text-transform:uppercase;margin-top:3px;">' + label + '</div>';
+                html += '</td>';
+            });
+            html += '</tr></table>';
+        }
+        return html;
+    }
+
+    function getCleanTableHTML(reportOutput) {
+        var html = '';
+        var tables = reportOutput.querySelectorAll('.table-responsive table, table.table');
+        tables.forEach(function(table) {
+            var clonedTable = table.cloneNode(true);
+            // Remove action columns
+            var headerCells = clonedTable.querySelectorAll('thead th');
+            var actionColIndex = -1;
+            headerCells.forEach(function(th, idx) {
+                if (th.innerText.toLowerCase().trim() === 'action' || th.innerText.toLowerCase().trim() === 'actions') {
+                    actionColIndex = idx;
+                }
+            });
+            if (actionColIndex >= 0) {
+                clonedTable.querySelectorAll('tr').forEach(function(row) {
+                    var cells = row.querySelectorAll('th, td');
+                    if (cells[actionColIndex]) {
+                        cells[actionColIndex].remove();
+                    }
+                });
+            }
+            // Also remove any cells with only buttons
+            clonedTable.querySelectorAll('td').forEach(function(td) {
+                if (td.querySelector('button') && td.innerText.trim() === '') {
+                    td.remove();
+                }
+            });
+            html += clonedTable.outerHTML;
+        });
+        return html;
+    }
+
+    function buildReportHTML(info, summaryHTML, tableHTML) {
+        var html = '';
+        html += '<!DOCTYPE html>';
+        html += '<html><head><title>' + info.reportTitle + '</title>';
+        html += '<style>';
+        html += '* { margin: 0; padding: 0; box-sizing: border-box; }';
+        html += 'body { font-family: Arial, "Segoe UI", sans-serif; background: #fff; color: #1e293b; font-size: 11px; line-height: 1.4; }';
+        html += '.report-container { max-width: 100%; margin: 0 auto; padding: 15px 25px; }';
+        html += '.report-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 3px solid #2a83df; }';
+        html += '.company-logo { font-size: 28px; font-weight: 800; color: #2a83df; }';
+        html += '.report-title { font-size: 22px; font-weight: 700; color: #2a83df; margin-bottom: 5px; }';
+        html += '.report-period { font-size: 11px; color: #64748b; }';
+        html += 'table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 10px; }';
+        html += 'thead tr { background: #2a83df; }';
+        html += 'th { padding: 10px 8px; text-align: left; font-weight: 600; color: #ffffff; border: 1px solid #1a5fb8; text-transform: uppercase; font-size: 9px; background: #2a83df; }';
+        html += 'td { padding: 8px; border: 1px solid #cbd5e1; vertical-align: middle; }';
+        html += 'tbody tr:nth-child(even) { background-color: #f7f8fb; }';
+        html += 'tfoot { background: #e3f2fd; font-weight: 600; }';
+        html += 'tfoot td { border-top: 2px solid #2a83df; }';
+        html += '.badge { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 9px; font-weight: 600; }';
+        html += '.bg-success { background: #198754 !important; color: white !important; }';
+        html += '.bg-warning { background: #ffc107 !important; color: #333 !important; }';
+        html += '.bg-danger { background: #dc3545 !important; color: white !important; }';
+        html += '.bg-primary { background: #2a83df !important; color: white !important; }';
+        html += '.bg-secondary { background: #64748b !important; color: white !important; }';
+        html += '.bg-light { background: #f7f8fb !important; color: #333 !important; }';
+        html += '.text-success { color: #198754 !important; }';
+        html += '.text-danger { color: #dc3545 !important; }';
+        html += '.text-muted { color: #64748b !important; }';
+        html += '.fw-bold { font-weight: 600 !important; }';
+        html += '.report-footer { margin-top: 25px; padding-top: 12px; border-top: 2px solid #2a83df; display: flex; justify-content: space-between; font-size: 9px; color: #64748b; }';
+        html += '@' + 'media print {';
+        html += '  body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }';
+        html += '  .report-container { padding: 0; }';
+        html += '  @' + 'page { margin: 10mm; size: A4; }';
+        html += '}';
+        html += '</style></head><body>';
+        html += '<div class="report-container">';
+        html += '<div class="report-header">';
+        html += '<div><div class="company-logo">MIKING</div></div>';
+        html += '<div style="text-align:right;">';
+        html += '<div class="report-title">' + info.reportTitle + '</div>';
+        html += '<div class="report-period">Period: ' + info.dateRange + '</div>';
+        html += '</div></div>';
+        html += summaryHTML;
+        html += '<div class="table-content">' + tableHTML + '</div>';
+        html += '<div class="report-footer">';
+        html += '<div>Generated: ' + new Date().toLocaleString() + '</div>';
+        html += '<div>MIKING - Business Management System</div>';
+        html += '</div></div></body></html>';
+        return html;
+    }
+
     function printReport() {
-        generateProfessionalReport('print');
+        var info = getReportInfo();
+        if (!info) { alert('No report content found'); return; }
+
+        var summaryHTML = getSummaryHTML(info.reportOutput);
+        var tableHTML = getCleanTableHTML(info.reportOutput);
+
+        if (!tableHTML && !summaryHTML) {
+            alert('No report data to print');
+            return;
+        }
+
+        var fullHTML = buildReportHTML(info, summaryHTML, tableHTML);
+        var printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert('Please allow popups to print the report');
+            return;
+        }
+        printWindow.document.write(fullHTML);
+        printWindow.document.close();
+
+        printWindow.onload = function() {
+            printWindow.focus();
+            printWindow.print();
+        };
     }
 
     function downloadReport(type) {
@@ -347,408 +487,178 @@
     }
 
     function downloadPDF() {
-        const reportOutput = document.querySelector('.report-output');
-        if (!reportOutput) {
-            alert('No report content to download');
+        var info = getReportInfo();
+        if (!info) { alert('No report content found'); return; }
+
+        var summaryHTML = getSummaryHTML(info.reportOutput);
+        var tableHTML = getCleanTableHTML(info.reportOutput);
+
+        if (!tableHTML && !summaryHTML) {
+            alert('No report data to download');
             return;
         }
 
-        // Get report info
-        const reportTitleEl = reportOutput.querySelector('h6');
-        let reportTitle = reportTitleEl ? reportTitleEl.innerText.replace(/[\uD83C-\uDBFF\uDC00-\uDFFF]+/g, '').trim() : 'Report';
-        reportTitle = reportTitle.replace(/^[\s\S]*?([\w\s&-]+Report)[\s\S]*$/i, '$1').trim() || reportTitle;
-        
-        const startDate = document.querySelector('input[wire\\:model\\.live="reportStartDate"]')?.value || '';
-        const endDate = document.querySelector('input[wire\\:model\\.live="reportEndDate"]')?.value || '';
-        const dateRange = startDate && endDate ? `${formatDate(startDate)} to ${formatDate(endDate)}` : 'All Time';
-
-        // Get summary stats
-        let summaryHTML = '';
-        const statCards = reportOutput.querySelectorAll('.stat-card');
-        if (statCards.length > 0) {
-            summaryHTML = '<div class="summary-section"><table class="summary-table"><tr>';
-            statCards.forEach(card => {
-                const value = card.querySelector('.stat-value')?.innerText || '';
-                const label = card.querySelector('.stat-label')?.innerText || '';
-                summaryHTML += `<td class="summary-cell"><div class="summary-value">${value}</div><div class="summary-label">${label}</div></td>`;
-            });
-            summaryHTML += '</tr></table></div>';
+        // Check if html2pdf is loaded
+        if (typeof html2pdf === 'undefined') {
+            alert('PDF library is loading. Please try again.');
+            return;
         }
 
-        // Get table content
-        let tableHTML = '';
-        const tables = reportOutput.querySelectorAll('.table-responsive table, table.table');
-        tables.forEach(table => {
-            const clonedTable = table.cloneNode(true);
-            clonedTable.querySelectorAll('th:last-child, td:last-child').forEach(cell => {
-                if (cell.innerText.toLowerCase().includes('action') || cell.querySelector('button')) {
-                    cell.remove();
-                }
-            });
-            tableHTML += clonedTable.outerHTML;
+        // Build the content container
+        var pdfContainer = document.createElement('div');
+        pdfContainer.style.position = 'absolute';
+        pdfContainer.style.left = '-9999px';
+        pdfContainer.style.top = '0';
+        pdfContainer.style.width = '277mm'; // A4 landscape width minus margins
+
+        var containerDiv = document.createElement('div');
+        containerDiv.style.fontFamily = 'Arial, sans-serif';
+        containerDiv.style.padding = '15px';
+        containerDiv.style.maxWidth = '100%';
+        containerDiv.style.color = '#1e293b';
+        containerDiv.style.fontSize = '10px';
+        containerDiv.style.lineHeight = '1.4';
+
+        // Header
+        var headerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:15px;border-bottom:3px solid #2a83df;">';
+        headerHTML += '<div style="font-size:24px;font-weight:800;color:#2a83df;">MIKING</div>';
+        headerHTML += '<div style="text-align:right;">';
+        headerHTML += '<div style="font-size:18px;font-weight:700;color:#2a83df;margin-bottom:5px;">' + info.reportTitle + '</div>';
+        headerHTML += '<div style="font-size:11px;color:#64748b;">Period: ' + info.dateRange + '</div>';
+        headerHTML += '</div></div>';
+
+        // Footer
+        var footerHTML = '<div style="margin-top:25px;padding-top:12px;border-top:2px solid #2a83df;display:flex;justify-content:space-between;font-size:9px;color:#64748b;">';
+        footerHTML += '<div>Generated: ' + new Date().toLocaleString() + '</div>';
+        footerHTML += '<div>MIKING - Business Management System</div>';
+        footerHTML += '</div>';
+
+        containerDiv.innerHTML = headerHTML + summaryHTML + '<div>' + tableHTML + '</div>' + footerHTML;
+
+        // Apply inline styles to tables for PDF
+        var tables = containerDiv.querySelectorAll('table');
+        tables.forEach(function(table) {
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            table.style.marginBottom = '15px';
+            table.style.fontSize = '9px';
+        });
+        containerDiv.querySelectorAll('thead tr').forEach(function(tr) {
+            tr.style.background = '#2a83df';
+        });
+        containerDiv.querySelectorAll('th').forEach(function(th) {
+            th.style.padding = '8px 6px';
+            th.style.textAlign = 'left';
+            th.style.fontWeight = '600';
+            th.style.color = '#ffffff';
+            th.style.border = '1px solid #1a5fb8';
+            th.style.textTransform = 'uppercase';
+            th.style.fontSize = '8px';
+            th.style.background = '#2a83df';
+        });
+        containerDiv.querySelectorAll('td').forEach(function(td) {
+            td.style.padding = '6px';
+            td.style.border = '1px solid #cbd5e1';
+            td.style.verticalAlign = 'middle';
         });
 
-        // Create hidden container for PDF generation
-        const pdfContainer = document.createElement('div');
-        pdfContainer.innerHTML = `
-            <div class="report-container" style="font-family: Arial, sans-serif; padding: 20px; max-width: 100%;">
-                <div class="report-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 3px solid #2a83df;">
-                    <div class="company-info">
-                        <div style="font-size: 24px; font-weight: 800; color: #2a83df;">MIKING</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 18px; font-weight: 700; color: #2a83df; margin-bottom: 5px;">\${reportTitle}</div>
-                        <div style="font-size: 11px; color: #64748b;">Period: \${dateRange}</div>
-                    </div>
-                </div>
-                \${summaryHTML.replace(/class="summary-section"/g, 'style="margin-bottom: 20px;"')
-                             .replace(/class="summary-table"/g, 'style="width: 100%; border-collapse: collapse;"')
-                             .replace(/class="summary-cell"/g, 'style="padding: 12px 15px; background: #e3f2fd; border: 1px solid #90caf9; text-align: center;"')
-                             .replace(/class="summary-value"/g, 'style="font-size: 14px; font-weight: 700; color: #1a5fb8;"')
-                             .replace(/class="summary-label"/g, 'style="font-size: 9px; color: #64748b; text-transform: uppercase; margin-top: 3px;"')}
-                <div class="table-content">
-                    \${tableHTML}
-                </div>
-                <div style="margin-top: 25px; padding-top: 12px; border-top: 2px solid #2a83df; display: flex; justify-content: space-between; font-size: 9px; color: #64748b;">
-                    <div>Generated: \${new Date().toLocaleString()}</div>
-                    <div>MIKING - Business Management System</div>
-                </div>
-            </div>
-        `;
-
-        // Add table styles
-        const style = document.createElement('style');
-        style.textContent = \`
-            .report-container table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 9px; }
-            .report-container thead tr { background: #2a83df !important; }
-            .report-container th { padding: 8px 6px; text-align: left; font-weight: 600; color: #ffffff !important; border: 1px solid #1a5fb8; text-transform: uppercase; font-size: 8px; background: #2a83df !important; }
-            .report-container td { padding: 6px; border: 1px solid #cbd5e1; vertical-align: middle; }
-            .report-container tbody tr:nth-child(even) { background-color: #f7f8fb; }
-            .report-container tfoot { background: #e3f2fd; font-weight: 600; }
-            .report-container tfoot td { border-top: 2px solid #2a83df; }
-            .report-container .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 8px; font-weight: 600; }
-            .report-container .bg-success { background: #198754 !important; color: white !important; }
-            .report-container .bg-warning { background: #ffc107 !important; color: #333 !important; }
-            .report-container .bg-danger { background: #dc3545 !important; color: white !important; }
-            .report-container .bg-primary { background: #2a83df !important; color: white !important; }
-            .report-container .bg-secondary { background: #64748b !important; color: white !important; }
-            .report-container .text-success { color: #198754 !important; }
-            .report-container .text-danger { color: #dc3545 !important; }
-            .report-container .fw-bold { font-weight: 600 !important; }
-        \`;
-        pdfContainer.appendChild(style);
+        pdfContainer.appendChild(containerDiv);
         document.body.appendChild(pdfContainer);
 
-        // Generate PDF options
-        const opt = {
+        var filename = info.reportTitle.replace(/[^a-z0-9]/gi, '_') + '_' + new Date().toISOString().split('T')[0] + '.pdf';
+
+        var opt = {
             margin: [10, 10, 10, 10],
-            filename: reportTitle.replace(/[^a-z0-9]/gi, '_') + '_' + new Date().toISOString().split('T')[0] + '.pdf',
+            filename: filename,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        // Generate and download PDF
-        html2pdf().set(opt).from(pdfContainer.querySelector('.report-container')).save().then(() => {
+        html2pdf().set(opt).from(containerDiv).save().then(function() {
             document.body.removeChild(pdfContainer);
+        }).catch(function(err) {
+            console.error('PDF generation error:', err);
+            document.body.removeChild(pdfContainer);
+            alert('Failed to generate PDF. Please try again.');
         });
-    }
-
-    function generateProfessionalReport(action) {
-        const reportOutput = document.querySelector('.report-output');
-        if (!reportOutput) {
-            alert('No report content to download');
-            return;
-        }
-
-        // Get report info
-        const reportTitleEl = reportOutput.querySelector('h6');
-        let reportTitle = reportTitleEl ? reportTitleEl.innerText.replace(/[\uD83C-\uDBFF\uDC00-\uDFFF]+/g, '').trim() : 'Report';
-        reportTitle = reportTitle.replace(/^[\s\S]*?([\w\s&-]+Report)[\s\S]*$/i, '$1').trim() || reportTitle;
-        
-        const startDate = document.querySelector('input[wire\\:model\\.live="reportStartDate"]')?.value || '';
-        const endDate = document.querySelector('input[wire\\:model\\.live="reportEndDate"]')?.value || '';
-        const dateRange = startDate && endDate ? \`\${formatDate(startDate)} to \${formatDate(endDate)}\` : 'All Time';
-
-        // Get summary stats
-        let summaryHTML = '';
-        const statCards = reportOutput.querySelectorAll('.stat-card');
-        if (statCards.length > 0) {
-            summaryHTML = '<div class="summary-section"><table class="summary-table"><tr>';
-            statCards.forEach(card => {
-                const value = card.querySelector('.stat-value')?.innerText || '';
-                const label = card.querySelector('.stat-label')?.innerText || '';
-                summaryHTML += \`<td class="summary-cell"><div class="summary-value">\${value}</div><div class="summary-label">\${label}</div></td>\`;
-            });
-            summaryHTML += '</tr></table></div>';
-        }
-
-        // Get table content
-        let tableHTML = '';
-        const tables = reportOutput.querySelectorAll('.table-responsive table, table.table');
-        tables.forEach(table => {
-            const clonedTable = table.cloneNode(true);
-            // Remove action column if exists
-            clonedTable.querySelectorAll('th:last-child, td:last-child').forEach(cell => {
-                if (cell.innerText.toLowerCase().includes('action') || cell.querySelector('button')) {
-                    cell.remove();
-                }
-            });
-            tableHTML += clonedTable.outerHTML;
-        });
-
-        // Create professional print window
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(\`
-            <!DOCTYPE html>
-            <html\u003E
-            <head\u003E
-                <title>\${reportTitle}</title\u003E
-                <style\u003E
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body { 
-                        font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                        background: #fff;
-                        color: #1e293b;
-                        font-size: 11px;
-                        line-height: 1.4;
-                    }
-                    .report-container {
-                        max-width: 100%;
-                        margin: 0 auto;
-                        padding: 15px 25px;
-                    }
-                    /* Header */
-                    .report-header {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: flex-start;
-                        margin-bottom: 20px;
-                        padding-bottom: 15px;
-                        border-bottom: 3px solid #2a83df;
-                    }
-                    .company-info {
-                        display: flex;
-                        align-items: center;
-                    }
-                    .company-logo {
-                        font-size: 28px;
-                        font-weight: 800;
-                        color: #2a83df;
-                        letter-spacing: -1px;
-                    }
-                    .company-logo span {
-                        color: #1a5fb8;
-                    }
-                    .report-title-section {
-                        text-align: right;
-                    }
-                    .report-title {
-                        font-size: 22px;
-                        font-weight: 700;
-                        color: #2a83df;
-                        margin-bottom: 5px;
-                    }
-                    .report-period {
-                        font-size: 11px;
-                        color: #64748b;
-                    }
-                    /* Summary */
-                    .summary-section {
-                        margin-bottom: 20px;
-                    }
-                    .summary-table {
-                        width: 100%;
-                        border-collapse: collapse;
-                    }
-                    .summary-cell {
-                        padding: 12px 15px;
-                        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-                        border: 1px solid #90caf9;
-                        text-align: center;
-                    }
-                    .summary-value {
-                        font-size: 16px;
-                        font-weight: 700;
-                        color: #1a5fb8;
-                    }
-                    .summary-label {
-                        font-size: 10px;
-                        color: #64748b;
-                        text-transform: uppercase;
-                        margin-top: 3px;
-                    }
-                    /* Table */
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-bottom: 15px;
-                        font-size: 10px;
-                    }
-                    thead tr {
-                        background: linear-gradient(135deg, #2a83df 0%, #1a5fb8 100%);
-                    }
-                    th {
-                        padding: 10px 8px;
-                        text-align: left;
-                        font-weight: 600;
-                        color: #ffffff;
-                        border: 1px solid #1a5fb8;
-                        text-transform: uppercase;
-                        font-size: 9px;
-                        letter-spacing: 0.5px;
-                    }
-                    td {
-                        padding: 8px;
-                        border: 1px solid #cbd5e1;
-                        vertical-align: middle;
-                    }
-                    tbody tr:nth-child(even) {
-                        background-color: #f7f8fb;
-                    }
-                    tbody tr:hover {
-                        background-color: #e3f2fd;
-                    }
-                    tfoot {
-                        background: #e3f2fd;
-                        font-weight: 600;
-                    }
-                    tfoot td {
-                        border-top: 2px solid #2a83df;
-                    }
-                    /* Badge styling */
-                    .badge {
-                        display: inline-block;
-                        padding: 3px 8px;
-                        border-radius: 3px;
-                        font-size: 9px;
-                        font-weight: 600;
-                    }
-                    .bg-success, .badge-success { background: #198754 !important; color: white; }
-                    .bg-warning, .badge-warning { background: #ffc107 !important; color: #333; }
-                    .bg-danger, .badge-danger { background: #dc3545 !important; color: white; }
-                    .bg-primary, .badge-primary { background: #2a83df !important; color: white; }
-                    .bg-secondary, .badge-secondary { background: #64748b !important; color: white; }
-                    .bg-light { background: #f7f8fb !important; color: #333; }
-                    .text-success { color: #198754 !important; }
-                    .text-danger { color: #dc3545 !important; }
-                    .text-muted { color: #64748b !important; }
-                    .fw-bold { font-weight: 600 !important; }
-                    /* Footer */
-                    .report-footer {
-                        margin-top: 25px;
-                        padding-top: 12px;
-                        border-top: 2px solid #2a83df;
-                        display: flex;
-                        justify-content: space-between;
-                        font-size: 9px;
-                        color: #64748b;
-                    }
-                    /* Print specific */
-                    @media print {
-                        body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-                        .report-container { padding: 0; }
-                        @page { margin: 15mm 10mm; size: A4 landscape; }
-                    }
-                    /* Hide stat cards in print */
-                    .stat-card, .row.mb-4 { display: none !important; }
-                </style\u003E
-            </head\u003E
-            <body\u003E
-                <div class="report-container"\u003E
-                    <div class="report-header"\u003E
-                        <div class="company-info"\u003E
-                            <div class="company-logo"\u003EMIKING</div\u003E
-                        </div\u003E
-                        <div class="report-title-section"\u003E
-                            <div class="report-title"\u003E\${reportTitle}</div\u003E
-                            <div class="report-period"\u003EPeriod: \${dateRange}</div\u003E
-                        </div\u003E
-                    </div\u003E
-                    \${summaryHTML}
-                    <div class="table-content"\u003E
-                        \${tableHTML}
-                    </div\u003E
-                    <div class="report-footer"\u003E
-                        <div\u003EGenerated: \${new Date().toLocaleString()}</div\u003E
-                        <div\u003EPage 1 of 1</div\u003E
-                        <div\u003EMIKING - Business Management System</div\u003E
-                    </div\u003E
-                </div\u003E
-            </body\u003E
-            </html\u003E
-        \`);
-        printWindow.document.close();
-        
-        setTimeout(() => {
-            if (action === 'print' || action === 'pdf') {
-                printWindow.print();
-            }
-        }, 500);
     }
 
     function exportToExcel() {
-        const reportOutput = document.querySelector('.report-output');
-        if (!reportOutput) {
-            alert('No report content to download');
-            return;
-        }
+        var info = getReportInfo();
+        if (!info) { alert('No report content found'); return; }
 
-        const tables = reportOutput.querySelectorAll('table');
+        var tables = info.reportOutput.querySelectorAll('.table-responsive table, table.table');
         if (tables.length === 0) {
             alert('No table data found to export');
             return;
         }
 
-        const reportTitleEl = reportOutput.querySelector('h6');
-        let reportTitle = reportTitleEl ? reportTitleEl.innerText.replace(/[\uD83C-\uDBFF\uDC00-\uDFFF]+/g, '').trim() : 'Report';
-        
-        let csvContent = '';
-        csvContent += 'MIKING\\n';
-        csvContent += reportTitle + '\\n';
-        csvContent += 'Generated: ' + new Date().toLocaleString() + '\\n\\n';
+        // Build Excel-compatible HTML table
+        // Note: x: namespace tags split with concatenation to prevent Blade from parsing them as components
+        var excelHTML = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:' + 'x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+        excelHTML += '<head><meta charset="utf-8">';
+        excelHTML += '<!--[if gte mso 9]><' + 'xml><' + 'x:ExcelWorkbook><' + 'x:ExcelWorksheets><' + 'x:ExcelWorksheet>';
+        excelHTML += '<' + 'x:Name>Report</' + 'x:Name>';
+        excelHTML += '<' + 'x:WorksheetOptions><' + 'x:DisplayGridlines/></' + 'x:WorksheetOptions>';
+        excelHTML += '</' + 'x:ExcelWorksheet></' + 'x:ExcelWorksheets></' + 'x:ExcelWorkbook></' + 'xml><![endif]-->';
+        excelHTML += '<style>';
+        excelHTML += 'table { border-collapse: collapse; width: 100%; }';
+        excelHTML += 'th { background-color: #2a83df; color: #ffffff; font-weight: bold; padding: 8px; border: 1px solid #1a5fb8; text-align: left; }';
+        excelHTML += 'td { padding: 6px; border: 1px solid #cbd5e1; vertical-align: middle; }';
+        excelHTML += 'tr:nth-child(even) { background-color: #f7f8fb; }';
+        excelHTML += '.header-cell { font-size: 18px; font-weight: bold; color: #2a83df; border: none; }';
+        excelHTML += '.info-cell { font-size: 11px; color: #64748b; border: none; }';
+        excelHTML += '</style></head><body>';
 
-        tables.forEach((table) => {
-            const rows = table.querySelectorAll('tr');
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('th, td');
-                const rowData = [];
-                let skipRow = false;
-                
-                cells.forEach((cell, index) => {
-                    // Skip action columns
-                    if (cell.innerText.toLowerCase().includes('action') || cell.querySelector('button')) {
-                        if (index === cells.length - 1) return;
-                        skipRow = true;
-                    }
-                    if (!cell.querySelector('button')) {
-                        let text = cell.innerText.replace(/[\\n\\r]+/g, ' ').trim();
-                        if (text.includes(',') || text.includes('"')) {
-                            text = '"' + text.replace(/"/g, '""') + '"';
-                        }
-                        rowData.push(text);
-                    }
-                });
-                
-                if (rowData.length > 0) {
-                    csvContent += rowData.join(',') + '\\n';
+        // Title row
+        excelHTML += '<table><tr><td class="header-cell" colspan="10">MIKING - ' + info.reportTitle + '</td></tr>';
+        excelHTML += '<tr><td class="info-cell" colspan="10">Period: ' + info.dateRange + '</td></tr>';
+        excelHTML += '<tr><td class="info-cell" colspan="10">Generated: ' + new Date().toLocaleString() + '</td></tr>';
+        excelHTML += '<tr><td colspan="10"></td></tr></table>';
+
+        tables.forEach(function(table) {
+            var clonedTable = table.cloneNode(true);
+            // Find and remove action columns
+            var headerCells = clonedTable.querySelectorAll('thead th');
+            var actionColIndex = -1;
+            headerCells.forEach(function(th, idx) {
+                if (th.innerText.toLowerCase().trim() === 'action' || th.innerText.toLowerCase().trim() === 'actions') {
+                    actionColIndex = idx;
                 }
             });
-            csvContent += '\\n';
+            if (actionColIndex >= 0) {
+                clonedTable.querySelectorAll('tr').forEach(function(row) {
+                    var cells = row.querySelectorAll('th, td');
+                    if (cells[actionColIndex]) {
+                        cells[actionColIndex].remove();
+                    }
+                });
+            }
+            // Remove buttons from cells
+            clonedTable.querySelectorAll('button, a.btn').forEach(function(btn) {
+                btn.remove();
+            });
+            excelHTML += clonedTable.outerHTML;
         });
 
-        const blob = new Blob(["\\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
+        excelHTML += '</body></html>';
+
+        var blob = new Blob(['\ufeff' + excelHTML], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        var link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = reportTitle.replace(/[^a-z0-9]/gi, '_') + '_' + new Date().toISOString().split('T')[0] + '.csv';
+        link.download = info.reportTitle.replace(/[^a-z0-9]/gi, '_') + '_' + new Date().toISOString().split('T')[0] + '.xls';
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        setTimeout(function() {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }, 100);
     }
 
     function formatDate(dateStr) {
         if (!dateStr) return '';
-        const date = new Date(dateStr);
+        var date = new Date(dateStr + 'T00:00:00');
         return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     }
 </script>
