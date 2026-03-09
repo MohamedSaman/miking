@@ -60,6 +60,30 @@ class TotalSales extends Component
     }
 
     // ---------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------
+    protected function isStaff(): bool
+    {
+        return auth()->user()?->role === 'staff';
+    }
+
+    protected function applyStaffFilter($query, string $userIdColumn = 'user_id')
+    {
+        if ($this->isStaff()) {
+            $query->where($userIdColumn, auth()->id());
+        }
+        return $query;
+    }
+
+    protected function applyStaffFilterViaSale($query)
+    {
+        if ($this->isStaff()) {
+            $query->whereHas('sale', fn($q) => $q->where('user_id', auth()->id()));
+        }
+        return $query;
+    }
+
+    // ---------------------------------------------------------------
     // Summary numbers
     // ---------------------------------------------------------------
     protected function dateRange($query)
@@ -88,6 +112,7 @@ class TotalSales extends Component
     {
         // Total sales count & amount from Sales table
         $salesQuery = Sale::query();
+        $this->applyStaffFilter($salesQuery);
         $this->dateRange($salesQuery);
 
         $totalSalesCount  = (clone $salesQuery)->count();
@@ -101,6 +126,7 @@ class TotalSales extends Component
 
         // Easier: use payments table for method breakdown
         $payQ = Payment::query()->whereNotNull('sale_id');
+        $this->applyStaffFilterViaSale($payQ);
         $this->paymentDateRange($payQ);
 
         $cashCollected   = (clone $payQ)->where('payment_method', 'cash')->sum('amount');
@@ -111,14 +137,17 @@ class TotalSales extends Component
 
         // Sales by type counting invoices
         $cashSaleCount   = Sale::whereHas('payments', fn($q) => $q->where('payment_method', 'cash'));
+        $this->applyStaffFilter($cashSaleCount);
         $this->dateRange($cashSaleCount);
         $cashSaleCount   = $cashSaleCount->count();
 
         $chequeSaleCount = Sale::whereHas('payments', fn($q) => $q->where('payment_method', 'cheque'));
+        $this->applyStaffFilter($chequeSaleCount);
         $this->dateRange($chequeSaleCount);
         $chequeSaleCount = $chequeSaleCount->count();
 
         $creditSaleCount = Sale::where('payment_method', 'credit');
+        $this->applyStaffFilter($creditSaleCount);
         $this->dateRange($creditSaleCount);
         $creditSaleCount = $creditSaleCount->count();
 
@@ -130,6 +159,7 @@ class TotalSales extends Component
         $incomeCash = Payment::whereNotNull('sale_id')
             ->where('payment_method', 'cash')
             ->whereIn('status', ['approved', 'paid']);
+        $this->applyStaffFilterViaSale($incomeCash);
         $this->paymentDateRange($incomeCash);
         $incomeCash = $incomeCash->sum('amount');
 
@@ -137,6 +167,7 @@ class TotalSales extends Component
         $incomeCheque = Payment::whereNotNull('sale_id')
             ->where('payment_method', 'cheque')
             ->whereHas('cheques', fn($q) => $q->where('status', 'complete'));
+        $this->applyStaffFilterViaSale($incomeCheque);
         $this->paymentDateRange($incomeCheque);
         $incomeCheque = $incomeCheque->sum('amount');
 
@@ -144,6 +175,7 @@ class TotalSales extends Component
         $incomeBank = Payment::whereNotNull('sale_id')
             ->where('payment_method', 'bank_transfer')
             ->whereIn('status', ['approved', 'paid']);
+        $this->applyStaffFilterViaSale($incomeBank);
         $this->paymentDateRange($incomeBank);
         $incomeBank = $incomeBank->sum('amount');
 
@@ -162,45 +194,45 @@ class TotalSales extends Component
     // ---------------------------------------------------------------
     public function getCashSalesProperty()
     {
-        return Payment::with(['sale.customer'])
+        $q = Payment::with(['sale.customer'])
             ->whereNotNull('sale_id')
             ->where('payment_method', 'cash')
             ->when($this->dateFrom, fn($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
-            ->when($this->dateTo,   fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
-            ->orderByDesc('payment_date')
-            ->paginate(15);
+            ->when($this->dateTo,   fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo));
+        $this->applyStaffFilterViaSale($q);
+        return $q->orderByDesc('payment_date')->paginate(15);
     }
 
     public function getCreditSalesProperty()
     {
-        return Sale::with('customer')
+        $q = Sale::with('customer')
             ->where('payment_method', 'credit')
             ->when($this->dateFrom, fn($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
-            ->when($this->dateTo,   fn($q) => $q->whereDate('created_at', '<=', $this->dateTo))
-            ->orderByDesc('created_at')
-            ->paginate(15);
+            ->when($this->dateTo,   fn($q) => $q->whereDate('created_at', '<=', $this->dateTo));
+        $this->applyStaffFilter($q);
+        return $q->orderByDesc('created_at')->paginate(15);
     }
 
     public function getChequeSalesProperty()
     {
-        return Payment::with(['sale.customer', 'cheques'])
+        $q = Payment::with(['sale.customer', 'cheques'])
             ->whereNotNull('sale_id')
             ->where('payment_method', 'cheque')
             ->when($this->dateFrom, fn($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
-            ->when($this->dateTo,   fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
-            ->orderByDesc('payment_date')
-            ->paginate(15);
+            ->when($this->dateTo,   fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo));
+        $this->applyStaffFilterViaSale($q);
+        return $q->orderByDesc('payment_date')->paginate(15);
     }
 
     public function getBankSalesProperty()
     {
-        return Payment::with(['sale.customer'])
+        $q = Payment::with(['sale.customer'])
             ->whereNotNull('sale_id')
             ->where('payment_method', 'bank_transfer')
             ->when($this->dateFrom, fn($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
-            ->when($this->dateTo,   fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
-            ->orderByDesc('payment_date')
-            ->paginate(15);
+            ->when($this->dateTo,   fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo));
+        $this->applyStaffFilterViaSale($q);
+        return $q->orderByDesc('payment_date')->paginate(15);
     }
 
     public function getTotalIncomeProperty()
@@ -211,6 +243,7 @@ class TotalSales extends Component
             ->whereNotNull('sale_id')
             ->where('payment_method', 'cash')
             ->whereIn('status', ['approved', 'paid'])
+            ->when($this->isStaff(), fn($q) => $q->whereHas('sale', fn($s) => $s->where('user_id', auth()->id())))
             ->when($this->dateFrom, fn($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
             ->when($this->dateTo,   fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
             ->get()
@@ -229,6 +262,7 @@ class TotalSales extends Component
             ->whereNotNull('sale_id')
             ->where('payment_method', 'cheque')
             ->whereHas('cheques', fn($q) => $q->where('status', 'complete'))
+            ->when($this->isStaff(), fn($q) => $q->whereHas('sale', fn($s) => $s->where('user_id', auth()->id())))
             ->when($this->dateFrom, fn($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
             ->when($this->dateTo,   fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
             ->get()
@@ -247,6 +281,7 @@ class TotalSales extends Component
             ->whereNotNull('sale_id')
             ->where('payment_method', 'bank_transfer')
             ->whereIn('status', ['approved', 'paid'])
+            ->when($this->isStaff(), fn($q) => $q->whereHas('sale', fn($s) => $s->where('user_id', auth()->id())))
             ->when($this->dateFrom, fn($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
             ->when($this->dateTo,   fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
             ->get()
