@@ -126,17 +126,29 @@
         }
 
         .data-table th .sort-icon {
-            display: inline-block;
-            margin-left: 5px;
-            font-size: 11px;
-            opacity: 0.3;
+            display: inline-flex;
+            align-items: center;
+            margin-left: 6px;
+            font-size: 13px;
+            color: #94a3b8;
             vertical-align: middle;
+            transition: color 0.15s;
+        }
+
+        .data-table th:hover .sort-icon {
+            color: #64748b;
         }
 
         .data-table th.sort-asc .sort-icon,
         .data-table th.sort-desc .sort-icon {
-            opacity: 1;
             color: #2a83df;
+            font-size: 14px;
+        }
+
+        .data-table th.sort-asc,
+        .data-table th.sort-desc {
+            background: #e8f0fe !important;
+            color: #1a56c4 !important;
         }
 
         .data-table th.no-sort {
@@ -724,7 +736,7 @@
                 if (!th.querySelector('.sort-icon')) {
                     var icon = document.createElement('span');
                     icon.className = 'sort-icon';
-                    icon.innerHTML = '&#8597;'; // up-down arrow
+                    icon.innerHTML = '<i class="bi bi-arrow-down-up"></i>';
                     th.appendChild(icon);
                 }
 
@@ -751,13 +763,13 @@
         allTh.forEach(function(th) {
             th.classList.remove('sort-asc', 'sort-desc');
             var icon = th.querySelector('.sort-icon');
-            if (icon) icon.innerHTML = '&#8597;';
+            if (icon) icon.innerHTML = '<i class="bi bi-arrow-down-up"></i>';
         });
 
         // Set current sort
         clickedTh.classList.add('sort-' + direction);
         var icon = clickedTh.querySelector('.sort-icon');
-        if (icon) icon.innerHTML = direction === 'asc' ? '&#8593;' : '&#8595;';
+        if (icon) icon.innerHTML = direction === 'asc' ? '<i class="bi bi-arrow-up"></i>' : '<i class="bi bi-arrow-down"></i>';
 
         // Sort rows
         rows.sort(function(a, b) {
