@@ -472,7 +472,7 @@
                             </div>
                             @endif
                         </div>
-                        @if(count($otherPermissions) > 0)
+                        @if(count($otherPermissions) > 0 && (!$mainPermKey || in_array($mainPermKey, $staffPermissions)))
                         <div class="card-body">
                             <div class="row">
                                 @foreach($otherPermissions as $permKey)
