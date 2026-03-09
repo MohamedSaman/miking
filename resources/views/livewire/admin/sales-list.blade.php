@@ -3,9 +3,10 @@
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
             <h3 class="fw-bold text-dark mb-2">
-                <i class="bi bi-cash-stack text-success me-2"></i> Admin Sales Management
+                <i class="bi bi-cash-stack text-success me-2"></i>
+                {{ auth()->user()->role === 'staff' ? 'Staff Sales Management' : 'Admin Sales Management' }}
             </h3>
-            <p class="text-muted mb-0">View and manage admin sales</p>
+            <p class="text-muted mb-0">{{ auth()->user()->role === 'staff' ? 'View and manage staff sales' : 'View and manage admin sales' }}</p>
         </div>
         <div>
             <a href="{{ route('admin.sales-system') }}" class="btn btn-primary">
@@ -507,6 +508,16 @@
                             || (isset($selectedSale->staffReturns) && $selectedSale->staffReturns->count() > 0);
                     @endphp
                     @if($hasAnyReturns)
+                    @php
+                        $totalReturnAmt = 0;
+                        if (isset($selectedSale->returns)) {
+                            foreach ($selectedSale->returns as $r) {
+                                $totalReturnAmt += $r->total_amount;
+                            }
+                        }
+                        $netAfterReturn = $selectedSale->total_amount - $totalReturnAmt;
+                        $dueAfterReturn = max(0, $selectedSale->due_amount - $totalReturnAmt);
+                    @endphp
                     <div class="row mt-2">
                         <div class="col-7"></div>
                         <div class="col-5">
@@ -515,23 +526,15 @@
                                     <td><strong>Grand Total</strong></td>
                                     <td class="text-end">Rs.{{ number_format($selectedSale->total_amount, 2) }}</td>
                                 </tr>
-                                @if(isset($selectedSale->returns) && count($selectedSale->returns) > 0)
+                                @if($totalReturnAmt > 0)
                                 <tr>
                                     <td><strong>Net Amount</strong></td>
-                                    <td class="text-end fw-bold">
-                                        Rs.@php
-                                            $returnAmount = 0;
-                                            foreach($selectedSale->returns as $return) {
-                                                $returnAmount += $return->total_amount;
-                                            }
-                                            echo number_format(($selectedSale->subtotal - $selectedSale->discount_amount) - $returnAmount, 2);
-                                        @endphp
-                                    </td>
+                                    <td class="text-end fw-bold">Rs.{{ number_format($netAfterReturn, 2) }}</td>
                                 </tr>
                                 @endif
                                 <tr>
                                     <td><strong>Due Amount</strong></td>
-                                    <td class="text-end">Rs.{{ number_format($selectedSale->due_amount, 2) }}</td>
+                                    <td class="text-end">Rs.{{ number_format($dueAfterReturn, 2) }}</td>
                                 </tr>
                             </table>
                         </div>

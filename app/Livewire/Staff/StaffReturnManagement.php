@@ -190,12 +190,9 @@ class StaffReturnManagement extends Component
         $totalQuantity = $this->selectedInvoice->items->sum('quantity');
         $totalDiscountAmount = $this->selectedInvoice->discount_amount ?? 0;
 
-        $totalUnitDiscounts = $this->selectedInvoice->items->sum(function ($item) {
-            return ($item->discount_per_unit ?? 0) * $item->quantity;
-        });
-
-        $remainingOverallDiscount = $totalDiscountAmount - $totalUnitDiscounts;
-        $this->overallDiscountPerItem = $totalQuantity > 0 ? ($remainingOverallDiscount / $totalQuantity) : 0;
+        // discount_amount is the sale-level header discount only (does not include per-item discounts).
+        // Distribute it evenly across all units as the "overall" discount per unit.
+        $this->overallDiscountPerItem = $totalQuantity > 0 ? ($totalDiscountAmount / $totalQuantity) : 0;
     }
 
     /** 📜 Load Previous Returns */
@@ -253,12 +250,8 @@ class StaffReturnManagement extends Component
             $totalDiscountAmount = $invoice->discount_amount ?? 0;
             $totalQty = $invoice->items->sum('quantity');
 
-            $totalUnitDiscounts = $invoice->items->sum(function ($item) {
-                return ($item->discount_per_unit ?? 0) * $item->quantity;
-            });
-
-            $remainingOverallDiscount = $totalDiscountAmount - $totalUnitDiscounts;
-            $overallDiscountPerItem = $totalQty > 0 ? ($remainingOverallDiscount / $totalQty) : 0;
+            // discount_amount is the sale-level header discount only (does not include per-item discounts).
+            $overallDiscountPerItem = $totalQty > 0 ? ($totalDiscountAmount / $totalQty) : 0;
 
             $this->invoiceModalData = [
                 'invoice_number' => $invoice->invoice_number,
