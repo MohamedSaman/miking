@@ -62,6 +62,7 @@ use App\Models\Setting as ModelsSetting;
 use App\Livewire\Admin\Settings;
 use App\Livewire\Admin\Expenses;
 use App\Livewire\Admin\Income;
+use App\Livewire\Admin\TotalSales;
 use App\Livewire\Admin\ReturnList;
 use App\Livewire\Admin\ReturnProduct;
 use App\Livewire\Admin\AddCustomerReceipt;
@@ -214,6 +215,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/staff-customer-return', StaffCustomerReturnList::class)->name('staff-customer-return');
         Route::get('/staff-allocated-products/{staffId?}', StaffAllocatedProducts::class)->name('staff-allocated-products');
         Route::get('/sales-distribution', SalesDistributionManagement::class)->name('sales-distribution');
+        Route::get('/total-sales', TotalSales::class)->name('total-sales')->middleware('permission:menu_total_sales');
         Route::get('/add-customer-receipt', AddCustomerReceipt::class)->name('add-customer-receipt');
         Route::get('/cheque-list', ChequeList::class)->name('cheque-list');
         Route::get('/return-cheque', ReturnCheque::class)->name('return-cheque');
@@ -247,6 +249,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/sales-system/{saleId?}', SalesSystem::class)->name('sales-system');
         Route::get('/pos-sales', PosSales::class)->name('pos-sales');
         Route::get('/sales-list', SalesList::class)->name('sales-list');
+        Route::get('/total-sales', TotalSales::class)->name('total-sales')->middleware('permission:menu_total_sales');
         Route::get('/store-billing/{saleId?}', StoreBilling::class)->name('store-billing');
 
         // Customers

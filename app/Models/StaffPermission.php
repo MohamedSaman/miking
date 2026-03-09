@@ -47,6 +47,7 @@ class StaffPermission extends Model
             'menu_sales_system' => 'Add Sales (Sales System)',
             'menu_pos_sales' => 'POS Sales Records',
             'sales_distribution_access' => 'Sales Distribution Page',
+            'menu_total_sales' => 'Total Sales Summary Page',
 
             // Quotation Menu
             'menu_quotation' => 'Quotation Parent Menu',
@@ -165,6 +166,7 @@ class StaffPermission extends Model
                 'menu_sales_system',
                 'menu_pos_sales',
                 'sales_distribution_access',
+                'menu_total_sales',
             ],
             'Quotation Management' => [
                 'menu_quotation',

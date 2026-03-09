@@ -949,6 +949,13 @@
                                 </a>
                             </li>
                             @endif
+                            @if(auth()->user()->hasPermission('menu_total_sales'))
+                            <li class="nav-item">
+                                <a class="nav-link py-2" href="{{ route('staff.total-sales') }}">
+                                    <i class="bi bi-bar-chart-line"></i> <span>Total Sales</span>
+                                </a>
+                            </li>
+                            @endif
                         </ul>
                     </div>
                 </li>

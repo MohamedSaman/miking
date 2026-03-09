@@ -935,6 +935,13 @@
                                     <i class="bi bi-truck"></i> <span>Sales Distribution</span>
                                 </a>
                             </li>
+                            @if(auth()->user()->hasPermission('menu_total_sales'))
+                            <li class="nav-item">
+                                <a class="nav-link py-2" href="{{ route('admin.total-sales') }}">
+                                    <i class="bi bi-bar-chart-line"></i> <span>Total Sales</span>
+                                </a>
+                            </li>
+                            @endif
                         </ul>
                     </div>
                 </li>
