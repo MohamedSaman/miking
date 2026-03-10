@@ -370,6 +370,9 @@ class PosSales extends Component
     {
         return Sale::with(['customer', 'user', 'items'])
             ->where('sale_type', 'pos')
+            ->when(auth()->user()->isStaff(), function ($query) {
+                $query->where('user_id', auth()->id());
+            })
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('invoice_number', 'like', '%' . $this->search . '%')
@@ -396,15 +399,20 @@ class PosSales extends Component
 
     public function getSalesStatsProperty()
     {
-        $totalSales = Sale::where('sale_type', 'pos');
-        $todaySales = Sale::where('sale_type', 'pos')->whereDate('created_at', today());
+        $baseQuery = Sale::where('sale_type', 'pos')
+            ->when(auth()->user()->isStaff(), function ($query) {
+                $query->where('user_id', auth()->id());
+            });
+
+        $totalSales = (clone $baseQuery);
+        $todaySales = (clone $baseQuery)->whereDate('created_at', today());
 
         return [
             'total_sales' => $totalSales->count(),
             'total_amount' => $totalSales->sum('total_amount'),
-            'pending_payments' => Sale::where('sale_type', 'pos')->where('payment_status', 'pending')->sum('due_amount'),
-            'partial_payments' => Sale::where('sale_type', 'pos')->where('payment_status', 'partial')->sum('due_amount'),
-            'paid_amount' => Sale::where('sale_type', 'pos')->where('payment_status', 'paid')->sum('total_amount'),
+            'pending_payments' => (clone $baseQuery)->where('payment_status', 'pending')->sum('due_amount'),
+            'partial_payments' => (clone $baseQuery)->where('payment_status', 'partial')->sum('due_amount'),
+            'paid_amount' => (clone $baseQuery)->where('payment_status', 'paid')->sum('total_amount'),
             'today_sales' => $todaySales->count(),
             'today_amount' => $todaySales->sum('total_amount'),
         ];

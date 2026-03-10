@@ -237,8 +237,6 @@ class StoreBilling extends Component
         $this->customerSearch = $sale->customer->name ?? '';
         $this->notes = $sale->notes;
         $this->salePriceType = $sale->sale_price_type;
-        $this->additionalDiscount = $sale->discount_amount;
-        $this->additionalDiscountType = 'fixed';
         $this->paymentMethod = $sale->payment_method;
 
         // Load items into cart
@@ -263,6 +261,15 @@ class StoreBilling extends Component
                 'stock' => ($product->stock->available_stock ?? 0) + $item->quantity
             ];
         }
+
+        // Calculate item-level discounts total, then set additional discount
+        // discount_amount in DB = item discounts + additional discount (on create)
+        $itemLevelDiscountTotal = collect($this->cart)->sum(function ($item) {
+            return $item['discount'] * $item['quantity'];
+        });
+        $additionalOnly = max(0, $sale->discount_amount - $itemLevelDiscountTotal);
+        $this->additionalDiscount = $additionalOnly;
+        $this->additionalDiscountType = 'fixed';
 
         // Load payments via both direct relationship AND payment allocations
         $directPayments = $sale->payments;
@@ -301,21 +308,43 @@ class StoreBilling extends Component
             ];
         })->values()->toArray();
 
-        // Load returns for this sale
-        $returns = $sale->returns()->with('product')->get();
-        $this->existingTotalReturns = $returns->sum('total_amount');
-        $this->existingReturns = $returns->map(function ($return) {
-            return [
+        // Load returns for this sale (admin returns + approved staff/customer returns)
+        $adminReturns = $sale->returns()->with('product')->get();
+        $staffReturns = $sale->staffReturns()->where('status', 'approved')->with('product')->get();
+
+        $this->existingTotalReturns = $adminReturns->sum('total_amount') + $staffReturns->sum('total_amount');
+
+        $allReturns = collect();
+
+        foreach ($adminReturns as $return) {
+            $allReturns->push([
                 'id' => $return->id,
-                'product_name' => $return->product->product_name ?? 'N/A',
-                'product_code' => $return->product->product_code ?? '',
+                'product_name' => $return->product->name ?? 'N/A',
+                'product_code' => $return->product->code ?? '',
                 'return_quantity' => $return->return_quantity,
                 'selling_price' => $return->selling_price,
                 'total_amount' => $return->total_amount,
                 'notes' => $return->notes,
                 'date' => $return->created_at->format('M d, Y h:i A'),
-            ];
-        })->toArray();
+                'type' => 'Admin Return',
+            ]);
+        }
+
+        foreach ($staffReturns as $return) {
+            $allReturns->push([
+                'id' => $return->id,
+                'product_name' => $return->product->name ?? 'N/A',
+                'product_code' => $return->product->code ?? '',
+                'return_quantity' => $return->quantity,
+                'selling_price' => $return->unit_price,
+                'total_amount' => $return->total_amount,
+                'notes' => $return->notes,
+                'date' => $return->created_at->format('M d, Y h:i A'),
+                'type' => 'Customer Return',
+            ]);
+        }
+
+        $this->existingReturns = $allReturns->toArray();
 
         // Reset new payment input fields — staff can add more payment if still due
         $this->cashAmount = 0;

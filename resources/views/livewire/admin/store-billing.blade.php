@@ -644,7 +644,7 @@
                                         <th class="text-center">Qty</th>
                                         <th>Price</th>
                                         <th>Total</th>
-                                        <th>Date</th>
+                                        <th>Type</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -662,7 +662,7 @@
                                         <td class="text-center">{{ $return['return_quantity'] }}</td>
                                         <td>Rs.{{ number_format($return['selling_price'], 2) }}</td>
                                         <td class="fw-bold text-danger">Rs.{{ number_format($return['total_amount'], 2) }}</td>
-                                        <td class="small">{{ $return['date'] }}</td>
+                                        <td><span class="badge bg-{{ $return['type'] === 'Customer Return' ? 'warning text-dark' : 'info' }}">{{ $return['type'] }}</span></td>
                                     </tr>
                                     @if($return['notes'])
                                     <tr>
