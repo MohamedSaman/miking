@@ -76,13 +76,13 @@
                 <td colspan="6" class="text-end"><strong>Grand Total</strong></td>
                 <td class="text-end"><strong>Rs.{{ number_format($sale->total_amount, 2) }}</strong></td>
             </tr>
-            @if($sale->payments->count() > 0)
+            @if($sale->payments->count() > 0 && (!isset($sale->staffReturns) || count($sale->staffReturns) == 0))
             <tr class="totals-row">
                 <td colspan="6" class="text-end"><strong>Paid Amount</strong></td>
                 <td class="text-end"><strong>Rs.{{ number_format($sale->payments->sum('amount'), 2) }}</strong></td>
             </tr>
             @endif
-            @if($sale->due_amount > 0)
+            @if($sale->due_amount > 0 && (!isset($sale->staffReturns) || count($sale->staffReturns) == 0))
             <tr class="totals-row">
                 <td colspan="6" class="text-end"><strong>Due Amount</strong></td>
                 <td class="text-end"><strong>Rs.{{ number_format($sale->due_amount, 2) }}</strong></td>
@@ -168,9 +168,17 @@
                     <td colspan="5" class="text-end"><strong>Return Amount:</strong></td>
                     <td class="text-end"><strong>-Rs.{{ number_format($staffReturnAmount, 2) }}</strong></td>
                 </tr>
-                <tr class="totals-row grand-total">
-                    <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
+                <tr class="totals-row">
+                    <td colspan="5" class="text-end"><strong>Total After Returns:</strong></td>
                     <td class="text-end"><strong>Rs.{{ number_format($sale->total_amount - $staffReturnAmount, 2) }}</strong></td>
+                </tr>
+                <tr class="totals-row">
+                    <td colspan="5" class="text-end"><strong>Paid Amount:</strong></td>
+                    <td class="text-end"><strong>Rs.{{ number_format(max(0, $sale->total_amount - $staffReturnAmount - $sale->due_amount), 2) }}</strong></td>
+                </tr>
+                <tr class="totals-row grand-total">
+                    <td colspan="5" class="text-end"><strong>Due Amount:</strong></td>
+                    <td class="text-end"><strong>Rs.{{ number_format($sale->due_amount, 2) }}</strong></td>
                 </tr>
             </tfoot>
         </table>

@@ -434,7 +434,15 @@ use App\Models\Sale;
                                     <td><strong>Grand Total</strong></td>
                                     <td class="text-end fw-bold">Rs.{{ number_format($selectedSale->total_amount, 2) }}</td>
                                 </tr>
-                                @if($selectedSale->due_amount > 0)
+                                @if((!isset($selectedSale->returns) || count($selectedSale->returns) == 0) && (!isset($selectedSale->staffReturns) || count($selectedSale->staffReturns) == 0))
+                                @if($selectedSale->total_amount - $selectedSale->due_amount > 0)
+                                <tr>
+                                    <td><strong class="text-success">Paid Amount</strong></td>
+                                    <td class="text-end fw-bold text-success">Rs.{{ number_format($selectedSale->total_amount - $selectedSale->due_amount, 2) }}</td>
+                                </tr>
+                                @endif
+                                @endif
+                                @if($selectedSale->due_amount > 0 && (!isset($selectedSale->returns) || count($selectedSale->returns) == 0) && (!isset($selectedSale->staffReturns) || count($selectedSale->staffReturns) == 0))
                                 <tr>
                                     <td><strong class="text-danger">Due Amount</strong></td>
                                     <td class="text-end fw-bold text-danger">Rs.{{ number_format($selectedSale->due_amount, 2) }}</td>
@@ -527,8 +535,18 @@ use App\Models\Sale;
                                     <td></td>
                                 </tr>
                                 <tr>
-                                    <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
-                                    <td class="text-end fw-bold">Rs.{{ number_format($selectedSale->total_amount - $staffReturnAmount, 2) }}</td>
+                                    <td colspan="5" class="text-end"><strong>Total After Returns:</strong></td>
+                                    <td class="text-end">Rs.{{ number_format($selectedSale->total_amount - $staffReturnAmount, 2) }}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong class="text-success">Paid Amount:</strong></td>
+                                    <td class="text-end fw-bold text-success">Rs.{{ number_format(max(0, $selectedSale->total_amount - $staffReturnAmount - $selectedSale->due_amount), 2) }}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong class="text-danger">Due Amount:</strong></td>
+                                    <td class="text-end fw-bold text-danger">Rs.{{ number_format($selectedSale->due_amount, 2) }}</td>
                                     <td></td>
                                 </tr>
                             </tfoot>

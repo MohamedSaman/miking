@@ -616,6 +616,20 @@
                                         <span
                                             class="fw-semibold">Rs.{{ number_format($selectedSale->total_amount, 2) }}</span>
                                     </div>
+                                    @if(!isset($selectedSale->staffReturns) || count($selectedSale->staffReturns) == 0)
+                                    @if($selectedSale->total_amount - $selectedSale->due_amount > 0)
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-success fw-bold">Paid Amount</span>
+                                        <span class="fw-bold text-success">Rs.{{ number_format($selectedSale->total_amount - $selectedSale->due_amount, 2) }}</span>
+                                    </div>
+                                    @endif
+                                    @endif
+                                    @if($selectedSale->due_amount > 0 && (!isset($selectedSale->staffReturns) || count($selectedSale->staffReturns) == 0))
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-danger fw-bold">Due Amount</span>
+                                        <span class="fw-bold text-danger">Rs.{{ number_format($selectedSale->due_amount, 2) }}</span>
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -665,8 +679,18 @@
                                         <td></td>
                                     </tr>
                                     <tr>
-                                        <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
-                                        <td class="text-end fw-bold">Rs.{{ number_format($selectedSale->total_amount - $returnAmount, 2) }}</td>
+                                        <td colspan="5" class="text-end"><strong>Total After Returns:</strong></td>
+                                        <td class="text-end">Rs.{{ number_format($selectedSale->total_amount - $returnAmount, 2) }}</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong class="text-success">Paid Amount:</strong></td>
+                                        <td class="text-end fw-bold text-success">Rs.{{ number_format(max(0, $selectedSale->total_amount - $returnAmount - $selectedSale->due_amount), 2) }}</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong class="text-danger">Due Amount:</strong></td>
+                                        <td class="text-end fw-bold text-danger">Rs.{{ number_format($selectedSale->due_amount, 2) }}</td>
                                         <td></td>
                                     </tr>
                                 </tfoot>
@@ -813,8 +837,16 @@
                                         <td class="text-end text-danger">- Rs.{{ number_format($receiptReturnAmount, 2) }}</td>
                                     </tr>
                                     <tr>
-                                        <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
-                                        <td class="text-end fw-bold">Rs.{{ number_format($selectedSale->total_amount - $receiptReturnAmount, 2) }}</td>
+                                        <td colspan="5" class="text-end"><strong>Total After Returns:</strong></td>
+                                        <td class="text-end">Rs.{{ number_format($selectedSale->total_amount - $receiptReturnAmount, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong class="text-success">Paid Amount:</strong></td>
+                                        <td class="text-end fw-bold text-success">Rs.{{ number_format(max(0, $selectedSale->total_amount - $receiptReturnAmount - $selectedSale->due_amount), 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong class="text-danger">Due Amount:</strong></td>
+                                        <td class="text-end fw-bold text-danger">Rs.{{ number_format($selectedSale->due_amount, 2) }}</td>
                                     </tr>
                                 </tfoot>
                             </table>

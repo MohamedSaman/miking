@@ -381,11 +381,19 @@
                                     <td><strong>Grand Total</strong></td>
                                     <td class="text-end fw-bold">Rs.{{ number_format($selectedSale->total_amount, 2) }}</td>
                                 </tr>
+                                @if((!isset($selectedSale->returns) || count($selectedSale->returns) == 0) && (!isset($selectedSale->staffReturns) || $selectedSale->staffReturns->count() == 0))
+                                @if($selectedSale->total_amount - $selectedSale->due_amount > 0)
+                                <tr>
+                                    <td><strong class="text-success">Paid Amount</strong></td>
+                                    <td class="text-end fw-bold text-success">Rs.{{ number_format($selectedSale->total_amount - $selectedSale->due_amount, 2) }}</td>
+                                </tr>
+                                @endif
                                 @if($selectedSale->due_amount > 0)
                                 <tr>
                                     <td><strong class="text-danger">Due Amount</strong></td>
                                     <td class="text-end fw-bold text-danger">Rs.{{ number_format($selectedSale->due_amount, 2) }}</td>
                                 </tr>
+                                @endif
                                 @endif
                             </table>
                         </div>
@@ -423,13 +431,22 @@
                             <tfoot class="table-light">
                                 <tr>
                                     <td colspan="5" class="text-end"><strong>Return Amount:</strong></td>
-                                    <td class="text-end">- Rs.@php echo number_format($returnAmount, 2); @endphp</td>
+                                    <td class="text-end text-danger">- Rs.{{ number_format($returnAmount, 2) }}</td>
                                 </tr>
                                 <tr>
-                                    <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
-                                    <td class="text-end fw-bold">
-                                        Rs.@php echo number_format(($selectedSale->subtotal - $selectedSale->discount_amount) - $returnAmount, 2); @endphp
-                                    </td>
+                                    <td colspan="5" class="text-end"><strong>Total After Returns:</strong></td>
+                                    <td class="text-end">Rs.{{ number_format($selectedSale->total_amount - $returnAmount, 2) }}</td>
+                                </tr>
+                                @php $paidAfterAdminReturn = max(0, $selectedSale->total_amount - $returnAmount - $selectedSale->due_amount); @endphp
+                                @if($paidAfterAdminReturn > 0)
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong class="text-success">Paid Amount:</strong></td>
+                                    <td class="text-end fw-bold text-success">Rs.{{ number_format($paidAfterAdminReturn, 2) }}</td>
+                                </tr>
+                                @endif
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong class="text-danger">Due Amount:</strong></td>
+                                    <td class="text-end fw-bold text-danger">Rs.{{ number_format($selectedSale->due_amount, 2) }}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -491,8 +508,26 @@
                                 @if($staffReturnTotal > 0)
                                 <tfoot class="table-light">
                                     <tr>
-                                        <td colspan="5" class="text-end"><strong>Approved Return Amount:</strong></td>
+                                        <td colspan="5" class="text-end"><strong>Return Amount:</strong></td>
                                         <td class="text-end text-danger fw-bold">- Rs.{{ number_format($staffReturnTotal, 2) }}</td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong>Total After Returns:</strong></td>
+                                        <td class="text-end">Rs.{{ number_format($selectedSale->total_amount - $staffReturnTotal, 2) }}</td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                    @php $staffPaid = max(0, $selectedSale->total_amount - $staffReturnTotal - $selectedSale->due_amount); @endphp
+                                    @if($staffPaid > 0)
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong class="text-success">Paid Amount:</strong></td>
+                                        <td class="text-end fw-bold text-success">Rs.{{ number_format($staffPaid, 2) }}</td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                    @endif
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong class="text-danger">Due Amount:</strong></td>
+                                        <td class="text-end fw-bold text-danger">Rs.{{ number_format($selectedSale->due_amount, 2) }}</td>
                                         <td colspan="2"></td>
                                     </tr>
                                 </tfoot>
@@ -502,44 +537,7 @@
                     </div>
                     @endif
 
-                    {{-- ==================== POST-RETURN TOTALS (only when returns exist) ==================== --}}
-                    @php
-                        $hasAnyReturns = (isset($selectedSale->returns) && count($selectedSale->returns) > 0)
-                            || (isset($selectedSale->staffReturns) && $selectedSale->staffReturns->count() > 0);
-                    @endphp
-                    @if($hasAnyReturns)
-                    @php
-                        $totalReturnAmt = 0;
-                        if (isset($selectedSale->returns)) {
-                            foreach ($selectedSale->returns as $r) {
-                                $totalReturnAmt += $r->total_amount;
-                            }
-                        }
-                        $netAfterReturn = $selectedSale->total_amount - $totalReturnAmt;
-                        $dueAfterReturn = max(0, $selectedSale->due_amount - $totalReturnAmt);
-                    @endphp
-                    <div class="row mt-2">
-                        <div class="col-7"></div>
-                        <div class="col-5">
-                            <table class="table table-sm table-borderless">
-                                <tr>
-                                    <td><strong>Grand Total</strong></td>
-                                    <td class="text-end">Rs.{{ number_format($selectedSale->total_amount, 2) }}</td>
-                                </tr>
-                                @if($totalReturnAmt > 0)
-                                <tr>
-                                    <td><strong>Net Amount</strong></td>
-                                    <td class="text-end fw-bold">Rs.{{ number_format($netAfterReturn, 2) }}</td>
-                                </tr>
-                                @endif
-                                <tr>
-                                    <td><strong>Due Amount</strong></td>
-                                    <td class="text-end">Rs.{{ number_format($dueAfterReturn, 2) }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                    @endif
+
 
                     @if($selectedSale->notes)
                     <h6 class="text-muted mb-2">NOTES</h6>

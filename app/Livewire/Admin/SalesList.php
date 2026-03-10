@@ -233,6 +233,14 @@ class SalesList extends Component
                         $item['return_qty']
                     );
                 }
+
+                // Reduce due_amount by the total return value
+                $totalReturnValue = collect($itemsToReturn)->sum(fn($item) => $item['return_qty'] * $item['unit_price']);
+                $this->selectedSale->due_amount = max(0, $this->selectedSale->due_amount - $totalReturnValue);
+                if ($this->selectedSale->due_amount == 0) {
+                    $this->selectedSale->payment_status = 'paid';
+                }
+                $this->selectedSale->save();
             });
 
             $this->showReturnModal = false;

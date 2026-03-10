@@ -218,7 +218,7 @@ class AddCustomerReceipt extends Component
     {
         if (!$this->selectedCustomer) return;
 
-        $query = Sale::with(['items', 'payments', 'returns', 'staffReturns' => function ($q) {
+        $query = Sale::with(['items', 'returns', 'staffReturns' => function ($q) {
                 $q->where('status', 'approved');
             }])
             ->where('customer_id', $this->selectedCustomer->id)
@@ -237,7 +237,7 @@ class AddCustomerReceipt extends Component
             ->get();
 
         $this->customerSales = $sales->map(function ($sale) {
-            // Admin returns (ReturnsProduct) are NOT yet reflected in due_amount — deduct them for display
+            // Admin returns (ReturnsProduct) now reduce due_amount directly in DB at return time
             $adminReturnAmount = $this->calculateReturnAmount($sale->id);
             // Staff returns are ALREADY reflected in due_amount (approval reduces it directly)
             $staffReturnAmount = $sale->staffReturns->sum('total_amount');
@@ -245,11 +245,11 @@ class AddCustomerReceipt extends Component
 
             // Adjusted amounts after returns
             $adjustedTotalAmount = $sale->total_amount - $totalReturnAmount;
-            // Only deduct admin returns from due_amount; staff returns already deducted at approval
-            $adjustedDueAmount = max(0, $sale->due_amount - $adminReturnAmount);
+            // due_amount already incorporates both admin and staff return reductions
+            $adjustedDueAmount = $sale->due_amount;
 
-            // Actual paid = sum of real payment records (not total - due which conflates returns)
-            $paidAmount = $sale->payments->sum('amount');
+            // Paid = adjusted total minus adjusted due (accounts for both return types correctly)
+            $paidAmount = max(0, $adjustedTotalAmount - $adjustedDueAmount);
 
             // If adjusted due amount is 0 or negative, update the sale status
             if ($adjustedDueAmount <= 0.01) {

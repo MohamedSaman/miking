@@ -391,6 +391,14 @@ class ReturnProduct extends Component
                     $item['return_qty']
                 );
             }
+
+            // Reduce due_amount by the total return value
+            $totalReturnValue = collect($itemsToReturn)->sum(fn($item) => $item['return_qty'] * $item['net_unit_price']);
+            $this->selectedInvoice->due_amount = max(0, $this->selectedInvoice->due_amount - $totalReturnValue);
+            if ($this->selectedInvoice->due_amount == 0) {
+                $this->selectedInvoice->payment_status = 'paid';
+            }
+            $this->selectedInvoice->save();
         });
 
         $this->clearReturnCart();
