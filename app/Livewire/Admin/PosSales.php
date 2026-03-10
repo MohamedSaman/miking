@@ -69,6 +69,9 @@ class PosSales extends Component
             'user',
             'returns' => function ($q) {
                 $q->with('product');
+            },
+            'staffReturns' => function ($q) {
+                $q->where('status', 'approved')->with('product');
             }
         ])
             ->where('sale_type', 'pos')
@@ -269,15 +272,18 @@ class PosSales extends Component
     {
         $sale = \App\Models\Sale::with(['customer', 'items', 'payments', 'returns' => function ($q) {
             $q->with('product');
+        }, 'staffReturns' => function ($q) {
+            $q->where('status', 'approved')->with('product');
         }])->find($saleId);
         if (!$sale) {
             $this->dispatch('showToast', ['type' => 'error', 'message' => 'Sale not found.']);
             return;
         }
-        // Store sale ID in session for print route
-        session(['print_sale_id' => $sale->id]);
-        // Open print page in new window
-        $printUrl = route('admin.print.sale', $sale->id);
+        // Use role-appropriate print route so staff users don't get redirected
+        $routeName = \Illuminate\Support\Facades\Auth::user()->role === 'admin'
+            ? 'admin.print.sale'
+            : 'staff.print.sale';
+        $printUrl = route($routeName, $sale->id);
         $this->js("window.open('$printUrl', '_blank', 'width=800,height=600');");
     }
 
@@ -285,6 +291,8 @@ class PosSales extends Component
     {
         $sale = Sale::with(['customer', 'items', 'returns' => function ($q) {
             $q->with('product');
+        }, 'staffReturns' => function ($q) {
+            $q->where('status', 'approved')->with('product');
         }])->find($saleId);
 
         if (!$sale) {

@@ -205,7 +205,9 @@ class StaffSalesView extends Component
 
     public function viewSale($saleId)
     {
-        $this->selectedSale = Sale::with(['customer', 'items', 'payments', 'user'])
+        $this->selectedSale = Sale::with(['customer', 'items', 'payments', 'user', 'staffReturns' => function ($q) {
+            $q->where('status', 'approved')->with('product');
+        }])
             ->findOrFail($saleId);
         $this->showViewModal = true;
     }

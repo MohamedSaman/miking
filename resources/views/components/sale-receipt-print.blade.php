@@ -56,7 +56,7 @@
                 <td>{{ $item->product_name }}</td>
                 <td class="text-center">{{ $item->quantity }}</td>
                 <td class="text-end">Rs.{{ number_format($item->unit_price, 2) }}</td>
-                <td class="text-end">Rs.{{ number_format($item->unit_discount, 2) }}</td>
+                <td class="text-end">Rs.{{ number_format($item->discount_per_unit, 2) }}</td>
                 <td class="text-end">Rs.{{ number_format($item->total, 2) }}</td>
             </tr>
             @endforeach
@@ -128,6 +128,49 @@
                 <tr class="totals-row grand-total">
                     <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
                     <td class="text-end"><strong>Rs.{{ number_format(($sale->subtotal - $sale->discount_amount) - $returnAmount, 2) }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    @endif
+
+    {{-- Staff Returned Items Table --}}
+    @if(isset($sale->staffReturns) && count($sale->staffReturns) > 0)
+    <div class="returned-items-section">
+        <h6 style="margin-bottom: 10px; font-weight: bold; color: #000;">CUSTOMER RETURNED ITEMS</h6>
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th width="40">#</th>
+                    <th>ITEM CODE</th>
+                    <th>DESCRIPTION</th>
+                    <th width="100">RETURN QTY</th>
+                    <th width="120">UNIT PRICE</th>
+                    <th width="120">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php $staffReturnAmount = 0; @endphp
+                @foreach($sale->staffReturns as $srIndex => $staffReturn)
+                @php $staffReturnAmount += $staffReturn->total_amount; @endphp
+                <tr>
+                    <td class="text-center">{{ $srIndex + 1 }}</td>
+                    <td>{{ $staffReturn->product?->code ?? '-' }}</td>
+                    <td>{{ $staffReturn->product?->name ?? '-' }}</td>
+                    <td class="text-center">{{ $staffReturn->quantity }}</td>
+                    <td class="text-end">Rs.{{ number_format($staffReturn->unit_price, 2) }}</td>
+                    <td class="text-end">Rs.{{ number_format($staffReturn->total_amount, 2) }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr class="totals-row">
+                    <td colspan="5" class="text-end"><strong>Return Amount:</strong></td>
+                    <td class="text-end"><strong>-Rs.{{ number_format($staffReturnAmount, 2) }}</strong></td>
+                </tr>
+                <tr class="totals-row grand-total">
+                    <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
+                    <td class="text-end"><strong>Rs.{{ number_format($sale->total_amount - $staffReturnAmount, 2) }}</strong></td>
                 </tr>
             </tfoot>
         </table>

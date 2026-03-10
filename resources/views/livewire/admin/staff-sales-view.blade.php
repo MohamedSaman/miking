@@ -395,6 +395,53 @@
                         </div>
                     </div>
 
+                    @if(isset($selectedSale->staffReturns) && count($selectedSale->staffReturns) > 0)
+                    <hr>
+                    <h6 class="fw-bold text-muted mb-3">Returned Items</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Product</th>
+                                    <th>Code</th>
+                                    <th class="text-center">Return Qty</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Total</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php $staffReturnAmount = 0; @endphp
+                                @foreach($selectedSale->staffReturns as $srIdx => $staffReturn)
+                                @php $staffReturnAmount += $staffReturn->total_amount; @endphp
+                                <tr>
+                                    <td>{{ $srIdx + 1 }}</td>
+                                    <td>{{ $staffReturn->product?->name ?? '-' }}</td>
+                                    <td>{{ $staffReturn->product?->code ?? '-' }}</td>
+                                    <td class="text-center">{{ $staffReturn->quantity }}</td>
+                                    <td class="text-end">Rs.{{ number_format($staffReturn->unit_price, 2) }}</td>
+                                    <td class="text-end">Rs.{{ number_format($staffReturn->total_amount, 2) }}</td>
+                                    <td class="text-center"><span class="badge bg-success">Approved</span></td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong>Return Amount:</strong></td>
+                                    <td class="text-end text-danger">- Rs.{{ number_format($staffReturnAmount, 2) }}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
+                                    <td class="text-end fw-bold">Rs.{{ number_format($selectedSale->total_amount - $staffReturnAmount, 2) }}</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    @endif
+
                     @if ($selectedSale->notes)
                     <hr>
                     <h6 class="fw-bold text-muted mb-2">Notes</h6>

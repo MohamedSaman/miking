@@ -13,7 +13,9 @@ class ReceiptController extends Controller
     {
         try {
             // Load the sale with all necessary relationships
-            $sale = Sale::with(['customer', 'items.product', 'payments'])->findOrFail($id);
+            $sale = Sale::with(['customer', 'items.product', 'payments', 'staffReturns' => function ($q) {
+                $q->where('status', 'approved')->with('product');
+            }])->findOrFail($id);
 
             // Set PDF options for better rendering
             $pdf = Pdf::loadView('receipts.download', compact('sale'))

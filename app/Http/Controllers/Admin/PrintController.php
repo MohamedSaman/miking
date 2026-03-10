@@ -13,6 +13,8 @@ class PrintController extends Controller
         // Load sale with all necessary relationships including returns
         $sale = Sale::with(['customer', 'items.product', 'payments', 'returns' => function ($q) {
             $q->with('product');
+        }, 'staffReturns' => function ($q) {
+            $q->where('status', 'approved')->with('product');
         }])->findOrFail($id);
 
         // Return the print view

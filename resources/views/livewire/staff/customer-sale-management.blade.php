@@ -620,15 +620,69 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- ==================== RETURNED ITEMS TABLE ==================== --}}
+                    @if(isset($selectedSale->staffReturns) && count($selectedSale->staffReturns) > 0)
+                    <div class="info-card mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0"><i class="bi bi-arrow-return-left me-2 text-danger"></i>Returned Items</h6>
+                            <span class="badge bg-danger rounded-pill">{{ count($selectedSale->staffReturns) }} returns</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Product</th>
+                                        <th class="text-center">Code</th>
+                                        <th class="text-center">Return Qty</th>
+                                        <th class="text-end">Unit Price</th>
+                                        <th class="text-end">Total</th>
+                                        <th class="text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php $returnAmount = 0; @endphp
+                                    @foreach($selectedSale->staffReturns as $rIndex => $return)
+                                    @php $returnAmount += $return->total_amount; @endphp
+                                    <tr>
+                                        <td>{{ $rIndex + 1 }}</td>
+                                        <td>{{ $return->product?->name ?? '-' }}</td>
+                                        <td class="text-center">{{ $return->product?->code ?? '-' }}</td>
+                                        <td class="text-center">{{ $return->quantity }}</td>
+                                        <td class="text-end">Rs.{{ number_format($return->unit_price, 2) }}</td>
+                                        <td class="text-end">Rs.{{ number_format($return->total_amount, 2) }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-success">Approved</span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong>Return Amount:</strong></td>
+                                        <td class="text-end text-danger fw-bold">- Rs.{{ number_format($returnAmount, 2) }}</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
+                                        <td class="text-end fw-bold">Rs.{{ number_format($selectedSale->total_amount - $returnAmount, 2) }}</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    @endif
                     @endif
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                         <i class="bi bi-x-lg me-1"></i> Close
                     </button>
-                    <a href="javascript:void(0)" class="btn btn-primary btn-action" onclick="printInvoice()">
+                    <button type="button" class="btn btn-primary btn-action" wire:click="printInvoice()">
                         <i class="bi bi-printer me-1"></i> Print Invoice
-                    </a>
+                    </button>
                     <a href="{{ route('receipts.download', ['id' => $selectedSale->id ?? 0]) }}"
                         class="btn btn-success btn-action" target="_blank">
                         <i class="bi bi-download me-1"></i> Download PDF
@@ -723,6 +777,49 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Returned Items in Receipt -->
+                        @if(isset($selectedSale->staffReturns) && count($selectedSale->staffReturns) > 0)
+                        <h6 class="text-muted mb-2">RETURNED ITEMS</h6>
+                        <div class="table-responsive mb-4">
+                            <table class="table table-bordered table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Product</th>
+                                        <th class="text-center">Code</th>
+                                        <th class="text-center">Return Qty</th>
+                                        <th class="text-end">Unit Price</th>
+                                        <th class="text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php $receiptReturnAmount = 0; @endphp
+                                    @foreach($selectedSale->staffReturns as $rIdx => $ret)
+                                    @php $receiptReturnAmount += $ret->total_amount; @endphp
+                                    <tr>
+                                        <td>{{ $rIdx + 1 }}</td>
+                                        <td>{{ $ret->product?->name ?? '-' }}</td>
+                                        <td class="text-center">{{ $ret->product?->code ?? '-' }}</td>
+                                        <td class="text-center">{{ $ret->quantity }}</td>
+                                        <td class="text-end">Rs.{{ number_format($ret->unit_price, 2) }}</td>
+                                        <td class="text-end">Rs.{{ number_format($ret->total_amount, 2) }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong>Return Amount:</strong></td>
+                                        <td class="text-end text-danger">- Rs.{{ number_format($receiptReturnAmount, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
+                                        <td class="text-end fw-bold">Rs.{{ number_format($selectedSale->total_amount - $receiptReturnAmount, 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        @endif
 
                         <!-- Order Summary -->
                         <div class="row">

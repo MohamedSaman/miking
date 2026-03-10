@@ -218,7 +218,9 @@ class AddCustomerReceipt extends Component
     {
         if (!$this->selectedCustomer) return;
 
-        $query = Sale::with(['items', 'payments', 'returns'])
+        $query = Sale::with(['items', 'payments', 'returns', 'staffReturns' => function ($q) {
+                $q->where('status', 'approved');
+            }])
             ->where('customer_id', $this->selectedCustomer->id)
             ->where(function ($query) {
                 $query->where('payment_status', 'pending')
@@ -227,25 +229,31 @@ class AddCustomerReceipt extends Component
 
         // Filter by user for staff
         if ($this->isStaff()) {
-            $query->where('user_id', Auth::id())->where('sale_type', 'staff');
+            $query->where('user_id', Auth::id())
+                  ->whereIn('sale_type', ['staff', 'pos']);
         }
 
         $sales = $query->orderBy('created_at', 'asc')
             ->get();
 
         $this->customerSales = $sales->map(function ($sale) {
-            $paidAmount = $sale->total_amount - $sale->due_amount;
-
-            // Calculate total return amount for this sale
-            $returnAmount = $this->calculateReturnAmount($sale->id);
+            // Admin returns (ReturnsProduct) are NOT yet reflected in due_amount — deduct them for display
+            $adminReturnAmount = $this->calculateReturnAmount($sale->id);
+            // Staff returns are ALREADY reflected in due_amount (approval reduces it directly)
+            $staffReturnAmount = $sale->staffReturns->sum('total_amount');
+            $totalReturnAmount = $adminReturnAmount + $staffReturnAmount;
 
             // Adjusted amounts after returns
-            $adjustedTotalAmount = $sale->total_amount - $returnAmount;
-            $adjustedDueAmount = max(0, $sale->due_amount - $returnAmount);
+            $adjustedTotalAmount = $sale->total_amount - $totalReturnAmount;
+            // Only deduct admin returns from due_amount; staff returns already deducted at approval
+            $adjustedDueAmount = max(0, $sale->due_amount - $adminReturnAmount);
+
+            // Actual paid = sum of real payment records (not total - due which conflates returns)
+            $paidAmount = $sale->payments->sum('amount');
 
             // If adjusted due amount is 0 or negative, update the sale status
             if ($adjustedDueAmount <= 0.01) {
-                $this->autoMarkSaleAsPaid($sale->id, $returnAmount);
+                $this->autoMarkSaleAsPaid($sale->id, $adminReturnAmount);
             }
 
             return [
@@ -257,11 +265,11 @@ class AddCustomerReceipt extends Component
                 'total_amount' => $adjustedTotalAmount,
                 'original_due_amount' => $sale->due_amount,
                 'due_amount' => $adjustedDueAmount,
-                'return_amount' => $returnAmount,
+                'return_amount' => $totalReturnAmount,
                 'paid_amount' => $paidAmount,
                 'payment_status' => $adjustedDueAmount <= 0.01 ? 'paid' : $sale->payment_status,
                 'items_count' => $sale->items->count(),
-                'has_returns' => $returnAmount > 0,
+                'has_returns' => $totalReturnAmount > 0,
             ];
         })->filter(function ($sale) {
             // Only show sales with due amount > 0 after returns
@@ -791,7 +799,7 @@ class AddCustomerReceipt extends Component
             // Filter sales by user for staff
             if ($this->isStaff()) {
                 $query->where('user_id', Auth::id())
-                      ->where('sale_type', 'staff');
+                      ->whereIn('sale_type', ['staff', 'pos']);
             }
         }])
             ->whereHas('sales', function ($query) {
@@ -803,7 +811,7 @@ class AddCustomerReceipt extends Component
                 // Filter sales by user for staff
                 if ($this->isStaff()) {
                     $query->where('user_id', Auth::id())
-                          ->where('sale_type', 'staff');
+                          ->whereIn('sale_type', ['staff', 'pos']);
                 }
             })
             ->when($this->search, function ($query) {

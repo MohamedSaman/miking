@@ -190,9 +190,14 @@ class StaffReturnManagement extends Component
         $totalQuantity = $this->selectedInvoice->items->sum('quantity');
         $totalDiscountAmount = $this->selectedInvoice->discount_amount ?? 0;
 
-        // discount_amount is the sale-level header discount only (does not include per-item discounts).
-        // Distribute it evenly across all units as the "overall" discount per unit.
-        $this->overallDiscountPerItem = $totalQuantity > 0 ? ($totalDiscountAmount / $totalQuantity) : 0;
+        // Subtract per-item discounts to get only the sale-level (additional/overall) discount.
+        // This handles both cases: discount_amount storing only additional, or including per-item totals.
+        $totalUnitDiscounts = $this->selectedInvoice->items->sum(function ($item) {
+            return ($item->discount_per_unit ?? 0) * $item->quantity;
+        });
+        $overallDiscountOnly = max(0, $totalDiscountAmount - $totalUnitDiscounts);
+
+        $this->overallDiscountPerItem = $totalQuantity > 0 ? ($overallDiscountOnly / $totalQuantity) : 0;
     }
 
     /** 📜 Load Previous Returns */
@@ -231,17 +236,19 @@ class StaffReturnManagement extends Component
     {
         if (!$this->selectedInvoice) return 0;
 
-        // For staff returns, only count approved returns
+        // Count both approved and pending returns to prevent duplicate return requests
         return StaffReturn::where('sale_id', $this->selectedInvoice->id)
             ->where('product_id', $productId)
-            ->where('status', 'approved')
+            ->whereIn('status', ['approved', 'pending'])
             ->sum('quantity');
     }
 
     /** 👁️ View Invoice Details in Modal */
     public function viewInvoice($invoiceId)
     {
-        $invoice = Sale::with(['items.product', 'customer'])
+        $invoice = Sale::with(['items.product', 'customer', 'staffReturns' => function ($q) {
+                $q->with('product');
+            }])
             ->where('id', $invoiceId)
             ->where('user_id', Auth::id())
             ->first();
@@ -250,8 +257,24 @@ class StaffReturnManagement extends Component
             $totalDiscountAmount = $invoice->discount_amount ?? 0;
             $totalQty = $invoice->items->sum('quantity');
 
-            // discount_amount is the sale-level header discount only (does not include per-item discounts).
-            $overallDiscountPerItem = $totalQty > 0 ? ($totalDiscountAmount / $totalQty) : 0;
+            // Subtract per-item discounts to get only the sale-level (additional/overall) discount
+            $totalUnitDiscounts = $invoice->items->sum(function ($item) {
+                return ($item->discount_per_unit ?? 0) * $item->quantity;
+            });
+            $remainingOverallDiscount = max(0, $totalDiscountAmount - $totalUnitDiscounts);
+            $overallDiscountPerItem = $totalQty > 0 ? ($remainingOverallDiscount / $totalQty) : 0;
+
+            // Load staff returns for this invoice
+            $staffReturns = $invoice->staffReturns->map(function ($return) {
+                return [
+                    'product_name' => $return->product?->name ?? '-',
+                    'product_code' => $return->product?->code ?? '-',
+                    'quantity' => $return->quantity,
+                    'unit_price' => $return->unit_price,
+                    'total_amount' => $return->total_amount,
+                    'status' => $return->status,
+                ];
+            })->toArray();
 
             $this->invoiceModalData = [
                 'invoice_number' => $invoice->invoice_number,
@@ -259,6 +282,7 @@ class StaffReturnManagement extends Component
                 'date' => $invoice->created_at->format('Y-m-d H:i:s'),
                 'total_amount' => $invoice->total_amount,
                 'overall_discount' => $totalDiscountAmount,
+                'returns' => $staffReturns,
                 'items' => $invoice->items->map(function ($item) use ($overallDiscountPerItem) {
                     $itemDiscount = $item->discount_per_unit ?? 0;
                     $totalDiscountPerUnit = $itemDiscount + $overallDiscountPerItem;

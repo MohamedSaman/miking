@@ -335,6 +335,45 @@
             </tbody>
         </table>
 
+        {{-- Staff Returned Items --}}
+        @if(isset($sale->staffReturns) && count($sale->staffReturns) > 0)
+        <h4 class="text-muted mb-2" style="margin-top: 16px;">STAFF RETURNED ITEMS</h4>
+        <table class="mb-4">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Product</th>
+                    <th>Code</th>
+                    <th>Return Qty</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php $staffReturnAmount = 0; @endphp
+                @foreach($sale->staffReturns as $srIndex => $staffReturn)
+                @php $staffReturnAmount += $staffReturn->total_amount; @endphp
+                <tr>
+                    <td>{{ $srIndex + 1 }}</td>
+                    <td>{{ $staffReturn->product->name ?? '-' }}</td>
+                    <td>{{ $staffReturn->product->code ?? '-' }}</td>
+                    <td>{{ $staffReturn->quantity }}</td>
+                    <td>Rs.{{ number_format($staffReturn->unit_price, 2) }}</td>
+                    <td>Rs.{{ number_format($staffReturn->total_amount, 2) }}</td>
+                </tr>
+                @endforeach
+                <tr style="background: #f8f8f8; font-weight: bold;">
+                    <td colspan="5" style="text-align: right;">Return Amount:</td>
+                    <td>- Rs.{{ number_format($staffReturnAmount, 2) }}</td>
+                </tr>
+                <tr style="background: #e9ecef; font-weight: bold;">
+                    <td colspan="5" style="text-align: right;">Net Amount:</td>
+                    <td>Rs.{{ number_format($sale->total_amount - $staffReturnAmount, 2) }}</td>
+                </tr>
+            </tbody>
+        </table>
+        @endif
+
         <!-- Payment Details -->
         <div class="row">
             <div class="col-md-6">

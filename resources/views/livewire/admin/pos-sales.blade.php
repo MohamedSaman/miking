@@ -489,6 +489,53 @@ use App\Models\Sale;
                     </div>
                     @endif
 
+                    {{-- ==================== STAFF RETURNED ITEMS TABLE ==================== --}}
+                    @if(isset($selectedSale->staffReturns) && count($selectedSale->staffReturns) > 0)
+                    <h6 class="text-muted mb-3 mt-4">CUSTOMER RETURNED ITEMS</h6>
+                    <div class="table-responsive mb-4" style="min-height: 10px;">
+                        <table class="table table-bordered table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Product</th>
+                                    <th class="text-center">Code</th>
+                                    <th class="text-center">Return Qty</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Total</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php $staffReturnAmount = 0; @endphp
+                                @foreach($selectedSale->staffReturns as $srIndex => $staffReturn)
+                                @php $staffReturnAmount += $staffReturn->total_amount; @endphp
+                                <tr>
+                                    <td>{{ $srIndex + 1 }}</td>
+                                    <td>{{ $staffReturn->product?->name ?? '-' }}</td>
+                                    <td class="text-center">{{ $staffReturn->product?->code ?? '-' }}</td>
+                                    <td class="text-center">{{ $staffReturn->quantity }}</td>
+                                    <td class="text-end">Rs.{{ number_format($staffReturn->unit_price, 2) }}</td>
+                                    <td class="text-end">Rs.{{ number_format($staffReturn->total_amount, 2) }}</td>
+                                    <td class="text-center"><span class="badge bg-success">Approved</span></td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong>Return Amount:</strong></td>
+                                    <td class="text-end text-danger">- Rs.{{ number_format($staffReturnAmount, 2) }}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
+                                    <td class="text-end fw-bold">Rs.{{ number_format($selectedSale->total_amount - $staffReturnAmount, 2) }}</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    @endif
+
                     @if($selectedSale->notes)
                     <h6 class="text-muted mb-2">NOTES</h6>
                     <div class="card bg-light">

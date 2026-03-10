@@ -100,17 +100,17 @@ class CustomerSaleManagement extends Component
     public function viewSaleDetails($saleId)
     {
         $this->selectedSaleId = $saleId;
-        $this->selectedSale = Sale::with('customer')->find($saleId);
+        $this->selectedSale = Sale::with([
+            'customer',
+            'staffReturns' => function ($q) {
+                $q->where('status', 'approved')->with('product');
+            }
+        ])->find($saleId);
 
-        // Assuming a 'product' relationship exists on the SaleItem model
-        // Assuming a 'product' relationship exists on the SaleItem model
-        // that links to the productDetail model.
         $this->saleItems = SaleItem::with('product')
             ->where('sale_id', $saleId)
             ->get();
-        // dd($this->saleItems);
 
-        $this->js("$('#saleDetailsModal').modal('show');");
         $this->js("$('#saleDetailsModal').modal('show');");
     }
 
@@ -134,5 +134,15 @@ class CustomerSaleManagement extends Component
         }
 
         return $this->redirect(route('receipts.download', ['id' => $this->selectedSale->id]), navigate: false);
+    }
+
+    public function printInvoice()
+    {
+        if (!$this->selectedSaleId) {
+            return;
+        }
+
+        $printUrl = route('staff.print.sale', $this->selectedSaleId);
+        $this->js("window.open('$printUrl', '_blank', 'width=800,height=600');");
     }
 }

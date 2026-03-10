@@ -478,6 +478,47 @@
         </div>
         @endif
 
+        {{-- Staff Returned Items --}}
+        @if(isset($sale->staffReturns) && count($sale->staffReturns) > 0)
+        @php $staffReturnAmount = 0; @endphp
+        <div class="returned-section">
+            <h4>STAFF RETURNED ITEMS</h4>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;" class="text-center">#</th>
+                        <th style="width: 30%;">PRODUCT</th>
+                        <th style="width: 15%;">CODE</th>
+                        <th style="width: 15%;" class="text-center">RETURN QTY</th>
+                        <th style="width: 17%;" class="text-right">UNIT PRICE</th>
+                        <th style="width: 18%;" class="text-right">TOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($sale->staffReturns as $index => $staffReturn)
+                    @php $staffReturnAmount += $staffReturn->total_amount; @endphp
+                    <tr>
+                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td>{{ $staffReturn->product->name ?? '-' }}</td>
+                        <td>{{ $staffReturn->product->code ?? '-' }}</td>
+                        <td class="text-center">{{ $staffReturn->quantity }}</td>
+                        <td class="text-right">Rs.{{ number_format($staffReturn->unit_price, 2) }}</td>
+                        <td class="text-right">Rs.{{ number_format($staffReturn->total_amount, 2) }}</td>
+                    </tr>
+                    @endforeach
+                    <tr style="background: #f8f8f8; font-weight: bold;">
+                        <td colspan="5" class="text-right" style="padding: 8px;">Return Amount:</td>
+                        <td class="text-right" style="padding: 8px;">- Rs.{{ number_format($staffReturnAmount, 2) }}</td>
+                    </tr>
+                    <tr style="background: #e9ecef; font-weight: bold;">
+                        <td colspan="5" class="text-right" style="padding: 8px;">Net Amount:</td>
+                        <td class="text-right" style="padding: 8px;">Rs.{{ number_format($sale->total_amount - $staffReturnAmount, 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        @endif
+
         <div class="global-footer" style="position: absolute; bottom: 5;top: auto; width: 100%;">
             <table>
                 <tr>
