@@ -627,12 +627,10 @@ class AddCustomerReceipt extends Component
                 if ($saleModel) {
                     // Update sale amounts for both admin and staff
                     // Only difference: staff payment status = 'pending', admin = 'paid'
+                    // NOTE: due_amount tracks original sale amount - paid amount
+                    // Returns are applied as display deductions only, not affect original due_amount
                     $newDueAmount = $saleModel->due_amount - $paymentAmount;
-                    $returnAmount = $this->calculateReturnAmount($saleId);
-
-                    // Adjust for returns
-                    $adjustedDueAmount = max(0, $newDueAmount - $returnAmount);
-                    $saleModel->due_amount = $adjustedDueAmount;
+                    $saleModel->due_amount = max(0, $newDueAmount);
 
                     if ($saleModel->due_amount <= 0.01) {
                         $saleModel->payment_status = 'paid';
