@@ -76,17 +76,20 @@
                 <td colspan="6" class="text-end"><strong>Grand Total</strong></td>
                 <td class="text-end"><strong>Rs.{{ number_format($sale->total_amount, 2) }}</strong></td>
             </tr>
-            @if($sale->payments->count() > 0 && (!isset($sale->staffReturns) || count($sale->staffReturns) == 0))
+            @if((!isset($sale->returns) || count($sale->returns) == 0) && (!isset($sale->staffReturns) || count($sale->staffReturns) == 0))
+            @php $noReturnPaid = max(0, $sale->total_amount - $sale->due_amount); @endphp
+            @if($noReturnPaid > 0 && $sale->due_amount > 0)
             <tr class="totals-row">
                 <td colspan="6" class="text-end"><strong>Paid Amount</strong></td>
-                <td class="text-end"><strong>Rs.{{ number_format($sale->payments->sum('amount'), 2) }}</strong></td>
+                <td class="text-end"><strong>Rs.{{ number_format($noReturnPaid, 2) }}</strong></td>
             </tr>
             @endif
-            @if($sale->due_amount > 0 && (!isset($sale->staffReturns) || count($sale->staffReturns) == 0))
+            @if($sale->due_amount > 0)
             <tr class="totals-row">
                 <td colspan="6" class="text-end"><strong>Due Amount</strong></td>
                 <td class="text-end"><strong>Rs.{{ number_format($sale->due_amount, 2) }}</strong></td>
             </tr>
+            @endif
             @endif
         </tfoot>
     </table>
@@ -129,6 +132,19 @@
                     <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
                     <td class="text-end"><strong>Rs.{{ number_format(($sale->subtotal - $sale->discount_amount) - $returnAmount, 2) }}</strong></td>
                 </tr>
+                @php $paidAfterReturn = max(0, $sale->total_amount - $returnAmount - $sale->due_amount); @endphp
+                @if($paidAfterReturn > 0)
+                <tr class="totals-row">
+                    <td colspan="5" class="text-end"><strong>Paid Amount:</strong></td>
+                    <td class="text-end"><strong>Rs.{{ number_format($paidAfterReturn, 2) }}</strong></td>
+                </tr>
+                @endif
+                @if($sale->due_amount > 0)
+                <tr class="totals-row">
+                    <td colspan="5" class="text-end"><strong>Due Amount:</strong></td>
+                    <td class="text-end"><strong>Rs.{{ number_format($sale->due_amount, 2) }}</strong></td>
+                </tr>
+                @endif
             </tfoot>
         </table>
     </div>

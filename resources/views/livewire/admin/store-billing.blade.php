@@ -520,6 +520,12 @@
                             <span class="text-muted">Already Paid:</span>
                             <span class="fw-bold text-success">Rs.{{ number_format($existingPaidAmount, 2) }}</span>
                         </div>
+                        @if($existingTotalReturns > 0)
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span class="text-muted">Returns:</span>
+                            <span class="fw-bold text-danger">- Rs.{{ number_format($existingTotalReturns, 2) }}</span>
+                        </div>
+                        @endif
                         <div class="d-flex justify-content-between mb-1 small">
                             <span class="text-muted">New Grand Total:</span>
                             <span class="fw-bold" style="color:#2a83df;">Rs.{{ number_format($grandTotal, 2) }}</span>
@@ -527,7 +533,7 @@
                         <hr class="my-2">
                         <div class="d-flex justify-content-between small">
                             <span class="text-muted fw-bold">Remaining Balance:</span>
-                            @php $remainingBalance = max(0, $grandTotal - $existingPaidAmount); @endphp
+                            @php $remainingBalance = max(0, $grandTotal - $existingPaidAmount - $existingTotalReturns); @endphp
                             @if($remainingBalance > 0)
                                 <span class="fw-bold text-danger">Rs.{{ number_format($remainingBalance, 2) }}</span>
                             @else
@@ -543,6 +549,143 @@
                         <div class="mt-2 small text-success">
                             <i class="bi bi-check-circle me-1"></i>
                             This invoice is fully paid. No additional payment needed.
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+
+                    {{-- Payment History (shown when editing) --}}
+                    @if($isEditing)
+                    <div class="mb-3">
+                        <h6 class="fw-bold mb-2" style="color:#2a83df;">
+                            <i class="bi bi-clock-history me-1"></i> Payment History
+                        </h6>
+                        @if(count($existingPayments) > 0)
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Date</th>
+                                        <th>Method</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($existingPayments as $index => $payment)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td class="small">{{ $payment['payment_date'] }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ $payment['payment_method'] === 'cash' ? 'success' : ($payment['payment_method'] === 'cheque' ? 'info' : ($payment['payment_method'] === 'bank_transfer' ? 'primary' : 'secondary')) }}">
+                                                {{ ucfirst(str_replace('_', ' ', $payment['payment_method'])) }}
+                                            </span>
+                                            @if($payment['bank_name'])
+                                                <div class="small text-muted">{{ $payment['bank_name'] }}</div>
+                                            @endif
+                                            @if($payment['payment_reference'])
+                                                <div class="small text-muted">Ref: {{ $payment['payment_reference'] }}</div>
+                                            @endif
+                                        </td>
+                                        <td class="fw-bold">Rs.{{ number_format($payment['amount'], 2) }}</td>
+                                        <td>
+                                            @if($payment['status'] === 'approved' || $payment['status'] === 'paid')
+                                                <span class="badge bg-success">{{ ucfirst($payment['status']) }}</span>
+                                            @elseif($payment['status'] === 'pending')
+                                                <span class="badge bg-warning">Pending</span>
+                                            @elseif($payment['status'] === 'rejected')
+                                                <span class="badge bg-danger">Rejected</span>
+                                            @else
+                                                <span class="badge bg-secondary">{{ ucfirst($payment['status'] ?? 'N/A') }}</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @if($payment['notes'])
+                                    <tr>
+                                        <td colspan="5" class="small text-muted py-1 ps-4">
+                                            <i class="bi bi-chat-left-text me-1"></i>{{ $payment['notes'] }}
+                                        </td>
+                                    </tr>
+                                    @endif
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="3" class="text-end fw-bold">Total Paid:</td>
+                                        <td colspan="2" class="fw-bold text-success">
+                                            Rs.{{ number_format(collect($existingPayments)->where('status', '!=', 'rejected')->sum('amount'), 2) }}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        @else
+                        <div class="alert alert-light border rounded-0 mb-0 py-2 small">
+                            <i class="bi bi-info-circle me-1 text-muted"></i> No payments recorded yet for this invoice.
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+
+                    {{-- Returns History (shown when editing) --}}
+                    @if($isEditing)
+                    <div class="mb-3">
+                        <h6 class="fw-bold mb-2 text-danger">
+                            <i class="bi bi-arrow-return-left me-1"></i> Product Returns
+                        </h6>
+                        @if(count($existingReturns) > 0)
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead style="background-color: #fff3cd;">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Product</th>
+                                        <th class="text-center">Qty</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php $totalReturnAmount = 0; @endphp
+                                    @foreach($existingReturns as $index => $return)
+                                    @php $totalReturnAmount += $return['total_amount']; @endphp
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>
+                                            <div class="fw-medium">{{ $return['product_name'] }}</div>
+                                            @if($return['product_code'])
+                                                <small class="text-muted">{{ $return['product_code'] }}</small>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">{{ $return['return_quantity'] }}</td>
+                                        <td>Rs.{{ number_format($return['selling_price'], 2) }}</td>
+                                        <td class="fw-bold text-danger">Rs.{{ number_format($return['total_amount'], 2) }}</td>
+                                        <td class="small">{{ $return['date'] }}</td>
+                                    </tr>
+                                    @if($return['notes'])
+                                    <tr>
+                                        <td colspan="6" class="small text-muted py-1 ps-4">
+                                            <i class="bi bi-chat-left-text me-1"></i>{{ $return['notes'] }}
+                                        </td>
+                                    </tr>
+                                    @endif
+                                    @endforeach
+                                </tbody>
+                                <tfoot style="background-color: #fff3cd;">
+                                    <tr>
+                                        <td colspan="4" class="text-end fw-bold">Total Returns:</td>
+                                        <td colspan="2" class="fw-bold text-danger">
+                                            Rs.{{ number_format($totalReturnAmount, 2) }}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        @else
+                        <div class="alert alert-light border rounded-0 mb-0 py-2 small">
+                            <i class="bi bi-info-circle me-1 text-muted"></i> No product returns for this invoice.
                         </div>
                         @endif
                     </div>

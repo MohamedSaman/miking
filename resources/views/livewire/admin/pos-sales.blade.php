@@ -12,7 +12,7 @@ use App\Models\Sale;
             <p class="text-muted mb-0">View and manage POS sales</p>
         </div>
         <div>
-            <a href="{{ route('admin.store-billing') }}" class="btn btn-primary">
+            <a href="{{ route(auth()->user()->isStaff() ? 'staff.store-billing' : 'admin.store-billing') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-2"></i> New POS Sale
             </a>
         </div>
@@ -214,7 +214,7 @@ use App\Models\Sale;
                                             @php
                                                 $editRoute = auth()->user()->isStaff() ? 'staff.store-billing' : 'admin.store-billing';
                                             @endphp
-                                            <a class="dropdown-item" href="{{ route($editRoute, ['saleId' => $sale->id]) }}">
+                                            <a class="dropdown-item" href="{{ route($editRoute, ['saleId' => $sale->id]) }}" target="_blank">
                                                 <i class="bi bi-pencil-square text-primary me-2"></i>
                                                 Edit Items
                                             </a>
@@ -484,7 +484,7 @@ use App\Models\Sale;
                             <tfoot class="table-light">
                                 <tr>
                                     <td colspan="5" class="text-end"><strong>Return Amount:</strong></td>
-                                    <td class="text-end">- Rs.@php echo number_format($returnAmount, 2); @endphp</td>
+                                    <td class="text-end text-danger">- Rs.@php echo number_format($returnAmount, 2); @endphp</td>
                                 </tr>
                                 <tr>
                                     <td colspan="5" class="text-end"><strong>Net Amount:</strong></td>
@@ -492,6 +492,19 @@ use App\Models\Sale;
                                         Rs.@php echo number_format(($selectedSale->subtotal - $selectedSale->discount_amount) - $returnAmount, 2); @endphp
                                     </td>
                                 </tr>
+                                @php $paidAfterReturn = max(0, $selectedSale->total_amount - $returnAmount - $selectedSale->due_amount); @endphp
+                                @if($paidAfterReturn > 0)
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong class="text-success">Paid Amount:</strong></td>
+                                    <td class="text-end fw-bold text-success">Rs.{{ number_format($paidAfterReturn, 2) }}</td>
+                                </tr>
+                                @endif
+                                @if($selectedSale->due_amount > 0)
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong class="text-danger">Due Amount:</strong></td>
+                                    <td class="text-end fw-bold text-danger">Rs.{{ number_format($selectedSale->due_amount, 2) }}</td>
+                                </tr>
+                                @endif
                             </tfoot>
                         </table>
                     </div>

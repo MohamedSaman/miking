@@ -38,7 +38,6 @@ use App\Livewire\Staff\CustomerSaleManagement;
 use App\Livewire\Admin\StoreBilling;
 use App\Livewire\Admin\DuePayments as AdminDuePayments;
 use App\Livewire\Admin\StaffStockDetails as StaffStockDetailsExport;
-use App\Livewire\Staff\StoreBilling as StaffStoreBilling;
 use App\Http\Controllers\ProductsExportController;
 use App\Http\Controllers\StaffSaleExportController;
 use App\Livewire\Admin\GRN;
@@ -251,9 +250,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/sales-list', SalesList::class)->name('sales-list');
         Route::get('/total-sales', TotalSales::class)->name('total-sales')->middleware('permission:menu_total_sales');
         Route::get('/store-billing/{saleId?}', StoreBilling::class)->name('store-billing');
-
-        // Customers
-        Route::get('/manage-customer', ManageCustomer::class)->name('manage-customer');
         Route::get('/customer-sale-details', CustomerSaleDetails::class)->name('customer-sale-details');
         Route::get('/customer-sale-management', CustomerSaleManagement::class)->name('customer-sale-management');
 

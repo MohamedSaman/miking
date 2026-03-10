@@ -11,6 +11,7 @@ use App\Models\ProductDetail;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Payment;
+use App\Models\PaymentAllocation;
 use App\Models\Cheque;
 use App\Models\POSSession;
 use App\Services\FIFOStockService;
@@ -103,6 +104,9 @@ class StoreBilling extends Component
     public $isEditing = false;
     public $originalSale = null;
     public $existingPaidAmount = 0; // Payments already recorded before editing
+    public $existingPayments = []; // Payment history for editing
+    public $existingReturns = []; // Returns for this sale
+    public $existingTotalReturns = 0; // Total return amount for this sale
 
     public function mount($saleId = null)
     {
@@ -260,10 +264,58 @@ class StoreBilling extends Component
             ];
         }
 
-        // Load already-paid amount from existing payments (non-rejected)
-        $this->existingPaidAmount = $sale->payments
+        // Load payments via both direct relationship AND payment allocations
+        $directPayments = $sale->payments;
+        $allocatedPaymentIds = PaymentAllocation::where('sale_id', $sale->id)
+            ->pluck('payment_id')
+            ->toArray();
+        $allocatedPayments = Payment::whereIn('id', $allocatedPaymentIds)->get();
+
+        // Merge and deduplicate
+        $allPayments = $directPayments->merge($allocatedPayments)->unique('id');
+
+        // Load allocations for amount mapping
+        $allocations = PaymentAllocation::where('sale_id', $sale->id)
+            ->pluck('allocated_amount', 'payment_id')
+            ->toArray();
+
+        // Load already-paid amount (use allocated amount where available, otherwise payment amount)
+        $this->existingPaidAmount = $allPayments
             ->where('status', '!=', 'rejected')
-            ->sum('amount');
+            ->sum(function ($payment) use ($allocations) {
+                return $allocations[$payment->id] ?? $payment->amount;
+            });
+
+        // Load payment history details
+        $this->existingPayments = $allPayments->map(function ($payment) use ($allocations) {
+            $amount = $allocations[$payment->id] ?? $payment->amount;
+            return [
+                'id' => $payment->id,
+                'amount' => $amount,
+                'payment_method' => $payment->payment_method,
+                'payment_date' => $payment->payment_date ? $payment->payment_date->format('M d, Y h:i A') : $payment->created_at->format('M d, Y h:i A'),
+                'status' => $payment->status,
+                'payment_reference' => $payment->payment_reference,
+                'bank_name' => $payment->bank_name,
+                'notes' => $payment->notes,
+            ];
+        })->values()->toArray();
+
+        // Load returns for this sale
+        $returns = $sale->returns()->with('product')->get();
+        $this->existingTotalReturns = $returns->sum('total_amount');
+        $this->existingReturns = $returns->map(function ($return) {
+            return [
+                'id' => $return->id,
+                'product_name' => $return->product->product_name ?? 'N/A',
+                'product_code' => $return->product->product_code ?? '',
+                'return_quantity' => $return->return_quantity,
+                'selling_price' => $return->selling_price,
+                'total_amount' => $return->total_amount,
+                'notes' => $return->notes,
+                'date' => $return->created_at->format('M d, Y h:i A'),
+            ];
+        })->toArray();
 
         // Reset new payment input fields — staff can add more payment if still due
         $this->cashAmount = 0;
@@ -398,8 +450,8 @@ class StoreBilling extends Component
             $newPayment = $this->bankTransferAmount;
         }
 
-        // When editing, add any existing payments already on record
-        return $this->existingPaidAmount + $newPayment;
+        // When editing, add any existing payments already on record + returns count as paid
+        return $this->existingPaidAmount + $this->existingTotalReturns + $newPayment;
     }
 
     public function getDueAmountProperty()
