@@ -395,11 +395,20 @@ class SalesList extends Component
         try {
             DB::transaction(function () {
                 $saleItems = SaleItem::where('sale_id', $this->selectedSale->id)->get();
+                $returns = \App\Models\ReturnsProduct::where('sale_id', $this->selectedSale->id)->get();
 
                 foreach ($saleItems as $item) {
                     $productStock = ProductStock::where('product_id', $item->product_id)->first();
                     if ($productStock) {
-                        $productStock->available_stock += $item->quantity;
+                        // Calculate quantity returned for this product
+                        $returnedQuantity = $returns
+                            ->where('product_id', $item->product_id)
+                            ->sum('return_quantity');
+                        
+                        // Only restore the quantity that wasn't returned
+                        $quantityToRestore = $item->quantity - $returnedQuantity;
+                        
+                        $productStock->available_stock += $quantityToRestore;
                         if ($productStock->sold_count >= $item->quantity) {
                             $productStock->sold_count -= $item->quantity;
                         }
@@ -408,6 +417,7 @@ class SalesList extends Component
                 }
 
                 \App\Models\Payment::where('sale_id', $this->selectedSale->id)->delete();
+                \App\Models\ReturnsProduct::where('sale_id', $this->selectedSale->id)->delete();
                 SaleItem::where('sale_id', $this->selectedSale->id)->delete();
 
                 $this->selectedSale->delete();
