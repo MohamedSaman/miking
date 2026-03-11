@@ -60,6 +60,9 @@ class ProductsListExport implements FromCollection, WithHeadings, WithStyles, Wi
                 'product_prices.selling_price',
                 'product_prices.cash_price',
                 'product_prices.credit_price',
+                'product_prices.cash_credit_price',
+                'product_details.cash_sale_commission',
+                'product_details.credit_sale_commission',
                 'product_stocks.available_stock',
                 'product_stocks.damage_stock',
                 'product_details.status'
@@ -99,6 +102,9 @@ class ProductsListExport implements FromCollection, WithHeadings, WithStyles, Wi
             'Selling Price',
             'Cash Price',
             'Credit Price',
+            'Cash & Credit Price',
+            'Cash Sale Bonus',
+            'Credit Sale Bonus',
             'Available Stock',
             'Damage Stock',
             'Status',
@@ -140,9 +146,12 @@ class ProductsListExport implements FromCollection, WithHeadings, WithStyles, Wi
             'F' => 12,
             'G' => 12,
             'H' => 12,
-            'I' => 15,
+            'I' => 18,
             'J' => 15,
-            'K' => 12,
+            'K' => 16,
+            'L' => 15,
+            'M' => 15,
+            'N' => 12,
         ];
     }
 
