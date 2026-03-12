@@ -13,13 +13,15 @@ class ReceiptController extends Controller
     {
         try {
             // Load the sale with all necessary relationships
-            $sale = Sale::with(['customer', 'items.product', 'payments', 'staffReturns' => function ($q) {
+            $sale = Sale::with(['customer', 'items.product', 'user', 'payments', 'returns' => function ($q) {
+                $q->with('product');
+            }, 'staffReturns' => function ($q) {
                 $q->where('status', 'approved')->with('product');
             }])->findOrFail($id);
 
             // Set PDF options for better rendering
             $pdf = Pdf::loadView('receipts.download', compact('sale'))
-                ->setPaper('a4')
+                ->setPaper('a5')
                 ->setOptions([
                     'isHtml5ParserEnabled' => true,
                     'isRemoteEnabled' => true,

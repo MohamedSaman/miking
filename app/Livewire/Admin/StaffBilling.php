@@ -495,7 +495,11 @@ class StaffBilling extends Component
             return;
         }
 
-        $sale = Sale::with(['customer', 'items'])->find($this->lastSaleId);
+        $sale = Sale::with(['customer', 'items', 'user', 'payments', 'returns' => function ($q) {
+            $q->with('product');
+        }, 'staffReturns' => function ($q) {
+            $q->with('product');
+        }])->find($this->lastSaleId);
 
         if (!$sale) {
             $this->js("Swal.fire('error', 'Sale not found.', 'error')");
@@ -503,7 +507,7 @@ class StaffBilling extends Component
         }
 
         $pdf = PDF::loadView('admin.sales.invoice', compact('sale'));
-        $pdf->setPaper('a4', 'portrait');
+        $pdf->setPaper('a5', 'portrait');
         $pdf->setOption('dpi', 150);
         $pdf->setOption('defaultFont', 'sans-serif');
 

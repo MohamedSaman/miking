@@ -289,7 +289,7 @@ class PosSales extends Component
 
     public function downloadInvoice($saleId)
     {
-        $sale = Sale::with(['customer', 'items', 'returns' => function ($q) {
+        $sale = Sale::with(['customer', 'items', 'user', 'payments', 'returns' => function ($q) {
             $q->with('product');
         }, 'staffReturns' => function ($q) {
             $q->where('status', 'approved')->with('product');
@@ -307,7 +307,7 @@ class PosSales extends Component
 
             $pdf = PDF::loadView('admin.sales.invoice', compact('sale'));
 
-            $pdf->setPaper('a4', 'portrait');
+            $pdf->setPaper('a5', 'portrait');
             $pdf->setOption('dpi', 150);
             $pdf->setOption('defaultFont', 'sans-serif');
 

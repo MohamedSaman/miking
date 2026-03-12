@@ -6,18 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Print Document' }}</title>
     <style>
-        /* Global Print Layout Styles */
+        /* ============================================
+           A5 PRINT LAYOUT - CURTAINPLUS STYLE
+           ============================================ */
         @page {
-            size: A4 portrait;
+            size: A5 portrait;
+            margin: 6mm 8mm 6mm 8mm;
+        }
+
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Segoe UI', 'Trebuchet MS', Arial, sans-serif;
             font-size: 12px;
-            line-height: 1.4;
+            line-height: 1.35;
             background: white;
             color: #000;
         }
@@ -29,158 +37,156 @@
             box-sizing: border-box;
             padding: 0;
             margin: 0;
+            display: flex;
+            flex-direction: column;
+            /* A5 height (210mm) minus top+bottom margins (6mm+6mm) */
+            min-height: 198mm;
         }
 
-        /* Global Header Styles */
+        /* ============================================
+           HEADER SECTION
+           ============================================ */
         .global-header {
-            border-bottom: 3px solid #000000;
-            padding: 10px 15px 10px 15px;
+            text-align: center;
+            padding: 0 0 6px 0;
             margin: 0;
             background: white;
         }
 
-
-
-        .global-header .d-flex {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .global-header img {
-            max-height: 40px;
-        }
-
-        .global-header h2 {
-            font-size: 2rem;
+        .global-header .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a237e;
             letter-spacing: 1.5px;
-            font-weight: bold;
             margin-bottom: 0;
+            line-height: 1.2;
         }
 
-        .global-header .text-muted {
-            color: #666;
-            font-size: 0.75rem;
+        .global-header .company-subtitle {
+            font-size: 9px;
+            color: #c0392b;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin: 2px 0;
         }
 
-        .global-header h3 {
-            font-size: 1rem;
-            margin-bottom: 0;
-            font-weight: bold;
+        .global-header .company-address {
+            font-size: 10px;
+            color: #333;
+            margin: 2px 0 0 0;
         }
 
-        .global-header h5,
-        .global-header h6 {
-            margin-bottom: 0;
-            font-weight: bold;
-            font-size: 0.9rem;
+        .global-header .company-tel {
+            font-size: 10px;
+            color: #333;
+            margin: 1px 0 0 0;
         }
 
-        .global-header h6 {
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .global-header hr {
+        .header-line {
+            border: none;
             border-top: 2px solid #000;
-            margin: 0.25rem 0;
+            margin: 5px 0 0 0;
         }
 
-        /* Content Area */
+        .document-type {
+            font-size: 13px;
+            font-weight: bold;
+            color: #1a237e;
+            letter-spacing: 1px;
+            margin: 3px 0 0 0;
+            text-transform: uppercase;
+        }
+
+        /* ============================================
+           CONTENT AREA
+           ============================================ */
         .print-content {
-            padding: 15px;
-            min-height: auto;
+            padding: 8px 0;
+            flex: 1 1 auto;
         }
 
-        /* Global Footer Styles */
-        .global-footer {
-            background: white;
-            padding: 10px 15px;
-            margin: 0;
-        }
-
-        .global-footer .row {
-            display: flex;
-            margin-left: 0;
-            margin-right: 0;
-        }
-
-        .global-footer .col-4 {
-            flex: 0 0 30%;
-            max-width: 30%;
-            text-align: center;
-            padding: 0 10px;
-        }
-
-        .global-footer img {
-            height: 25px;
-            margin: auto;
-        }
-
-        .global-footer .border-top {
-            border-top: 1px solid #000000;
-            padding-top: 8px;
-        }
-
-        .global-footer .text-center {
-            text-align: center;
-            font-size: 9px;
-            color: #666;
-            margin: 1px 0;
-        }
-
-        .global-footer p {
-            margin: 1px 0;
-            font-size: 9px;
-        }
-
-        /* Sale Receipt Specific Styles */
+        /* ============================================
+           INVOICE INFO ROW (Customer + Invoice Details)
+           ============================================ */
         .invoice-info-row {
             display: flex;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             font-size: 11px;
             page-break-inside: avoid;
+            border: 1px solid #999;
+            padding: 8px 10px;
         }
 
-        .invoice-info-row .col-6 {
+        .invoice-info-row .col-left {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .invoice-info-row .col-right {
             flex: 0 0 50%;
             max-width: 50%;
         }
 
         .invoice-info-row p {
             margin: 2px 0;
-            line-height: 1.4;
-        }
-
-        .invoice-info-row table {
+            line-height: 1.5;
             font-size: 11px;
         }
 
-        .invoice-info-row td {
-            padding: 2px 0;
+        .invoice-info-row .label {
+            font-weight: bold;
+            display: inline-block;
+            min-width: 85px;
         }
 
+        .invoice-info-row .info-table {
+            width: 100%;
+            font-size: 11px;
+            border: none;
+        }
+
+        .invoice-info-row .info-table td {
+            padding: 2px 4px;
+            border: none;
+            vertical-align: top;
+        }
+
+        .invoice-info-row .info-table .info-label {
+            font-weight: bold;
+            white-space: nowrap;
+            padding-right: 8px;
+        }
+
+        .invoice-info-row .info-table .info-value {
+            text-align: right;
+        }
+
+        /* ============================================
+           ITEMS TABLE
+           ============================================ */
         .invoice-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 15px 0;
-            font-size: 10px;
+            margin: 0 0 10px 0;
+            font-size: 11px;
             page-break-inside: auto;
         }
 
         .invoice-table th {
             background-color: #f0f0f0;
             border: 1px solid #000;
-            padding: 6px 8px;
+            padding: 5px 6px;
             font-weight: bold;
-            text-transform: uppercase;
             text-align: center;
+            font-size: 10px;
             page-break-after: avoid;
         }
 
         .invoice-table td {
             border: 1px solid #000;
-            padding: 5px 8px;
+            padding: 4px 6px;
+            font-size: 11px;
         }
 
         .invoice-table tbody tr {
@@ -189,32 +195,188 @@
 
         .invoice-table tfoot .totals-row td {
             border-top: 1px solid #000;
-            padding: 5px 8px;
+            padding: 4px 6px;
             font-weight: bold;
             page-break-inside: avoid;
         }
 
         .invoice-table tfoot .grand-total td {
             border-top: 2px solid #000;
-            font-size: 11px;
-            padding: 7px 8px;
-            background-color: #f8f9fa;
+            font-size: 12px;
+            padding: 5px 6px;
+            font-weight: bold;
             page-break-inside: avoid;
         }
 
-        /* Avoid breaking returned items section */
+        /* ============================================
+           PAYMENT + ORDER SUMMARY SECTION
+           ============================================ */
+        .payment-summary-row {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 11px;
+            page-break-inside: avoid;
+        }
+
+        .payment-info-col {
+            flex: 0 0 40%;
+            max-width: 40%;
+            border: 1px solid #000;
+            padding: 6px 8px;
+        }
+
+        .order-summary-col {
+            flex: 0 0 60%;
+            max-width: 60%;
+            border: 1px solid #000;
+            border-left: none;
+            padding: 6px 8px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .summary-table {
+            width: 100%;
+            font-size: 11px;
+            border: none;
+        }
+
+        .summary-table td {
+            padding: 2px 0;
+            border: none;
+        }
+
+        .summary-table .summary-label {
+            text-align: left;
+            padding-left: 10px;
+        }
+
+        .summary-table .summary-value {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .summary-table .grand-total-row td {
+            font-size: 13px;
+            font-weight: bold;
+            padding-top: 4px;
+            border-top: 1px solid #ccc;
+        }
+
+        .summary-table .amount-due-row td {
+            color: #c0392b;
+            font-weight: bold;
+        }
+
+        /* ============================================
+           RETURNED ITEMS SECTION
+           ============================================ */
         .returned-items-section {
             page-break-inside: avoid;
-            margin-top: 20px;
+            margin-top: 8px;
+            padding-top: 6px;
+            border-top: 1px solid #000;
         }
 
         .returned-items-section h6 {
-            margin-bottom: 10px;
+            font-size: 12px;
             font-weight: bold;
             color: #000;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
             page-break-after: avoid;
         }
 
+        .return-amount-row {
+            text-align: right;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 4px 0;
+        }
+
+        .return-amount-row .return-label {
+            color: #c0392b;
+        }
+
+        .return-amount-row .return-value {
+            color: #c0392b;
+        }
+
+        .net-amount-row {
+            text-align: right;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 4px 0;
+            border-top: 1px solid #000;
+        }
+
+        /* ============================================
+           FOOTER SECTION
+           ============================================ */
+        .global-footer {
+            background: white;
+            padding: 0;
+            margin: 0;
+            margin-top: auto;
+        }
+
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0 8px 0;
+            padding: 0 15px;
+        }
+
+        .signature-block {
+            text-align: center;
+            width: 40%;
+        }
+
+        .signature-block .sig-dots {
+            font-size: 11px;
+            letter-spacing: 2px;
+            margin-bottom: 3px;
+        }
+
+        .signature-block .sig-label {
+            font-size: 10px;
+            font-weight: bold;
+            font-style: italic;
+        }
+
+        .footer-thankyou {
+            text-align: center;
+            font-size: 12px;
+            font-style: italic;
+            font-weight: bold;
+            color: #1a237e;
+            margin: 8px 0 5px 0;
+        }
+
+        .footer-info {
+            text-align: center;
+            font-size: 9px;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 4px;
+        }
+
+        .footer-info a {
+            color: #2980b9;
+            text-decoration: none;
+        }
+
+        /* ============================================
+           UTILITY CLASSES
+           ============================================ */
         .text-end {
             text-align: right;
         }
@@ -231,40 +393,48 @@
             font-weight: bold;
         }
 
-        .mb-0 {
-            margin-bottom: 0;
+        .text-danger {
+            color: #c0392b;
         }
 
-        .mb-2 {
-            margin-bottom: 0.5rem;
+        .text-success {
+            color: #27ae60;
         }
 
-        .mb-3 {
-            margin-bottom: 1rem;
+        .text-primary {
+            color: #1a237e;
         }
 
-        .mt-2 {
-            margin-top: 0.5rem;
-        }
+        .mb-0 { margin-bottom: 0; }
+        .mb-1 { margin-bottom: 0.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .pt-3 { padding-top: 1rem; }
 
-        .pt-3 {
-            padding-top: 1rem;
-        }
-
-        /* Hide on screen, show on print */
+        /* ============================================
+           SCREEN PREVIEW
+           ============================================ */
         @media screen {
             body {
-                background: #f5f5f5;
+                background: #e0e0e0;
                 padding: 20px 0;
             }
 
             .print-container {
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                max-width: 210mm;
+                box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
+                max-width: 148mm;
+                min-height: 210mm;
                 margin: 0 auto;
+                padding: 6mm 8mm;
+                display: flex;
+                flex-direction: column;
             }
         }
 
+        /* ============================================
+           PRINT STYLES
+           ============================================ */
         @media print {
             body {
                 background: white !important;
@@ -272,29 +442,19 @@
 
             .print-container {
                 box-shadow: none !important;
-            }
-
-            @page {
-                margin: 10mm 10mm 10mm 10mm;
-            }
-
-            /* Use running elements for header/footer on every page */
-            .global-header {
-                position: running(header);
+                padding: 0;
+                margin: 0;
+                min-height: 198mm;
+                display: flex;
+                flex-direction: column;
             }
 
             .global-footer {
-                position: running(footer);
+                margin-top: auto;
             }
 
-            @page {
-                @top-center {
-                    content: element(header);
-                }
-
-                @bottom-center {
-                    content: element(footer);
-                }
+            .global-header {
+                margin: 0;
             }
         }
     </style>
@@ -304,22 +464,14 @@
     <div class="print-container">
         <!-- Global Header -->
         <div class="global-header">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                {{-- Left: Logo --}}
-                <div style="flex: 0 0 120px; margin-right:10px;">
-                    <img src="{{ asset('images/MI-King') }}" alt="Logo" class="img-fluid" style="max-height:40px;">
-                </div>
-                {{-- Center: Company Name --}}
-                <div class="text-center" style="flex: 1;">
-                    <h2 class="mb-0 fw-bold" style="font-size: 2rem; letter-spacing: 1.5px;">MI-KING</h2>
-                    <p class="mb-0 text-muted small">BEST IN BOYS</p>
-                </div>
-                {{-- Right:  & Invoice --}}
-                <div class="text-end" style="flex: 0 0 120px;">
-                    <h3 class="mb-0 fw-bold"></h3>
-                    <h6 class="mb-0 text-muted">{{ $documentType ?? 'INVOICE' }}</h6>
-                </div>
-            </div>
+            <div class="company-name">MI-KING</div>
+            <div class="company-subtitle">BEST IN BOYS</div>
+            <div class="company-address">No.122/10A, Super Paradise Market, Keyzer Street, Colombo 11.</div>
+            <div class="company-tel">TEL : (076) 1234567</div>
+            @if(isset($documentType) && $documentType)
+            <div class="document-type">{{ $documentType }}</div>
+            @endif
+            <hr class="header-line">
         </div>
 
         <!-- Dynamic Content Area -->
@@ -328,28 +480,21 @@
         </div>
 
         <!-- Global Footer -->
-        <div class="global-footer" style="position: absolute; bottom: 5;top: auto; width: 100%;">
-            <div class="row text-center mb-3">
-                <div class="col-4">
-                    <p class=""><strong>.............................</strong></p>
-                    <p class="mb-2"><strong>Checked By</strong></p>
-                    
+        <div class="global-footer">
+            <div class="signature-section">
+                <div class="signature-block">
+                    <div class="sig-dots">.............................</div>
+                    <div class="sig-label">Authorized Signature</div>
                 </div>
-                <div class="col-4">
-                    <p class=""><strong>.............................</strong></p>
-                    <p class="mb-2"><strong>Authorized Officer</strong></p>
-                    
-                </div>
-                <div class="col-4">
-                    <p class=""><strong>.............................</strong></p>
-                    <p class="mb-2"><strong>Customer Stamp</strong></p>
-                    
+                <div class="signature-block">
+                    <div class="sig-dots">.............................</div>
+                    <div class="sig-label">Customer Signature</div>
                 </div>
             </div>
-            <div class="border-top pt-3">
-                <p class="text-center"><strong>ADDRESS :</strong> 122/10A, Super Paradise Market, Keyzer Street, Colombo 11 .</p>
-                <p class="text-center"><strong>TEL :</strong> (076) 9085252, <strong>EMAIL :</strong> sample@gmail.com</p>
-                <p class="text-center mt-2" style="font-size: 9px;"><strong>Goods return will be accepted within 10 days only. Electrical and body parts non-returnable.</strong></p>
+            <div class="footer-thankyou">Thank you for your business!</div>
+            <div class="footer-info">
+                <span>122/10A, Super Paradise Market, Keyzer Street, Colombo 11</span> |
+                <span>Tel: (076) 1234567</span>
             </div>
         </div>
     </div>

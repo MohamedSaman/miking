@@ -921,8 +921,10 @@ class SalesSystem extends Component
             return;
         }
 
-        $sale = Sale::with(['customer', 'items', 'returns' => function ($q) {
+        $sale = Sale::with(['customer', 'items', 'user', 'payments', 'returns' => function ($q) {
             $q->with('product');
+        }, 'staffReturns' => function ($q) {
+            $q->where('status', 'approved')->with('product');
         }])->find($this->lastSaleId);
 
         if (!$sale) {
@@ -931,7 +933,7 @@ class SalesSystem extends Component
         }
 
         $pdf = PDF::loadView('admin.sales.invoice', compact('sale'));
-        $pdf->setPaper('a4', 'portrait');
+        $pdf->setPaper('a5', 'portrait');
         $pdf->setOption('dpi', 150);
         $pdf->setOption('defaultFont', 'sans-serif');
 
@@ -958,6 +960,26 @@ class SalesSystem extends Component
         $this->loadCustomers();
         $this->setDefaultCustomer(); // Set walking customer again for new sale
         $this->showSaleModal = false;
+    }
+
+    // Print Invoice
+    public function printInvoice($saleId)
+    {
+        $sale = Sale::with(['customer', 'items', 'payments', 'returns' => function ($q) {
+            $q->with('product');
+        }, 'staffReturns' => function ($q) {
+            $q->where('status', 'approved')->with('product');
+        }])->find($saleId);
+
+        if (!$sale) {
+            $this->js("Swal.fire('error', 'Sale not found.', 'error')");
+            return;
+        }
+
+        // Use role-appropriate print route so staff users don't get redirected
+        $routeName = $this->isAdmin() ? 'admin.print.sale' : 'staff.print.sale';
+        $printUrl = route($routeName, $sale->id);
+        $this->js("window.open('$printUrl', '_blank', 'width=800,height=600');");
     }
 
     public function render()

@@ -442,7 +442,7 @@ class SalesList extends Component
 
     public function printInvoice($saleId)
     {
-        $sale = \App\Models\Sale::with(['customer', 'items', 'payments', 'returns' => function ($q) {
+        $sale = \App\Models\Sale::with(['customer', 'items', 'payments', 'user', 'returns' => function ($q) {
             $q->with('product');
         }])->find($saleId);
         if (!$sale) {
@@ -459,8 +459,10 @@ class SalesList extends Component
 
     public function downloadInvoice($saleId)
     {
-        $query = Sale::with(['customer', 'items', 'returns' => function ($q) {
+        $query = Sale::with(['customer', 'items', 'user', 'payments', 'returns' => function ($q) {
             $q->with('product');
+        }, 'staffReturns' => function ($q) {
+            $q->where('status', 'approved')->with('product');
         }]);
 
         if ($this->isStaff()) {
@@ -482,7 +484,7 @@ class SalesList extends Component
 
             $pdf = PDF::loadView('admin.sales.invoice', compact('sale'));
 
-            $pdf->setPaper('a4', 'portrait');
+            $pdf->setPaper('a5', 'portrait');
             $pdf->setOption('dpi', 150);
             $pdf->setOption('defaultFont', 'sans-serif');
 

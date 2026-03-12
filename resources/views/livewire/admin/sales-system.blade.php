@@ -664,7 +664,7 @@
                         <i class="bi bi-arrow-left me-2"></i>Back to Sales List
                     </a>
                     @endif
-                    <button type="button" class="btn btn-outline-primary me-2" onclick="openPrintWindow({{ $createdSale->id }})">
+                    <button type="button" class="btn btn-outline-primary me-2" wire:click="printInvoice({{ $createdSale->id }})">
                         <i class="bi bi-printer me-2"></i>Print
                     </button>
                     <button type="button" class="btn btn-success" wire:click="downloadInvoice">
@@ -1007,14 +1007,6 @@
 
 @push('scripts')
 <script>
-    // Print function for sale system
-    function openPrintWindow(saleId) {
-        const printUrl = '/admin/print/sale/' + saleId;
-        const printWindow = window.open(printUrl, '_blank', 'width=800,height=600');
-        if (printWindow) {
-            printWindow.focus();
-        }
-    }
 
     // Auto-close alerts after 5 seconds
     document.addEventListener('livewire:initialized', () => {
