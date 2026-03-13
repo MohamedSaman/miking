@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use Exception;
 use App\Models\User;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +15,7 @@ use App\Livewire\Concerns\WithDynamicLayout;
 class ManageStaff extends Component
 {
     use WithDynamicLayout;
+    use WithPagination;
 
     public $viewUserDetail = [];
     public $name;

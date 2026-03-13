@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\Customer;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Exception;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class ManageCustomer extends Component
 {
     use WithDynamicLayout;
+    use WithPagination;
 
     public $name;
     public $contactNumber;
