@@ -209,7 +209,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
+                    <div class="mb-3 position-relative">
                         <input type="text" class="form-control shadow-sm"
                             id="productSearchInput"
                             wire:model.live="search"
@@ -218,40 +218,40 @@
                             wire:keydown.enter.prevent="addSelectedResult"
                             wire:keydown.escape.prevent="$set('search', '')"
                             placeholder="Search by product name, code, or model... [F1]">
-                    </div>
 
-                    {{-- Search Results --}}
-                    @if($search && count($searchResults) > 0)
-                    <div class="search-results mt-1 position-absolute w-100 z-10 shadow-lg bg-white border" 
-                        id="search-results-container"
-                        style="max-height: 300px; max-width: 96%; overflow-y: auto;">
-                        @foreach($searchResults as $index => $product)
-                        <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white rounded-1 {{ $selectedResultIndex === $index ? 'bg-primary bg-opacity-10 border-primary' : '' }}"
-                            id="search-result-{{ $index }}"
-                            wire:key="product-{{ $product['id'] }}"
-                            style="{{ $selectedResultIndex === $index ? 'border-left: 4px solid #0d6efd;' : '' }}">
-                            <div>
-                                <h6 class="mb-1 fw-semibold">{{ $product['name'] }}</h6>
-                                <p class="text-muted small mb-0">
-                                    Code: {{ $product['code'] }} | Model: {{ $product['model'] }}
-                                </p>
-                                <p class="text-success small mb-0">
-                                    Rs.{{ number_format($product['price'], 2) }} | Stock: {{ $product['stock'] }}
-                                </p>
+                        {{-- Search Results --}}
+                        @if($search && count($searchResults) > 0)
+                        <div class="search-results mt-1 position-absolute w-100 shadow-lg bg-white border" 
+                            id="search-results-container"
+                            style="z-index: 1060; max-height: 300px; overflow-y: auto;">
+                            @foreach($searchResults as $index => $product)
+                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white rounded-1 {{ $selectedResultIndex === $index ? 'bg-primary bg-opacity-10 border-primary' : '' }}"
+                                id="search-result-{{ $index }}"
+                                wire:key="product-{{ $product['id'] }}"
+                                style="{{ $selectedResultIndex === $index ? 'border-left: 4px solid #0d6efd;' : '' }}">
+                                <div>
+                                    <h6 class="mb-1 fw-semibold">{{ $product['name'] }}</h6>
+                                    <p class="text-muted small mb-0">
+                                        Code: {{ $product['code'] }} | Model: {{ $product['model'] }}
+                                    </p>
+                                    <p class="text-success small mb-0">
+                                        Rs.{{ number_format($product['price'], 2) }} | Stock: {{ $product['stock'] }}
+                                    </p>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary"
+                                    wire:click="addToCart({{ json_encode($product) }})"
+                                    {{ $product['stock'] <= 0 ? 'disabled' : '' }}>
+                                    <i class="bi bi-plus-lg"></i> Add
+                                </button>
                             </div>
-                            <button class="btn btn-sm btn-outline-primary"
-                                wire:click="addToCart({{ json_encode($product) }})"
-                                {{ $product['stock'] <= 0 ? 'disabled' : '' }}>
-                                <i class="bi bi-plus-lg"></i> Add
-                            </button>
+                            @endforeach
                         </div>
-                        @endforeach
+                        @elseif($search)
+                        <div class="text-center text-muted p-3 mt-1 position-absolute w-100 bg-white border shadow-sm" style="z-index: 1060;">
+                            <i class="bi bi-exclamation-circle me-1"></i> No allocated products found
+                        </div>
+                        @endif
                     </div>
-                    @elseif($search)
-                    <div class="text-center text-muted p-3">
-                        <i class="bi bi-exclamation-circle me-1"></i> No allocated products found
-                    </div>
-                    @endif
                 </div>
             </div>
         </div>
