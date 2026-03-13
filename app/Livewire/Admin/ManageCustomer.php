@@ -43,6 +43,20 @@ class ManageCustomer extends Component
     public $showViewModal = false;
     public $viewCustomerDetail = [];
     public $perPage = 10;
+    
+    // Viewing customer extended data
+    public $activeTab = 'overview';
+    public $customerSales = [];
+    public $customerPayments = [];
+    public $customerDues = [];
+    public $customerReturns = [];
+    public $stats = [
+        'total_sales_count' => 0,
+        'total_sales_amount' => 0,
+        'total_payments_count' => 0,
+        'total_payments_amount' => 0,
+        'pending_dues_count' => 0,
+    ];
 
     public function updatedPerPage()
     {
@@ -51,7 +65,10 @@ class ManageCustomer extends Component
 
     public function render()
     {
-        $customers = Customer::latest()->paginate($this->perPage);
+        $customers = Customer::withSum('sales', 'due_amount')
+            ->latest()
+            ->paginate($this->perPage);
+            
         return view('livewire.admin.manage-customer', [
             'customers' => $customers,
         ])->layout($this->layout);
@@ -106,13 +123,14 @@ class ManageCustomer extends Component
      * ---------------------------- */
     public function viewDetails($id)
     {
-        $customer = Customer::find($id);
+        $customer = Customer::withSum('sales', 'due_amount')->find($id);
         if (!$customer) {
             $this->js("Swal.fire('Error!', 'Customer Not Found', 'error')");
             return;
         }
 
         $this->viewCustomerDetail = [
+            'id' => $customer->id,
             'name' => $customer->name,
             'business_name' => $customer->business_name,
             'phone' => $customer->phone,
@@ -121,12 +139,46 @@ class ManageCustomer extends Component
             'address' => $customer->address,
             'opening_balance' => $customer->opening_balance,
             'overpaid_amount' => $customer->overpaid_amount,
+            'due_amount' => $customer->sales_sum_due_amount ?? 0,
             'opening_remarks' => $customer->opening_remarks,
             'created_at' => $customer->created_at,
             'updated_at' => $customer->updated_at,
         ];
 
+        // Fetch Sales
+        $this->customerSales = \App\Models\Sale::where('customer_id', $id)->latest()->get();
+        
+        // Fetch Payments
+        $this->customerPayments = \App\Models\Payment::where('customer_id', $id)->latest()->get();
+        
+        // Fetch Dues (Sales with due_amount > 0)
+        $this->customerDues = \App\Models\Sale::where('customer_id', $id)
+            ->where('due_amount', '>', 0)
+            ->latest()
+            ->get();
+
+        // Fetch Returns
+        $this->customerReturns = \App\Models\StaffReturn::where('customer_id', $id)->latest()->get();
+
+        // Calculate Stats
+        $salesQuery = \App\Models\Sale::where('customer_id', $id);
+        $totalSalesDue = $salesQuery->sum('due_amount');
+        
+        $this->stats = [
+            'total_sales_count' => $salesQuery->count(),
+            'total_sales_amount' => $salesQuery->sum('total_amount'),
+            'total_payments_count' => \App\Models\Payment::where('customer_id', $id)->count(),
+            'total_payments_amount' => \App\Models\Payment::where('customer_id', $id)->sum('amount'),
+            'pending_dues_count' => $this->customerDues->count(),
+        ];
+
+        $this->activeTab = 'overview';
         $this->showViewModal = true;
+    }
+
+    public function setTab($tab)
+    {
+        $this->activeTab = $tab;
     }
 
     public function saveCustomer()

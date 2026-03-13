@@ -177,6 +177,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/admin/staff/{staffId}/reentry', \App\Livewire\Admin\StockReentry::class)->name('staff.reentry');
         Route::get('/store-billing/{saleId?}', StoreBilling::class)->name('store-billing');
         Route::get('/print/sale/{id}', [PrintController::class, 'printSale'])->name('print.sale');
+        Route::get('/print/customer-report/{type}/{id}', [PrintController::class, 'printCustomerReport'])->name('customer-report');
         Route::get('/due-payments', AdminDuePayments::class)->name('due-payments');
         Route::get('/staff-attendance', StaffAttendance::class)->name('staff-attendance');
         Route::get('/staff-tracking', \App\Livewire\Admin\StaffSessionTracking::class)->name('staff-tracking');
