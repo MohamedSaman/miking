@@ -434,6 +434,24 @@
                                 <option value="bank_transfer">Bank Transfer</option>
                                 <option value="credit">Credit (Pay Later)</option>
                             </select>
+                            @php
+                                $hasOtherPayments = (floatval($cashAmount) > 0) || 
+                                                    (count($cheques) > 0) || 
+                                                    (floatval($bankTransferAmount) > 0);
+                            @endphp
+                            @if($hasOtherPayments)
+                                <div class="mt-2 small text-muted">
+                                    <i class="bi bi-info-circle me-1"></i> 
+                                    Payment Breakdown: 
+                                    @if(floatval($cashAmount) > 0) <span class="badge bg-success bg-opacity-10 text-success border border-success">Cash: Rs.{{ number_format($cashAmount, 2) }}</span> @endif
+                                    @if(count($cheques) > 0) <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">Cheques: Rs.{{ number_format(collect($cheques)->sum('amount'), 2) }}</span> @endif
+                                    @if(floatval($bankTransferAmount) > 0) <span class="badge bg-info bg-opacity-10 text-info border border-info">Bank: Rs.{{ number_format($bankTransferAmount, 2) }}</span> @endif
+                                    @if($dueAmount > 0) <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Remaining as Due: Rs.{{ number_format($dueAmount, 2) }}</span> @endif
+                                </div>
+                            @endif
+                            <div class="form-text small">
+                                Combine multiple methods (e.g. Cash + Cheque) by switching views. Any unpaid balance becomes Credit.
+                            </div>
                         </div>
 
                         {{-- Cash Payment Fields --}}
@@ -565,10 +583,23 @@
                         {{-- Credit Payment Info --}}
                         @if($paymentMethod === 'credit')
                         <div class="col-md-12">
-                            <div class="alert alert-warning mb-0 rounded-0">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                <strong>Credit Sale</strong>
-                                <p class="mb-0 mt-2">The full amount of Rs.{{ number_format($grandTotal, 2) }} will be marked as due.</p>
+                            <div class="alert alert-warning mb-0 border-2 rounded-0 shadow-sm">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold text-dark mb-1">Partial / Full Credit Sale</h6>
+                                        <p class="mb-0 small text-muted">
+                                            @if($dueAmount >= $grandTotal)
+                                                The <strong>full amount</strong> of Rs.{{ number_format($grandTotal, 2) }} will be marked as due.
+                                            @else
+                                                The <strong>remaining balance</strong> of <span class="text-danger fw-bold">Rs.{{ number_format($dueAmount, 2) }}</span> will be marked as due.
+                                            @endif
+                                            This requires admin approval.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         @endif

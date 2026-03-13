@@ -74,7 +74,7 @@ class PosSales extends Component
                 $q->where('status', 'approved')->with('product');
             }
         ])
-            ->where('sale_type', 'pos')
+            ->where('sale_type', auth()->user()->isStaff() ? 'staff' : 'pos')
             ->find($saleId);
 
         $this->showViewModal = true;
@@ -369,7 +369,7 @@ class PosSales extends Component
     public function getSalesProperty()
     {
         return Sale::with(['customer', 'user', 'items'])
-            ->where('sale_type', 'pos')
+            ->where('sale_type', auth()->user()->isStaff() ? 'staff' : 'pos')
             ->when(auth()->user()->isStaff(), function ($query) {
                 $query->where('user_id', auth()->id());
             })
@@ -399,7 +399,7 @@ class PosSales extends Component
 
     public function getSalesStatsProperty()
     {
-        $baseQuery = Sale::where('sale_type', 'pos')
+        $baseQuery = Sale::where('sale_type', auth()->user()->isStaff() ? 'staff' : 'pos')
             ->when(auth()->user()->isStaff(), function ($query) {
                 $query->where('user_id', auth()->id());
             });

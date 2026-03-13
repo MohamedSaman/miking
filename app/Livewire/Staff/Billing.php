@@ -153,15 +153,9 @@ class Billing extends Component
 
     public function getTotalPaidAmountProperty()
     {
-        $total = 0;
-
-        if ($this->paymentMethod === 'cash') {
-            $total = $this->cashAmount;
-        } elseif ($this->paymentMethod === 'cheque') {
-            $total = collect($this->cheques)->sum('amount');
-        } elseif ($this->paymentMethod === 'bank_transfer') {
-            $total = $this->bankTransferAmount;
-        }
+        $total = floatval($this->cashAmount ?? 0) + 
+                 floatval($this->bankTransferAmount ?? 0) + 
+                 collect($this->cheques)->sum('amount');
 
         return $total;
     }
@@ -285,15 +279,10 @@ class Billing extends Component
 
     public function updatedPaymentMethod($value)
     {
-        $this->cashAmount = 0;
-        $this->cheques = [];
-        $this->bankTransferAmount = 0;
-        $this->bankTransferBankName = '';
-        $this->bankTransferReferenceNumber = '';
-
-        if ($value === 'cash') {
+        // Don't reset anymore to allow multi-method payments
+        if ($value === 'cash' && $this->cashAmount <= 0 && count($this->cheques) == 0 && $this->bankTransferAmount <= 0) {
             $this->cashAmount = $this->grandTotal;
-        } elseif ($value === 'bank_transfer') {
+        } elseif ($value === 'bank_transfer' && $this->bankTransferAmount <= 0 && $this->cashAmount <= 0 && count($this->cheques) == 0) {
             $this->bankTransferAmount = $this->grandTotal;
         }
     }
@@ -796,7 +785,7 @@ class Billing extends Component
                 'notes' => $this->notes,
                 'user_id' => $staffId,
                 'status' => 'confirm',
-                'sale_type' => 'pos',
+                'sale_type' => 'staff',
                 'sale_price_type' => $this->salePriceType,
             ]);
 
@@ -816,53 +805,67 @@ class Billing extends Component
                 ]);
             }
 
-            // Create Payment Record ONLY for actual money payments (cash, cheque, bank_transfer)
-            // Skip payment record for credit sales - they're just debt records, no money involved
-            $isCashZero = ($this->paymentMethod === 'cash' && $this->cashAmount <= 0);
+            // Create Payment Records for each method (e.g. for Mixed Payment with Credit)
+            // 1. Cash Payment
+            if (floatval($this->cashAmount) > 0) {
+                Payment::create([
+                    'customer_id' => $customer->id,
+                    'sale_id' => $sale->id,
+                    'amount' => floatval($this->cashAmount),
+                    'payment_method' => 'cash',
+                    'payment_date' => now(),
+                    'is_completed' => false,
+                    'status' => 'pending',
+                    'created_by' => $staffId,
+                    'payment_reference' => 'STAFF-CASH-' . now()->format('YmdHis'),
+                ]);
+            }
 
-            // Only create payment records for actual money transactions
-            if ($this->totalPaidAmount > 0 && $this->paymentMethod !== 'credit' && !$isCashZero) {
+            // 2. Cheque Payment(s)
+            if (count($this->cheques) > 0) {
+                $totalChequeAmount = collect($this->cheques)->sum('amount');
                 $payment = Payment::create([
                     'customer_id' => $customer->id,
                     'sale_id' => $sale->id,
-                    'amount' => $this->totalPaidAmount,
-                    'payment_method' => $this->paymentMethod,
+                    'amount' => $totalChequeAmount,
+                    'payment_method' => 'cheque',
                     'payment_date' => now(),
-                    'is_completed' => false, // Not completed until admin approval
-                    'status' => 'pending', // Pending admin approval
-                    'created_by' => $staffId, // Track which staff made the payment
+                    'is_completed' => false,
+                    'status' => 'pending',
+                    'created_by' => $staffId,
+                    'payment_reference' => 'STAFF-CHQ-' . collect($this->cheques)->pluck('number')->implode(','),
+                    'bank_name' => collect($this->cheques)->pluck('bank_name')->unique()->implode(', '),
                 ]);
 
-                // Handle payment method specific data (only for actual payment records)
-                if ($this->paymentMethod === 'cash') {
-                    $payment->update([
-                        'payment_reference' => 'STAFF-CASH-' . now()->format('YmdHis'),
-                    ]);
-                } elseif ($this->paymentMethod === 'cheque') {
-                    foreach ($this->cheques as $cheque) {
-                        Cheque::create([
-                            'cheque_number' => $cheque['number'],
-                            'cheque_date' => $cheque['date'],
-                            'bank_name' => $cheque['bank_name'],
-                            'cheque_amount' => $cheque['amount'],
-                            'status' => 'pending', // Cheque also needs approval
-                            'customer_id' => $customer->id,
-                            'payment_id' => $payment->id,
-                        ]);
-                    }
-
-                    $payment->update([
-                        'payment_reference' => 'STAFF-CHQ-' . collect($this->cheques)->pluck('number')->implode(','),
-                        'bank_name' => collect($this->cheques)->pluck('bank_name')->unique()->implode(', '),
-                    ]);
-                } elseif ($this->paymentMethod === 'bank_transfer') {
-                    $payment->update([
-                        'payment_reference' => $this->bankTransferReferenceNumber ?: 'STAFF-BANK-' . now()->format('YmdHis'),
-                        'bank_name' => $this->bankTransferBankName,
-                        'transfer_date' => now(),
-                        'transfer_reference' => $this->bankTransferReferenceNumber,
+                foreach ($this->cheques as $cheque) {
+                    Cheque::create([
+                        'cheque_number' => $cheque['number'],
+                        'cheque_date' => $cheque['date'],
+                        'bank_name' => $cheque['bank_name'],
+                        'cheque_amount' => $cheque['amount'],
+                        'status' => 'pending',
+                        'customer_id' => $customer->id,
+                        'payment_id' => $payment->id,
                     ]);
                 }
+            }
+
+            // 3. Bank Transfer
+            if (floatval($this->bankTransferAmount) > 0) {
+                Payment::create([
+                    'customer_id' => $customer->id,
+                    'sale_id' => $sale->id,
+                    'amount' => floatval($this->bankTransferAmount),
+                    'payment_method' => 'bank_transfer',
+                    'payment_date' => now(),
+                    'is_completed' => false,
+                    'status' => 'pending',
+                    'created_by' => $staffId,
+                    'payment_reference' => $this->bankTransferReferenceNumber ?: 'STAFF-BANK-' . now()->format('YmdHis'),
+                    'bank_name' => $this->bankTransferBankName,
+                    'transfer_date' => now(),
+                    'transfer_reference' => $this->bankTransferReferenceNumber,
+                ]);
             }
 
             // Create or Update staff_sales table with sold values
@@ -872,26 +875,17 @@ class Billing extends Component
             $staffSale = StaffSale::where('staff_id', $staffId)->first();
 
             if ($staffSale) {
-                // Update existing staff_sales record
                 $staffSale->increment('sold_quantity', $cartTotalQuantity);
                 $staffSale->increment('sold_value', $cartTotalValue);
 
-                // Update status based on completion
-                $totalQuantity = $staffSale->total_quantity;
-                $soldQuantity = $staffSale->sold_quantity;
-
-                if ($soldQuantity >= $totalQuantity) {
+                if ($staffSale->sold_quantity >= $staffSale->total_quantity) {
                     $staffSale->update(['status' => 'completed']);
-                } elseif ($soldQuantity > 0) {
+                } elseif ($staffSale->sold_quantity > 0) {
                     $staffSale->update(['status' => 'partial']);
                 }
             } else {
-                // Create new staff_sales record if it doesn't exist
-                $staffSale = StaffSale::create([
+                StaffSale::create([
                     'staff_id' => $staffId,
-                    'admin_id' => null, // No admin assigned yet
-                    'total_quantity' => 0, // Will be set by admin during allocation
-                    'total_value' => 0, // Will be set by admin during allocation
                     'sold_quantity' => $cartTotalQuantity,
                     'sold_value' => $cartTotalValue,
                     'status' => 'partial',
@@ -902,25 +896,18 @@ class Billing extends Component
 
             $this->lastSaleId = $sale->id;
             $this->createdSale = Sale::with(['customer', 'items', 'payments', 'user'])->find($sale->id);
-
-            // Calculate and record staff bonuses for this sale
             StaffBonusService::calculateBonusesForSale($this->createdSale);
-
             $this->showSaleModal = true;
 
-            // Capture payment method and cash amount before resetting fields
             $usedPaymentMethod = $this->paymentMethod;
             $usedCashAmount = $this->cashAmount;
 
-            // Clear cart and reset
             $this->cart = [];
             $this->additionalDiscount = 0;
-            $this->additionalDiscountType = 'fixed';
             $this->resetPaymentFields();
             $this->notes = '';
             $this->setDefaultCustomer();
 
-            // Different success message for credit vs payment sales
             if ($usedPaymentMethod === 'credit' || ($usedPaymentMethod === 'cash' && $usedCashAmount <= 0)) {
                 $this->js("Swal.fire('success', 'Credit sale created successfully! No payment approval needed.', 'success')");
             } else {

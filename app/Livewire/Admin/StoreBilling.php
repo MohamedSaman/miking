@@ -469,15 +469,9 @@ class StoreBilling extends Component
 
     public function getTotalPaidAmountProperty()
     {
-        $newPayment = 0;
-
-        if ($this->paymentMethod === 'cash') {
-            $newPayment = $this->cashAmount;
-        } elseif ($this->paymentMethod === 'cheque') {
-            $newPayment = collect($this->cheques)->sum('amount');
-        } elseif ($this->paymentMethod === 'bank_transfer') {
-            $newPayment = $this->bankTransferAmount;
-        }
+        $newPayment = floatval($this->cashAmount ?? 0) + 
+                      floatval($this->bankTransferAmount ?? 0) + 
+                      collect($this->cheques)->sum('amount');
 
         // When editing, add any existing payments already on record + returns count as paid
         return $this->existingPaidAmount + $this->existingTotalReturns + $newPayment;
@@ -592,16 +586,11 @@ class StoreBilling extends Component
     // When payment method changes
     public function updatedPaymentMethod($value)
     {
-        // Reset all payment fields
-        $this->cashAmount = 0;
-        $this->cheques = [];
-        $this->bankTransferAmount = 0;
-        $this->bankTransferBankName = '';
-        $this->bankTransferReferenceNumber = '';
-
-        if ($value === 'cash') {
+        // Don't reset anymore to allow multi-method payments
+        // Just set defaults if switching back to a section with 0
+        if ($value === 'cash' && $this->cashAmount <= 0 && count($this->cheques) == 0 && $this->bankTransferAmount <= 0) {
             $this->cashAmount = $this->grandTotal;
-        } elseif ($value === 'bank_transfer') {
+        } elseif ($value === 'bank_transfer' && $this->bankTransferAmount <= 0 && $this->cashAmount <= 0 && count($this->cheques) == 0) {
             $this->bankTransferAmount = $this->grandTotal;
         }
     }
@@ -1116,28 +1105,37 @@ class StoreBilling extends Component
                 }
             }
 
-            // Create Payment Record
-            if ($this->paymentMethod !== 'credit' && (int)$this->totalPaidAmount > 0) {
-                $payment = Payment::create([
-                    'customer_id' => $customer->id,
-                    'sale_id' => $sale->id,
-                    'amount' => (int)$this->totalPaidAmount,
-                    'payment_method' => $this->paymentMethod,
-                    'payment_date' => now(),
-                    'is_completed' => true,
-                    'status' =>  'paid',
-                ]);
-
-                // Handle payment method specific data
-                if ($this->paymentMethod === 'cash') {
-                    $payment->update([
+            // Create Payment Records for each method (e.g. for Mixed Payment with Credit)
+            // 1. Cash Payment
+                if (floatval($this->cashAmount) > 0) {
+                    $payment = Payment::create([
+                        'customer_id' => $customer->id,
+                        'sale_id' => $sale->id,
+                        'amount' => floatval($this->cashAmount),
+                        'payment_method' => 'cash',
+                        'payment_date' => now(),
+                        'is_completed' => true,
+                        'status' =>  'paid',
                         'payment_reference' => 'CASH-' . now()->format('YmdHis'),
                     ]);
+                    $this->updateCashInHands(floatval($this->cashAmount));
+                }
 
-                    // Update cash in hands - add cash payment
-                    $this->updateCashInHands((int)$this->totalPaidAmount);
-                } elseif ($this->paymentMethod === 'cheque') {
-                    // Create cheque records
+                // 2. Cheque Payment
+                if (count($this->cheques) > 0) {
+                    $totalChequeAmount = collect($this->cheques)->sum('amount');
+                    $payment = Payment::create([
+                        'customer_id' => $customer->id,
+                        'sale_id' => $sale->id,
+                        'amount' => $totalChequeAmount,
+                        'payment_method' => 'cheque',
+                        'payment_date' => now(),
+                        'is_completed' => true,
+                        'status' =>  'paid',
+                        'payment_reference' => 'CHQ-' . collect($this->cheques)->pluck('number')->implode(','),
+                        'bank_name' => collect($this->cheques)->pluck('bank_name')->unique()->implode(', '),
+                    ]);
+
                     foreach ($this->cheques as $cheque) {
                         Cheque::create([
                             'cheque_number' => $cheque['number'],
@@ -1149,20 +1147,24 @@ class StoreBilling extends Component
                             'payment_id' => $payment->id,
                         ]);
                     }
+                }
 
-                    $payment->update([
-                        'payment_reference' => 'CHQ-' . collect($this->cheques)->pluck('number')->implode(','),
-                        'bank_name' => collect($this->cheques)->pluck('bank_name')->unique()->implode(', '),
-                    ]);
-                } elseif ($this->paymentMethod === 'bank_transfer') {
-                    $payment->update([
+                // 3. Bank Transfer
+                if (floatval($this->bankTransferAmount) > 0) {
+                    Payment::create([
+                        'customer_id' => $customer->id,
+                        'sale_id' => $sale->id,
+                        'amount' => floatval($this->bankTransferAmount),
+                        'payment_method' => 'bank_transfer',
+                        'payment_date' => now(),
+                        'is_completed' => true,
+                        'status' =>  'paid',
                         'payment_reference' => $this->bankTransferReferenceNumber ?: 'BANK-' . now()->format('YmdHis'),
                         'bank_name' => $this->bankTransferBankName,
                         'transfer_date' => now(),
                         'transfer_reference' => $this->bankTransferReferenceNumber,
                     ]);
                 }
-            }
 
             DB::commit();
 
@@ -1284,25 +1286,37 @@ class StoreBilling extends Component
                 }
             }
 
-            // 5. Create a new Payment record if additional payment was entered
-            if ($this->paymentMethod !== 'credit' && $newPaymentAmount > 0) {
-                $payment = Payment::create([
-                    'customer_id'    => $customer->id,
-                    'sale_id'        => $sale->id,
-                    'amount'         => $newPaymentAmount,
-                    'payment_method' => $this->paymentMethod,
-                    'payment_date'   => now(),
-                    'is_completed'   => true,
-                    'status'         => 'paid',
-                ]);
-
-                if ($this->paymentMethod === 'cash') {
-                    $payment->update([
+            // 5. Create new Payment records for each method (supports Mixed Payment + Credit)
+            // 1. New Cash
+                if (floatval($this->cashAmount) > 0) {
+                    $payment = Payment::create([
+                        'customer_id'    => $customer->id,
+                        'sale_id'        => $sale->id,
+                        'amount'         => floatval($this->cashAmount),
+                        'payment_method' => 'cash',
+                        'payment_date'   => now(),
+                        'is_completed'   => true,
+                        'status'         => 'paid',
                         'payment_reference' => 'CASH-' . now()->format('YmdHis'),
                     ]);
-                    // Update cash in hands for the new cash received
-                    $this->updateCashInHands($newPaymentAmount);
-                } elseif ($this->paymentMethod === 'cheque') {
+                    $this->updateCashInHands(floatval($this->cashAmount));
+                }
+
+                // 2. New Cheques
+                if (count($this->cheques) > 0) {
+                    $totalChequeAmount = collect($this->cheques)->sum('amount');
+                    $payment = Payment::create([
+                        'customer_id'    => $customer->id,
+                        'sale_id'        => $sale->id,
+                        'amount'         => $totalChequeAmount,
+                        'payment_method' => 'cheque',
+                        'payment_date'   => now(),
+                        'is_completed'   => true,
+                        'status'         => 'paid',
+                        'payment_reference' => 'CHQ-' . collect($this->cheques)->pluck('number')->implode(','),
+                        'bank_name'         => collect($this->cheques)->pluck('bank_name')->unique()->implode(', '),
+                    ]);
+
                     foreach ($this->cheques as $cheque) {
                         Cheque::create([
                             'cheque_number' => $cheque['number'],
@@ -1314,19 +1328,24 @@ class StoreBilling extends Component
                             'payment_id'    => $payment->id,
                         ]);
                     }
-                    $payment->update([
-                        'payment_reference' => 'CHQ-' . collect($this->cheques)->pluck('number')->implode(','),
-                        'bank_name'         => collect($this->cheques)->pluck('bank_name')->unique()->implode(', '),
-                    ]);
-                } elseif ($this->paymentMethod === 'bank_transfer') {
-                    $payment->update([
+                }
+
+                // 3. New Bank Transfer
+                if (floatval($this->bankTransferAmount) > 0) {
+                    Payment::create([
+                        'customer_id'    => $customer->id,
+                        'sale_id'        => $sale->id,
+                        'amount'         => floatval($this->bankTransferAmount),
+                        'payment_method' => 'bank_transfer',
+                        'payment_date'   => now(),
+                        'is_completed'   => true,
+                        'status'         => 'paid',
                         'payment_reference' => $this->bankTransferReferenceNumber ?: 'BANK-' . now()->format('YmdHis'),
                         'bank_name'         => $this->bankTransferBankName,
                         'transfer_date'     => now(),
                         'transfer_reference'=> $this->bankTransferReferenceNumber,
                     ]);
                 }
-            }
 
             // 6. Recalculate bonuses
             \App\Services\StaffBonusService::calculateBonusesForSale($sale);
