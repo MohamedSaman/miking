@@ -1,4 +1,4 @@
-<x-print-layout title="Sale Receipt - {{ $sale->invoice_number }}" :documentType="in_array($sale->sale_price_type ?? '', ['cash', 'cash_credit']) ? 'CASH INVOICE' : 'CREDIT INVOICE'">
+<x-print-layout title="Sale Receipt - {{ $sale->invoice_number }}" :documentType="in_array($sale->sale_price_type ?? '', ['cash', 'cash_credit']) ? 'CASH INVOICE' : 'CREDIT INVOICE'" :noPrint="$noPrint ?? false" :saleId="$sale->id">
     <!-- Customer & Sale Details - Two Column Layout -->
     <div class="invoice-info-row">
         <div class="col-left">

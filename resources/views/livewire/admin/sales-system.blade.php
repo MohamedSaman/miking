@@ -667,8 +667,11 @@
                     <button type="button" class="btn btn-outline-primary me-2" wire:click="printInvoice({{ $createdSale->id }})">
                         <i class="bi bi-printer me-2"></i>Print
                     </button>
-                    <button type="button" class="btn btn-success" wire:click="downloadInvoice">
+                    <button type="button" class="btn btn-success me-2" wire:click="downloadInvoice">
                         <i class="bi bi-download me-2"></i>Download Invoice
+                    </button>
+                    <button type="button" class="btn btn-outline-success" wire:click="sendWhatsApp({{ $createdSale->id }})">
+                        <i class="bi bi-whatsapp me-2"></i>Send WhatsApp
                     </button>
                 </div>
             </div>

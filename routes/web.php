@@ -101,6 +101,8 @@ use App\Livewire\Staff\MyAllocatedProducts;
 
 // Public routes
 Route::get('/', CustomLogin::class)->name('welcome')->middleware('guest');
+Route::get('/invoice/view/{id}', [\App\Http\Controllers\ExternalInvoiceController::class, 'viewInvoice'])->name('invoice.external_view');
+Route::get('/invoice/download/{id}', [\App\Http\Controllers\ExternalInvoiceController::class, 'downloadInvoice'])->name('invoice.external_download');
 
 // Custom logout route
 Route::post('/logout', function (Request $request) {

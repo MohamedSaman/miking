@@ -315,6 +315,9 @@
                     <button type="button" class="btn btn-primary fw-bold" wire:click="downloadInvoice">
                         <i class="bi bi-download me-2"></i>Download Invoice
                     </button>
+                    <button type="button" class="btn btn-outline-success fw-bold" wire:click="sendWhatsApp({{ $createdSale->id }})">
+                        <i class="bi bi-whatsapp me-2"></i>Send WhatsApp
+                    </button>
                     <button type="button" class="btn btn-success fw-bold" wire:click="createNewSale">
                         <i class="bi bi-plus-circle me-2"></i>New Sale
                     </button>

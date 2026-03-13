@@ -436,6 +436,10 @@
            PRINT STYLES
            ============================================ */
         @media print {
+            .no-print {
+                display: none !important;
+            }
+
             body {
                 background: white !important;
             }
@@ -461,6 +465,24 @@
 </head>
 
 <body>
+    @if(isset($noPrint) && $noPrint)
+    <div class="toolbar no-print" style="position: sticky; top: 0; background: #fff; padding: 15px; border-bottom: 2px solid #1a237e; display: flex; justify-content: center; gap: 15px; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+        <a href="/invoice/download/{{ $saleId ?? '' }}" style="background: #27ae60; color: #fff; padding: 10px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; font-family: 'Segoe UI', Arial; font-size: 14px; transition: 0.3s; display: flex; align-items: center; gap: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+            </svg>
+            Download PDF
+        </a>
+        <button onclick="window.print()" style="background: #1a237e; color: #fff; padding: 10px 25px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Segoe UI', Arial; font-size: 14px; transition: 0.3s; display: flex; align-items: center; gap: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+            </svg>
+            Print Receipt
+        </button>
+    </div>
+    @endif
     <div class="print-container">
         <!-- Global Header -->
         <div class="global-header">
@@ -503,10 +525,12 @@
     <script>
         // Auto-trigger print when page loads
         window.onload = function() {
-            // Small delay to ensure content is fully rendered
-            setTimeout(function() {
-                window.print();
-            }, 500);
+            @if(!isset($noPrint) || !$noPrint)
+                // Small delay to ensure content is fully rendered
+                setTimeout(function() {
+                    window.print();
+                }, 500);
+            @endif
         };
 
         // Optional: Close window after printing or canceling
