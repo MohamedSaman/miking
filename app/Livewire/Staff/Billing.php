@@ -899,6 +899,7 @@ class Billing extends Component
                 ]);
             }
             DB::commit();
+            $this->js("console.log('Staff sale created successfully!');");
 
             $this->lastSaleId = $sale->id;
             $this->createdSale = Sale::with(['customer', 'items', 'payments', 'user'])->find($sale->id);
@@ -923,6 +924,7 @@ class Billing extends Component
             DB::rollBack();
             Log::error('Staff billing error: ' . $e->getMessage());
             $this->js("Swal.fire('error', 'Failed to create sale: " . $e->getMessage() . "', 'error')");
+            $this->js("console.error('Failed to create sale: " . addslashes($e->getMessage()) . "');");
         }
     }
 
