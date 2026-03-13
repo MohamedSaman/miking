@@ -893,11 +893,13 @@ class Billing extends Component
                 StaffSale::create([
                     'staff_id' => $staffId,
                     'total_quantity' => $cartTotalQuantity,
+                    'total_value' => $cartTotalValue,
                     'sold_quantity' => $cartTotalQuantity,
                     'sold_value' => $cartTotalValue,
                     'status' => 'partial',
                 ]);
             }
+
             DB::commit();
             $this->js("console.log('Staff sale created successfully!');");
 
@@ -923,8 +925,8 @@ class Billing extends Component
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Staff billing error: ' . $e->getMessage());
-            $this->js("Swal.fire('error', 'Failed to create sale: " . $e->getMessage() . "', 'error')");
-            $this->js("console.error('Failed to create sale: " . addslashes($e->getMessage()) . "');");
+            $this->js("Swal.fire('error', 'Failed to create sale: ' + " . json_encode($e->getMessage()) . ", 'error')");
+            $this->js("console.error('Failed to create sale: ' + " . json_encode($e->getMessage()) . ");");
         }
     }
 
