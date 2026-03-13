@@ -59,9 +59,19 @@
                                     | <i class="bi bi-envelope me-1"></i>{{ $selectedCustomer->email }}
                                     @endif
                                 </p>
-                                <span class="badge bg-warning">
+                                <span class="badge bg-warning me-1">
                                     {{ count($customerSales) }} Due Invoice(s)
                                 </span>
+                                @if(($customerOpeningBalance ?? 0) > 0)
+                                <span class="badge bg-danger me-1">
+                                    Opening: Rs.{{ number_format($customerOpeningBalance, 2) }}
+                                </span>
+                                @endif
+                                @if(($customerOverpaidAmount ?? 0) > 0)
+                                <span class="badge bg-success">
+                                    Credit: Rs.{{ number_format($customerOverpaidAmount, 2) }}
+                                </span>
+                                @endif
                             </div>
                             <button class="btn btn-outline-secondary btn-sm" wire:click="clearSelectedCustomer">
                                 <i class="bi bi-x"></i>
@@ -222,6 +232,9 @@
                                         @if($sale['has_returns'])
                                         <br><span class="badge bg-info badge-sm">Has Returns</span>
                                         @endif
+                                        @if(isset($sale['is_opening_balance']) && $sale['is_opening_balance'])
+                                            <br><small class="text-danger fw-bold">Note: {{ $sale['remarks'] ?? 'Previous Record' }}</small>
+                                        @endif
                                     </td>
                                     <td class="text-center">{{ $sale['sale_date'] }}</td>
                                     <td class="text-end">
@@ -249,7 +262,8 @@
                                     <td class="text-center">
                                         <button class="btn btn-outline-info btn-sm"
                                             wire:click.stop="viewSale({{ $sale['id'] }})"
-                                            title="View Invoice Details">
+                                            title="View Invoice Details"
+                                            @if(isset($sale['is_opening_balance']) && $sale['is_opening_balance']) disabled @endif>
                                             <i class="bi bi-eye"></i>
                                         </button>
                                     </td>
@@ -297,33 +311,54 @@
                 </div>
                 <div class="card-body">
                     @if(count($selectedInvoices) > 0)
-                        {{-- Show total due at the top --}}
-                        <div class="alert alert-info mb-4">
+                        <div class="alert alert-info mb-3">
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-semibold">Total Due (Selected):</span>
+                                <span class="fw-semibold">Total Due:</span>
                                 <span class="fw-bold fs-5 text-danger">Rs.{{ number_format($totalDueAmount, 2) }}</span>
                             </div>
-                            <small class="text-muted d-block mt-2">
-                                <i class="bi bi-info-circle me-1"></i>
-                                {{ count($selectedInvoices) }} invoice(s) selected for payment
-                            </small>
                         </div>
 
-                        {{-- Payment Amount Field --}}
+                        {{-- Apply Credit Opportunity --}}
+                        @if(($customerOverpaidAmount ?? 0) > 0)
+                        <div class="card border-success bg-light mb-3">
+                            <div class="card-body p-3">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="applyOverpaid" wire:model.live="applyOverpaid">
+                                    <label class="form-check-label fw-bold text-success" for="applyOverpaid">
+                                        Use Credit Balance
+                                    </label>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted">Available Credit:</small>
+                                    <span class="fw-semibold text-success">Rs.{{ number_format($customerOverpaidAmount, 2) }}</span>
+                                </div>
+                                @if($applyOverpaid)
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">Applied Credit:</small>
+                                    <span class="fw-bold text-primary">- Rs.{{ number_format($appliedOverpaidAmount, 2) }}</span>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
+
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Enter Payment Amount <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold">
+                                {{ $applyOverpaid ? 'Additional Payment Amount' : 'Enter Payment Amount' }} 
+                                <span class="text-danger">*</span>
+                            </label>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text">Rs.</span>
                                 <input
                                     type="number"
-                                    min="0.01"
-                                    max="{{ $totalDueAmount }}"
+                                    min="0"
+                                    max="{{ $maxPaymentAllowed }}"
                                     step="0.01"
                                     class="form-control"
                                     wire:model.live="totalPaymentAmount"
                                     placeholder="0.00">
                             </div>
-                            <small class="text-muted">Maximum: Rs.{{ number_format($totalDueAmount, 2) }}</small>
+                            <small class="text-muted">Required: Rs.{{ number_format($maxPaymentAllowed, 2) }}</small>
                             @error('totalPaymentAmount')
                             <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
@@ -339,19 +374,18 @@
                         </div>
                         @endif
 
-                        {{-- Process Payment Button --}}
                         <div class="d-grid mt-3">
                             <button
                                 class="btn btn-success btn-lg"
                                 wire:click="openPaymentModal"
                                 wire:loading.attr="disabled"
                                 wire:loading.class="disabled"
-                                @if($totalPaymentAmount <= 0 || $totalPaymentAmount > $totalDueAmount) disabled @endif>
+                                @if(($totalPaymentAmount + $appliedOverpaidAmount) <= 0 || $totalPaymentAmount > $maxPaymentAllowed) disabled @endif>
                                 <span wire:loading.remove wire:target="openPaymentModal">
                                     <i class="bi bi-cash-coin me-2"></i>
-                                    Process Payment
-                                    @if($totalPaymentAmount > 0)
-                                    <span class="ms-1">(Rs.{{ number_format($totalPaymentAmount, 2) }})</span>
+                                    {{ $totalPaymentAmount > 0 ? 'Process Payment' : 'Apply Credit Only' }}
+                                    @if($totalPaymentAmount + $appliedOverpaidAmount > 0)
+                                    <span class="ms-1">(Rs.{{ number_format($totalPaymentAmount + $appliedOverpaidAmount, 2) }})</span>
                                     @endif
                                 </span>
                                 <span wire:loading wire:target="openPaymentModal">
@@ -361,14 +395,13 @@
                             </button>
                         </div>
 
-                        {{-- Quick Payment Options --}}
                         <div class="mt-3">
                             <small class="text-muted d-block mb-2">Quick Options:</small>
                             <div class="d-grid gap-2">
                                 <button
                                     class="btn btn-outline-primary btn-sm"
-                                    wire:click="$set('totalPaymentAmount', {{ $totalDueAmount }})">
-                                    Pay Full Amount (Rs.{{ number_format($totalDueAmount, 2) }})
+                                    wire:click="$set('totalPaymentAmount', {{ $maxPaymentAllowed }})">
+                                    Pay Remaining (Rs.{{ number_format($maxPaymentAllowed, 2) }})
                                 </button>
                             </div>
                         </div>
@@ -748,6 +781,25 @@
                                 @endif
                                 @endforeach
                             </tbody>
+                            <tfoot class="table-light">
+                                <tr class="fw-bold">
+                                    <td colspan="2" class="text-end">Total Allocation:</td>
+                                    <td class="text-end text-dark">Rs.{{ number_format($totalPaymentAmount + $appliedOverpaidAmount, 2) }}</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                                @if($appliedOverpaidAmount > 0)
+                                <tr class="text-primary">
+                                    <td colspan="2" class="text-end">Credit Redeemed:</td>
+                                    <td class="text-end">- Rs.{{ number_format($appliedOverpaidAmount, 2) }}</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                                <tr class="text-success fs-5">
+                                    <td colspan="2" class="text-end">Actual Payment:</td>
+                                    <td class="text-end">Rs.{{ number_format($totalPaymentAmount, 2) }}</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                                @endif
+                            </tfoot>
                         </table>
                     </div>
                 </div>
@@ -828,6 +880,16 @@
                                             <td><strong>Amount Paid:</strong></td>
                                             <td class="fw-bold text-success">Rs.{{ number_format($latestPayment->amount, 2) }}</td>
                                         </tr>
+                                        @if($appliedOverpaidAmount > 0)
+                                        <tr>
+                                            <td><strong>Applied Credit:</strong></td>
+                                            <td class="fw-bold text-primary">Rs.{{ number_format($appliedOverpaidAmount, 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Total Benefit:</strong></td>
+                                            <td class="fw-bold text-dark">Rs.{{ number_format($latestPayment->amount + $appliedOverpaidAmount, 2) }}</td>
+                                        </tr>
+                                        @endif
                                         <tr>
                                             <td><strong>Reference No:</strong></td>
                                             <td>{{ $latestPayment->payment_reference ?: 'N/A' }}</td>

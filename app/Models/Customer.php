@@ -20,6 +20,9 @@ class Customer extends Model
         'business_name',
         'created_by',
         'user_id',
+        'opening_balance',
+        'overpaid_amount',
+        'opening_remarks',
     ];
 
     public function sales()

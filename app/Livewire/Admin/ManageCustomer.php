@@ -21,6 +21,9 @@ class ManageCustomer extends Component
     public $email;
     public $customerType;
     public $businessName;
+    public $openingBalance = 0;
+    public $overpaidAmount = 0;
+    public $openingRemarks;
 
     public $editCustomerId;
     public $editName;
@@ -29,6 +32,9 @@ class ManageCustomer extends Component
     public $editEmail;
     public $editCustomerType;
     public $editBusinessName;
+    public $editOpeningBalance = 0;
+    public $editOverpaidAmount = 0;
+    public $editOpeningRemarks;
 
     public $deleteId;
     public $showEditModal = false;
@@ -69,13 +75,19 @@ class ManageCustomer extends Component
             'email',
             'customerType',
             'businessName',
+            'openingBalance',
+            'overpaidAmount',
+            'openingRemarks',
             'editCustomerId',
             'editName',
             'editContactNumber',
             'editAddress',
             'editEmail',
             'editCustomerType',
-            'editBusinessName'
+            'editBusinessName',
+            'editOpeningBalance',
+            'editOverpaidAmount',
+            'editOpeningRemarks'
         ]);
         $this->resetErrorBag();
     }
@@ -107,6 +119,9 @@ class ManageCustomer extends Component
             'email' => $customer->email,
             'type' => $customer->type,
             'address' => $customer->address,
+            'opening_balance' => $customer->opening_balance,
+            'overpaid_amount' => $customer->overpaid_amount,
+            'opening_remarks' => $customer->opening_remarks,
             'created_at' => $customer->created_at,
             'updated_at' => $customer->updated_at,
         ];
@@ -123,6 +138,9 @@ class ManageCustomer extends Component
             'address' => 'nullable',
             'email' => 'nullable|email|unique:customers,email',
             'businessName' => 'nullable',
+            'openingBalance' => 'nullable|numeric',
+            'overpaidAmount' => 'nullable|numeric',
+            'openingRemarks' => 'nullable|string',
         ]);
 
         try {
@@ -133,6 +151,9 @@ class ManageCustomer extends Component
                 'email' => $this->email,
                 'type' => $this->customerType,
                 'business_name' => $this->businessName,
+                'opening_balance' => $this->openingBalance ?? 0,
+                'overpaid_amount' => $this->overpaidAmount ?? 0,
+                'opening_remarks' => $this->openingRemarks,
                 'user_id' => Auth::id(),
             ]);
 
@@ -162,6 +183,9 @@ class ManageCustomer extends Component
         $this->editCustomerType = $customer->type;
         $this->editAddress = $customer->address;
         $this->editEmail = $customer->email;
+        $this->editOpeningBalance = $customer->opening_balance;
+        $this->editOverpaidAmount = $customer->overpaid_amount;
+        $this->editOpeningRemarks = $customer->opening_remarks;
 
         $this->showEditModal = true;
     }
@@ -175,6 +199,9 @@ class ManageCustomer extends Component
             'editContactNumber' => 'nullable | max:10',
             'editAddress' => 'nullable',
             'editEmail' => 'nullable|email|unique:customers,email,' . $this->editCustomerId,
+            'editOpeningBalance' => 'nullable|numeric',
+            'editOverpaidAmount' => 'nullable|numeric',
+            'editOpeningRemarks' => 'nullable|string',
         ]);
 
         try {
@@ -191,6 +218,9 @@ class ManageCustomer extends Component
                 'type' => $this->editCustomerType,
                 'address' => $this->editAddress,
                 'email' => $this->editEmail,
+                'opening_balance' => $this->editOpeningBalance ?? 0,
+                'overpaid_amount' => $this->editOverpaidAmount ?? 0,
+                'opening_remarks' => $this->editOpeningRemarks,
             ]);
 
             $this->js("Swal.fire('Success!', 'Customer Updated Successfully', 'success')");

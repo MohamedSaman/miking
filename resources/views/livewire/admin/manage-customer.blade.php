@@ -234,6 +234,44 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row g-3 mt-1">
+                        <div class="col-12">
+                            <div class="alert alert-warning rounded-0 py-2 mb-3">
+                                <i class="bi bi-info-circle me-1"></i>
+                                <strong>Previous Records (Old Balance Before System)</strong>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Opening Balance (Old Outstanding)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rs.</span>
+                                    <input type="number" step="0.01" class="form-control @error('openingBalance') is-invalid @enderror" 
+                                           wire:model="openingBalance" placeholder="0">
+                                </div>
+                                @error('openingBalance') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Overpaid (Customer Credit)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rs.</span>
+                                    <input type="number" step="0.01" class="form-control @error('overpaidAmount') is-invalid @enderror" 
+                                           wire:model="overpaidAmount" placeholder="0">
+                                </div>
+                                @error('overpaidAmount') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Remarks (Note old invoice numbers)</label>
+                                <textarea class="form-control @error('openingRemarks') is-invalid @enderror" 
+                                          wire:model="openingRemarks" rows="2" placeholder="e.g. Old INV-001, INV-002 – balance carried forward"></textarea>
+                                @error('openingRemarks') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                    </div>
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
                             <i class="bi bi-check2-circle me-1"></i>
@@ -317,6 +355,44 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-12">
+                                <div class="alert alert-warning rounded-0 py-2 mb-3">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <strong>Previous Records (Old Balance Before System)</strong>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Opening Balance (Old Outstanding)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Rs.</span>
+                                        <input type="number" step="0.01" class="form-control @error('editOpeningBalance') is-invalid @enderror" 
+                                               wire:model="editOpeningBalance">
+                                    </div>
+                                    @error('editOpeningBalance') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Overpaid (Customer Credit)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Rs.</span>
+                                        <input type="number" step="0.01" class="form-control @error('editOverpaidAmount') is-invalid @enderror" 
+                                               wire:model="editOverpaidAmount">
+                                    </div>
+                                    @error('editOverpaidAmount') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Remarks (Note old invoice numbers)</label>
+                                    <textarea class="form-control @error('editOpeningRemarks') is-invalid @enderror" 
+                                              wire:model="editOpeningRemarks" rows="2"></textarea>
+                                    @error('editOpeningRemarks') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                        </div>
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
                                 <i class="bi bi-check2-circle me-1"></i>
@@ -396,6 +472,15 @@
                                     <i class="bi bi-clock-history me-1"></i> Account Information
                                 </h6>
                                 <div class="row">
+                                    <div class="col-4 text-muted fw-semibold mb-2">Opening Balance:</div>
+                                    <div class="col-8 mb-2">Rs. {{ number_format($viewCustomerDetail['opening_balance'] ?? 0, 2) }}</div>
+
+                                    <div class="col-4 text-muted fw-semibold mb-2">Overpaid:</div>
+                                    <div class="col-8 mb-2">Rs. {{ number_format($viewCustomerDetail['overpaid_amount'] ?? 0, 2) }}</div>
+
+                                    <div class="col-4 text-muted fw-semibold mb-2">Old Remarks:</div>
+                                    <div class="col-8 mb-2">{{ $viewCustomerDetail['opening_remarks'] ?? '-' }}</div>
+
                                     <div class="col-4 text-muted fw-semibold mb-2">Created:</div>
                                     <div class="col-8 mb-2">
                                         {{ $viewCustomerDetail['created_at'] ? \Carbon\Carbon::parse($viewCustomerDetail['created_at'])->format('M d, Y h:i A') : '-' }}

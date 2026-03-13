@@ -60,12 +60,20 @@ class AddCustomerReceipt extends Component
     public $latestPayment = null;
     public $paymentSuccess = false;
 
+    public $customerOpeningBalance = 0;
+    public $customerOverpaidAmount = 0;
+    public $customerOpeningRemarks = '';
+
+    public $applyOverpaid = false;
+    public $appliedOverpaidAmount = 0;
+    public $maxPaymentAllowed = 0;
+
     protected $rules = [
         'paymentData.payment_date' => 'required|date',
         'paymentData.payment_method' => 'required|in:cash,cheque,bank_transfer',
         'paymentData.reference_number' => 'nullable|string|max:100',
         'paymentData.notes' => 'nullable|string|max:500',
-        'totalPaymentAmount' => 'required|numeric|min:0.01',
+        'totalPaymentAmount' => 'nullable|numeric|min:0',
         'cheque.cheque_number' => 'required_if:paymentData.payment_method,cheque|string|max:50',
         'cheque.bank_name' => 'required_if:paymentData.payment_method,cheque|string|max:100',
         'cheque.cheque_date' => 'required_if:paymentData.payment_method,cheque|date',
@@ -105,20 +113,39 @@ class AddCustomerReceipt extends Component
 
     public function updatedTotalPaymentAmount()
     {
-        if ($this->totalPaymentAmount > $this->totalDueAmount) {
-            $this->totalPaymentAmount = $this->totalDueAmount;
-        }
-
-        if ($this->totalPaymentAmount < 0) {
-            $this->totalPaymentAmount = 0;
-        }
-
+        $this->updateBoundaries();
         $this->calculateRemainingAmount();
         $this->autoAllocatePayment();
 
         // Update cheque amount if payment method is cheque
         if ($this->paymentData['payment_method'] === 'cheque') {
             $this->cheque['amount'] = $this->totalPaymentAmount;
+        }
+    }
+
+    public function updatedApplyOverpaid()
+    {
+        $this->updateBoundaries();
+        $this->calculateRemainingAmount();
+        $this->autoAllocatePayment();
+    }
+
+    private function updateBoundaries()
+    {
+        if ($this->applyOverpaid) {
+            $this->appliedOverpaidAmount = min((float)$this->totalDueAmount, (float)$this->customerOverpaidAmount);
+        } else {
+            $this->appliedOverpaidAmount = 0;
+        }
+
+        $this->maxPaymentAllowed = max(0, (float)$this->totalDueAmount - $this->appliedOverpaidAmount);
+
+        if ($this->totalPaymentAmount > $this->maxPaymentAllowed) {
+            $this->totalPaymentAmount = $this->maxPaymentAllowed;
+        }
+
+        if ($this->totalPaymentAmount < 0) {
+            $this->totalPaymentAmount = 0;
         }
     }
 
@@ -142,10 +169,17 @@ class AddCustomerReceipt extends Component
     public function selectCustomer($customerId)
     {
         $this->selectedCustomer = Customer::find($customerId);
-        $this->loadCustomerSales();
+        if ($this->selectedCustomer) {
+            $this->customerOpeningBalance = (float)($this->selectedCustomer->opening_balance ?? 0);
+            $this->customerOverpaidAmount = (float)($this->selectedCustomer->overpaid_amount ?? 0);
+            $this->customerOpeningRemarks = $this->selectedCustomer->opening_remarks ?? '';
+            $this->loadCustomerSales();
+        }
         $this->selectedInvoices = [];
         $this->totalPaymentAmount = 0;
         $this->totalDueAmount = 0;
+        $this->appliedOverpaidAmount = 0;
+        $this->applyOverpaid = false;
         $this->initializeAllocations();
     }
 
@@ -173,6 +207,7 @@ class AddCustomerReceipt extends Component
         }
 
         $this->calculateTotalDue();
+        $this->updateBoundaries();
         $this->totalPaymentAmount = 0;
         $this->remainingAmount = $this->totalDueAmount;
         $this->initializeAllocations();
@@ -236,7 +271,7 @@ class AddCustomerReceipt extends Component
         $sales = $query->orderBy('created_at', 'asc')
             ->get();
 
-        $this->customerSales = $sales->map(function ($sale) {
+        $salesData = $sales->map(function ($sale) {
             // Admin returns (ReturnsProduct) now reduce due_amount directly in DB at return time
             $adminReturnAmount = $this->calculateReturnAmount($sale->id);
             // Staff returns are ALREADY reflected in due_amount (approval reduces it directly)
@@ -261,12 +296,12 @@ class AddCustomerReceipt extends Component
                 'invoice_number' => $sale->invoice_number,
                 'sale_id' => $sale->sale_id,
                 'sale_date' => $sale->created_at->format('M d, Y'),
-                'original_total_amount' => $sale->total_amount,
-                'total_amount' => $adjustedTotalAmount,
-                'original_due_amount' => $sale->due_amount,
-                'due_amount' => $adjustedDueAmount,
-                'return_amount' => $totalReturnAmount,
-                'paid_amount' => $paidAmount,
+                'original_total_amount' => (float)$sale->total_amount,
+                'total_amount' => (float)$adjustedTotalAmount,
+                'original_due_amount' => (float)$sale->due_amount,
+                'due_amount' => (float)$adjustedDueAmount,
+                'return_amount' => (float)$totalReturnAmount,
+                'paid_amount' => (float)$paidAmount,
                 'payment_status' => $adjustedDueAmount <= 0.01 ? 'paid' : $sale->payment_status,
                 'items_count' => $sale->items->count(),
                 'has_returns' => $totalReturnAmount > 0,
@@ -276,6 +311,29 @@ class AddCustomerReceipt extends Component
             return $sale['due_amount'] > 0.01;
         })->values()->toArray();
 
+        // MANUALLY APPEND OPENING BALANCE AS A VIRTUAL SALE
+        if ($this->customerOpeningBalance > 0) {
+            array_unshift($salesData, [
+                'id' => 'opening_' . $this->selectedCustomer->id,
+                'invoice_number' => 'OPENING-BALANCE',
+                'sale_id' => 'PREVIOUS-REC',
+                'sale_date' => '-',
+                'original_total_amount' => (float)$this->customerOpeningBalance,
+                'total_amount' => (float)$this->customerOpeningBalance,
+                'original_due_amount' => (float)$this->customerOpeningBalance,
+                'due_amount' => (float)$this->customerOpeningBalance,
+                'return_amount' => 0,
+                'paid_amount' => 0,
+                'payment_status' => 'pending',
+                'items_count' => 0,
+                'has_returns' => false,
+                'is_opening_balance' => true,
+                'remarks' => $this->customerOpeningRemarks
+            ]);
+        }
+
+        $this->customerSales = $salesData;
+
         $this->calculateTotalDue();
     }
 
@@ -284,15 +342,16 @@ class AddCustomerReceipt extends Component
      */
     private function calculateTotalDue()
     {
-        $this->totalDueAmount = collect($this->customerSales)
+        $this->totalDueAmount = (float)collect($this->customerSales)
             ->whereIn('id', $this->selectedInvoices)
             ->sum('due_amount');
         $this->remainingAmount = $this->totalDueAmount;
+        $this->updateBoundaries();
     }
 
     private function calculateRemainingAmount()
     {
-        $this->remainingAmount = $this->totalDueAmount - $this->totalPaymentAmount;
+        $this->remainingAmount = $this->totalDueAmount - ($this->totalPaymentAmount + $this->appliedOverpaidAmount);
     }
 
     private function initializeAllocations()
@@ -314,7 +373,7 @@ class AddCustomerReceipt extends Component
 
     private function autoAllocatePayment()
     {
-        $remainingPayment = $this->totalPaymentAmount;
+        $remainingPayment = (float)$this->totalPaymentAmount + (float)$this->appliedOverpaidAmount;
 
         foreach ($this->customerSales as $sale) {
             $saleId = $sale['id'];
@@ -416,6 +475,8 @@ class AddCustomerReceipt extends Component
         $this->totalDueAmount = 0;
         $this->totalPaymentAmount = 0;
         $this->remainingAmount = 0;
+        $this->applyOverpaid = false;
+        $this->appliedOverpaidAmount = 0;
         $this->cheque = [
             'cheque_number' => '',
             'bank_name' => '',
@@ -533,6 +594,14 @@ class AddCustomerReceipt extends Component
         // Validate inputs
         try {
             $this->validate();
+            
+            if (($this->totalPaymentAmount <= 0) && ($this->appliedOverpaidAmount <= 0)) {
+                 $this->dispatch('show-toast', [
+                    'type' => 'error',
+                    'message' => 'Please enter a payment amount or apply credit.'
+                ]);
+                return;
+            }
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation failed', ['errors' => $e->errors()]);
 
@@ -572,128 +641,156 @@ class AddCustomerReceipt extends Component
 
             $totalProcessed = 0;
             $processedInvoices = [];
-
-            // Determine payment status based on user role
-            // Staff payments need admin approval (pending), Admin payments are directly approved (paid)
             $isStaffUser = $this->isStaff();
             $paymentStatus = $isStaffUser ? 'pending' : 'paid';
             $isCompleted = $isStaffUser ? false : true;
 
-            // Create a single payment record for customer (not tied to specific sale)
-            $paymentData = [
-                'customer_id' => $this->selectedCustomer->id,
-                'amount' => $this->totalPaymentAmount,
-                'payment_method' => $this->paymentData['payment_method'],
-                'payment_reference' => $this->paymentData['reference_number'] ?? null,
-                'payment_date' => $this->paymentData['payment_date'],
-                'status' => $paymentStatus,
-                'is_completed' => $isCompleted,
-                'notes' => $this->paymentData['notes'] ?? null,
-                'created_by' => Auth::id(),
-            ];
+            $creditPayment = null;
+            $actualPayment = null;
 
-            // Add bank transfer details if payment method is bank transfer
-            if ($this->paymentData['payment_method'] === 'bank_transfer') {
-                $paymentData['bank_name'] = $this->bankTransfer['bank_name'];
-                $paymentData['transfer_date'] = $this->bankTransfer['transfer_date'];
-                $paymentData['transfer_reference'] = $this->bankTransfer['reference_number'];
-            }
-
-            $payment = Payment::create($paymentData);
-
-            Log::info('Main payment created', ['payment_id' => $payment->id]);
-
-            // Process cheques if payment method is cheque
-            if ($this->paymentData['payment_method'] === 'cheque') {
-                Cheque::create([
-                    'payment_id' => $payment->id,
-                    'cheque_number' => $this->cheque['cheque_number'],
-                    'bank_name' => $this->cheque['bank_name'],
-                    'cheque_date' => $this->cheque['cheque_date'],
-                    'cheque_amount' => $this->cheque['amount'],
-                    'status' => 'pending',
+            // 1. Handle Credit Redemption (Overpaid Balance)
+            if ($this->appliedOverpaidAmount > 0) {
+                $creditPayment = Payment::create([
                     'customer_id' => $this->selectedCustomer->id,
+                    'amount' => $this->appliedOverpaidAmount,
+                    'payment_method' => 'credit_adjustment',
+                    'payment_reference' => 'CREDIT-REDEMPTION',
+                    'payment_date' => $this->paymentData['payment_date'],
+                    'status' => 'paid', // Credit is already "paid" in the past
+                    'is_completed' => true,
+                    'notes' => 'Redeemed from overpaid balance',
+                    'created_by' => Auth::id(),
                 ]);
-                Log::info('Cheque created');
+
+                // Update customer overpaid balance
+                $customer = Customer::find($this->selectedCustomer->id);
+                if ($customer) {
+                    $customer->overpaid_amount = max(0, $customer->overpaid_amount - $this->appliedOverpaidAmount);
+                    $customer->save();
+                }
+                Log::info('Credit redemption payment created', ['payment_id' => $creditPayment->id]);
             }
 
-            // Process each sale allocation
-            foreach ($this->customerSales as $sale) {
-                $saleId = $sale['id'];
+            // 2. Handle Actual Payment (Cash/Cheque/Bank)
+            if ($this->totalPaymentAmount > 0) {
+                $pData = [
+                    'customer_id' => $this->selectedCustomer->id,
+                    'amount' => $this->totalPaymentAmount,
+                    'payment_method' => $this->paymentData['payment_method'],
+                    'payment_reference' => $this->paymentData['reference_number'] ?? null,
+                    'payment_date' => $this->paymentData['payment_date'],
+                    'status' => $paymentStatus,
+                    'is_completed' => $isCompleted,
+                    'notes' => $this->paymentData['notes'] ?? null,
+                    'created_by' => Auth::id(),
+                ];
 
-                // Only process selected invoices
-                if (!in_array($saleId, $this->selectedInvoices)) {
-                    continue;
+                if ($this->paymentData['payment_method'] === 'bank_transfer') {
+                    $pData['bank_name'] = $this->bankTransfer['bank_name'];
+                    $pData['transfer_date'] = $this->bankTransfer['transfer_date'];
+                    $pData['transfer_reference'] = $this->bankTransfer['reference_number'];
                 }
 
-                $allocation = $this->allocations[$saleId];
-                $paymentAmount = $allocation['payment_amount'];
+                $actualPayment = Payment::create($pData);
+
+                if ($this->paymentData['payment_method'] === 'cheque') {
+                    Cheque::create([
+                        'payment_id' => $actualPayment->id,
+                        'cheque_number' => $this->cheque['cheque_number'],
+                        'bank_name' => $this->cheque['bank_name'],
+                        'cheque_date' => $this->cheque['cheque_date'],
+                        'cheque_amount' => $this->cheque['amount'],
+                        'status' => 'pending',
+                        'customer_id' => $this->selectedCustomer->id,
+                    ]);
+                }
+                Log::info('Actual payment created', ['payment_id' => $actualPayment->id]);
+            }
+
+            $remainingCreditToAllocate = (float)$this->appliedOverpaidAmount;
+            $remainingActualToAllocate = (float)$this->totalPaymentAmount;
+
+            // Process each sale allocation
+            foreach ($this->allocations as $allocation) {
+                $saleId = $allocation['sale_id'];
+                $paymentAmount = (float)$allocation['payment_amount'];
 
                 if ($paymentAmount <= 0) continue;
 
-                $saleModel = Sale::find($saleId);
-                if ($saleModel) {
-                    // Update sale amounts for both admin and staff
-                    // Only difference: staff payment status = 'pending', admin = 'paid'
-                    // NOTE: due_amount tracks original sale amount - paid amount
-                    // Returns are applied as display deductions only, not affect original due_amount
-                    $newDueAmount = $saleModel->due_amount - $paymentAmount;
-                    $saleModel->due_amount = max(0, $newDueAmount);
+                // How much of this allocation comes from credit?
+                $fromCredit = 0;
+                if ($remainingCreditToAllocate > 0) {
+                    $fromCredit = min($paymentAmount, $remainingCreditToAllocate);
+                    $remainingCreditToAllocate -= $fromCredit;
+                }
 
-                    if ($saleModel->due_amount <= 0.01) {
-                        $saleModel->payment_status = 'paid';
-                        $saleModel->due_amount = 0;
-                    } else {
-                        $saleModel->payment_status = 'partial';
+                // How much from actual cash/etc?
+                $fromActual = $paymentAmount - $fromCredit;
+                $remainingActualToAllocate -= $fromActual;
+
+                if (is_string($saleId) && strpos($saleId, 'opening_') === 0) {
+                    // Update customer opening balance
+                    $customer = Customer::find($this->selectedCustomer->id);
+                    if ($customer) {
+                        $customer->opening_balance = max(0, $customer->opening_balance - $paymentAmount);
+                        $customer->save();
                     }
+                } else {
+                    $saleModel = Sale::find($saleId);
+                    if ($saleModel) {
+                        $newDueAmount = max(0, $saleModel->due_amount - $paymentAmount);
+                        $saleModel->update([
+                            'due_amount' => $newDueAmount,
+                            'payment_status' => $newDueAmount <= 0.01 ? 'paid' : 'partial'
+                        ]);
 
-                    $saleModel->save();
+                        // Allocation for credit part
+                        if ($fromCredit > 0 && $creditPayment) {
+                            DB::table('payment_allocations')->insert([
+                                'payment_id' => $creditPayment->id,
+                                'sale_id' => $saleId,
+                                'allocated_amount' => $fromCredit,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
 
-                    // Create payment allocation record (needed for both admin and staff)
-                    DB::table('payment_allocations')->insert([
-                        'payment_id' => $payment->id,
-                        'sale_id' => $saleId,
-                        'allocated_amount' => $paymentAmount,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    Log::info('Sale allocation created', [
-                        'sale_id' => $saleId,
-                        'payment_amount' => $paymentAmount,
-                        'is_staff_payment' => $isStaffUser,
-                        'new_due' => $saleModel->due_amount
-                    ]);
+                        // Allocation for actual part
+                        if ($fromActual > 0 && $actualPayment) {
+                            DB::table('payment_allocations')->insert([
+                                'payment_id' => $actualPayment->id,
+                                'sale_id' => $saleId,
+                                'allocated_amount' => $fromActual,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
                 }
 
                 $totalProcessed += $paymentAmount;
-                $processedInvoices[] = $sale['invoice_number'];
+                $invoiceNum = $allocation['invoice_number'] ?? 'Unknown';
+                if (!in_array($invoiceNum, $processedInvoices)) {
+                    $processedInvoices[] = $invoiceNum;
+                }
             }
 
             DB::commit();
 
-            Log::info('Payment processed successfully', [
-                'total_processed' => $totalProcessed,
-                'invoices' => $processedInvoices,
-                'payment_id' => $payment->id,
-                'is_staff' => $isStaffUser
-            ]);
-
             $this->paymentSuccess = true;
             $this->showPaymentModal = false;
-            $this->latestPayment = $payment;
+            $this->latestPayment = $actualPayment ?: $creditPayment;
 
-            // Show different message for staff (pending approval) vs admin (immediate)
-            $successMessage = $isStaffUser 
-                ? "Payment of Rs." . number_format($totalProcessed, 2) . " submitted! Awaiting admin approval."
-                : "Payment of Rs." . number_format($totalProcessed, 2) . " processed successfully!";
+            $successMessage = "Rs." . number_format($totalProcessed, 2) . " processed successfully!";
+            if ($isStaffUser && $actualPayment) {
+                $successMessage .= " Awaiting admin approval for cash/cheque.";
+            }
 
             $this->dispatch('show-toast', [
                 'type' => 'success',
                 'message' => $successMessage
             ]);
 
-            // Open receipt modal for both admin and staff
             $this->openReceiptModal();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -738,7 +835,6 @@ class AddCustomerReceipt extends Component
             $payment = Payment::with(['cheques'])
                 ->find($this->latestPayment->id);
 
-            // Get allocations from payment_allocations table with return information
             $allocations = DB::table('payment_allocations')
                 ->join('sales', 'payment_allocations.sale_id', '=', 'sales.id')
                 ->where('payment_allocations.payment_id', $payment->id)
@@ -751,10 +847,24 @@ class AddCustomerReceipt extends Component
                 ->get()
                 ->map(function ($allocation) {
                     $returnAmount = $this->calculateReturnAmount($allocation->sale_id);
-                    $allocation->return_amount = $returnAmount;
-                    $allocation->adjusted_total = $allocation->total_amount - $returnAmount;
+                    $allocation->return_amount = (float)$returnAmount;
+                    $allocation->adjusted_total = (float)($allocation->total_amount - $returnAmount);
                     return $allocation;
                 });
+
+            // If there's unallocated amount, it was for the opening balance
+            $totalAllocated = $allocations->sum('allocated_amount');
+            if ($payment->amount > $totalAllocated + 0.01) {
+                $unallocated = $payment->amount - $totalAllocated;
+                $allocations->push((object)[
+                    'sale_id' => 0,
+                    'invoice_number' => 'OPENING-BALANCE',
+                    'total_amount' => $unallocated,
+                    'allocated_amount' => $unallocated,
+                    'return_amount' => 0,
+                    'adjusted_total' => $unallocated,
+                ]);
+            }
 
             $receiptData = [
                 'payment' => $payment,
@@ -802,17 +912,20 @@ class AddCustomerReceipt extends Component
                       ->whereIn('sale_type', ['staff', 'pos']);
             }
         }])
-            ->whereHas('sales', function ($query) {
-                $query->where(function ($q) {
-                    $q->where('payment_status', 'pending')
-                        ->orWhere('payment_status', 'partial');
-                });
-                
-                // Filter sales by user for staff
-                if ($this->isStaff()) {
-                    $query->where('user_id', Auth::id())
+            ->where(function($query) {
+                $query->whereHas('sales', function ($q) {
+                    $q->where(function ($sq) {
+                        $sq->where('payment_status', 'pending')
+                            ->orWhere('payment_status', 'partial');
+                    });
+                    
+                    // Filter sales by user for staff
+                    if ($this->isStaff()) {
+                        $q->where('user_id', Auth::id())
                           ->whereIn('sale_type', ['staff', 'pos']);
-                }
+                    }
+                })
+                ->orWhere('opening_balance', '>', 0);
             })
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
