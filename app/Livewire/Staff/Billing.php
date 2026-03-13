@@ -289,15 +289,21 @@ class Billing extends Component
 
     public function updated($propertyName)
     {
+        if (in_array($propertyName, ['cashAmount', 'bankTransferAmount', 'tempChequeAmount', 'additionalDiscount'])) {
+            if ($this->$propertyName === '') {
+                $this->$propertyName = 0;
+            }
+        }
+
         if (
             str_contains($propertyName, 'cart') ||
             str_contains($propertyName, 'additionalDiscount') ||
             str_contains($propertyName, 'additionalDiscountType')
         ) {
             if ($this->paymentMethod === 'cash') {
-                $this->cashAmount = $this->grandTotal;
+                $this->cashAmount = floatval($this->grandTotal);
             } elseif ($this->paymentMethod === 'bank_transfer') {
-                $this->bankTransferAmount = $this->grandTotal;
+                $this->bankTransferAmount = floatval($this->grandTotal);
             }
         }
     }

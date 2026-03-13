@@ -235,7 +235,7 @@
                                         Code: {{ $product['code'] }} | Model: {{ $product['model'] }}
                                     </p>
                                     <p class="text-success small mb-0">
-                                        Rs.{{ number_format($product['price'], 2) }} | Stock: {{ $product['stock'] }}
+                                        Rs.{{ number_format((float)($product['price'] ?? 0), 2) }} | Stock: {{ $product['stock'] }}
                                     </p>
                                 </div>
                                 <button class="btn btn-sm btn-outline-primary"
@@ -326,7 +326,7 @@
                                         x-on:keydown.arrow-up.prevent="$dispatch('focus-pos-field', { index: {{ $index - 1 }}, field: 'discount' })"
                                         value="{{ $item['discount'] }}" min="0" step="0.01">
                                 </td>
-                                <td class="fw-bold">Rs.{{ number_format($item['total'], 2) }}</td>
+                                <td class="fw-bold">Rs.{{ number_format((float)($item['total'] ?? 0), 2) }}</td>
                                 <td class="text-center">
                                     <button class="btn btn-sm btn-outline-danger rounded-0"
                                         wire:click="removeFromCart({{ $index }})">
@@ -339,7 +339,7 @@
                         <tfoot class="table-light">
                             <tr>
                                 <td colspan="5" class="text-end fw-bold">Subtotal:</td>
-                                <td class="fw-bold">Rs.{{ number_format($subtotal, 2) }}</td>
+                                <td class="fw-bold">Rs.{{ number_format((float)($subtotal ?? 0), 2) }}</td>
                                 <td></td>
                             </tr>
 
@@ -373,7 +373,7 @@
                                 </td>
                                 <td class="fw-bold text-danger">
                                     @if($additionalDiscount > 0)
-                                    - Rs.{{ number_format($additionalDiscountAmount, 2) }}
+                                    - Rs.{{ number_format((float)($additionalDiscountAmount ?? 0), 2) }}
                                     @if($additionalDiscountType === 'percentage')
                                     <div class="text-muted small">({{ $additionalDiscount }}%)</div>
                                     @endif
@@ -387,7 +387,7 @@
                             {{-- Grand Total --}}
                             <tr>
                                 <td colspan="5" class="text-end fw-bold fs-5">Grand Total:</td>
-                                <td class="fw-bold fs-5" style="color:#2a83df;">Rs.{{ number_format($grandTotal, 2) }}</td>
+                                <td class="fw-bold fs-5" style="color:#2a83df;">Rs.{{ number_format((float)($grandTotal ?? 0), 2) }}</td>
                                 <td></td>
                             </tr>
                         </tfoot>
@@ -443,10 +443,10 @@
                                 <div class="mt-2 small text-muted">
                                     <i class="bi bi-info-circle me-1"></i> 
                                     Payment Breakdown: 
-                                    @if(floatval($cashAmount) > 0) <span class="badge bg-success bg-opacity-10 text-success border border-success">Cash: Rs.{{ number_format($cashAmount, 2) }}</span> @endif
-                                    @if(count($cheques) > 0) <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">Cheques: Rs.{{ number_format(collect($cheques)->sum('amount'), 2) }}</span> @endif
-                                    @if(floatval($bankTransferAmount) > 0) <span class="badge bg-info bg-opacity-10 text-info border border-info">Bank: Rs.{{ number_format($bankTransferAmount, 2) }}</span> @endif
-                                    @if($dueAmount > 0) <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Remaining as Due: Rs.{{ number_format($dueAmount, 2) }}</span> @endif
+                                    @if(floatval($cashAmount) > 0) <span class="badge bg-success bg-opacity-10 text-success border border-success">Cash: Rs.{{ number_format((float)($cashAmount ?? 0), 2) }}</span> @endif
+                                    @if(count($cheques) > 0) <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">Cheques: Rs.{{ number_format((float)(collect($cheques)->sum('amount') ?? 0), 2) }}</span> @endif
+                                    @if(floatval($bankTransferAmount) > 0) <span class="badge bg-info bg-opacity-10 text-info border border-info">Bank: Rs.{{ number_format((float)($bankTransferAmount ?? 0), 2) }}</span> @endif
+                                    @if($dueAmount > 0) <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Remaining as Due: Rs.{{ number_format((float)($dueAmount ?? 0), 2) }}</span> @endif
                                 </div>
                             @endif
                             <div class="form-text small">
@@ -532,7 +532,7 @@
                                                 <td>{{ $cheque['number'] }}</td>
                                                 <td>{{ $cheque['bank_name'] }}</td>
                                                 <td>{{ date('d/m/Y', strtotime($cheque['date'])) }}</td>
-                                                <td class="fw-bold">Rs.{{ number_format($cheque['amount'], 2) }}</td>
+                                                <td class="fw-bold">Rs.{{ number_format((float)($cheque['amount'] ?? 0), 2) }}</td>
                                                 <td class="text-center">
                                                     <button type="button" class="btn btn-sm btn-outline-danger rounded-0"
                                                         wire:click="removeCheque({{ $index }})">
@@ -546,7 +546,7 @@
                                             <tr>
                                                 <td colspan="3" class="text-end fw-bold">Total:</td>
                                                 <td colspan="2" class="fw-bold text-success">
-                                                    Rs.{{ number_format(collect($cheques)->sum('amount'), 2) }}
+                                                    Rs.{{ number_format((float)(collect($cheques)->sum('amount') ?? 0), 2) }}
                                                 </td>
                                             </tr>
                                         </tfoot>
@@ -592,9 +592,9 @@
                                         <h6 class="fw-bold text-dark mb-1">Partial / Full Credit Sale</h6>
                                         <p class="mb-0 small text-muted">
                                             @if($dueAmount >= $grandTotal)
-                                                The <strong>full amount</strong> of Rs.{{ number_format($grandTotal, 2) }} will be marked as due.
+                                                The <strong>full amount</strong> of Rs.{{ number_format((float)($grandTotal ?? 0), 2) }} will be marked as due.
                                             @else
-                                                The <strong>remaining balance</strong> of <span class="text-danger fw-bold">Rs.{{ number_format($dueAmount, 2) }}</span> will be marked as due.
+                                                The <strong>remaining balance</strong> of <span class="text-danger fw-bold">Rs.{{ number_format((float)($dueAmount ?? 0), 2) }}</span> will be marked as due.
                                             @endif
                                             This requires admin approval.
                                         </p>
@@ -611,16 +611,16 @@
                                 <h6 class="mb-3 fw-semibold" style="color:#2a83df;">Payment Summary</h6>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Grand Total:</span>
-                                    <span class="fw-bold">Rs.{{ number_format($grandTotal, 2) }}</span>
+                                    <span class="fw-bold">Rs.{{ number_format((float)($grandTotal ?? 0), 2) }}</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Paid Amount:</span>
-                                    <span class="fw-bold text-success">Rs.{{ number_format($totalPaidAmount, 2) }}</span>
+                                    <span class="fw-bold text-success">Rs.{{ number_format((float)($totalPaidAmount ?? 0), 2) }}</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Due Amount:</span>
                                     <span class="fw-bold {{ $dueAmount > 0 ? 'text-warning' : 'text-success' }}">
-                                        Rs.{{ number_format($dueAmount, 2) }}
+                                        Rs.{{ number_format((float)($dueAmount ?? 0), 2) }}
                                     </span>
                                 </div>
                                 <div class="d-flex justify-content-between">
@@ -636,7 +636,7 @@
                         <div class="col-md-12">
                             <div class="alert alert-info small mb-0 rounded-0">
                                 <i class="bi bi-info-circle me-1"></i>
-                                Partial payment. Remaining Rs.{{ number_format($dueAmount, 2) }} will be marked as due.
+                                Partial payment. Remaining Rs.{{ number_format((float)($dueAmount ?? 0), 2) }} will be marked as due.
                             </div>
                         </div>
                         @endif
@@ -773,7 +773,7 @@
                     </div>
                     <h5 class="mb-3">Payment amount is less than total</h5>
                     <p class="mb-4">
-                        A due amount of <strong class="text-danger">Rs.{{ number_format($pendingDueAmount, 2) }}</strong> 
+                        A due amount of <strong class="text-danger">Rs.{{ number_format((float)($pendingDueAmount ?? 0), 2) }}</strong> 
                         will be recorded for this sale.
                     </p>
                     <p class="text-muted small">Do you want to proceed with this sale?</p>
@@ -877,32 +877,32 @@
                                         <td>{{ $item->product_code }}</td>
                                         <td>{{ $item->product_name }}</td>
                                         <td class="text-center">{{ $item->quantity }}</td>
-                                        <td class="text-end">Rs.{{ number_format($item->unit_price, 2) }}</td>
+                                        <td class="text-end">Rs.{{ number_format((float)($item->unit_price ?? 0), 2) }}</td>
                                         <td class="text-end">
                                             @if($item->discount_per_unit > 0)
-                                                - Rs.{{ number_format($item->discount_per_unit, 2) }}
+                                                - Rs.{{ number_format((float)($item->discount_per_unit ?? 0), 2) }}
                                             @else
                                                 - Rs.0.00
                                             @endif
                                         </td>
-                                        <td class="text-end">Rs.{{ number_format(($item->unit_price - $item->discount_per_unit) * $item->quantity, 2) }}</td>
+                                        <td class="text-end">Rs.{{ number_format((float)((($item->unit_price ?? 0) - ($item->discount_per_unit ?? 0)) * ($item->quantity ?? 0)), 2) }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
                                 <tfoot>
                                     <tr class="totals-row">
                                         <td colspan="6" class="text-end"><strong>Subtotal</strong></td>
-                                        <td class="text-end"><strong>Rs.{{ number_format($createdSale->subtotal, 2) }}</strong></td>
+                                        <td class="text-end"><strong>Rs.{{ number_format((float)($createdSale->subtotal ?? 0), 2) }}</strong></td>
                                     </tr>
                                     @if($createdSale->discount_amount > 0)
                                     <tr class="totals-row">
                                         <td colspan="6" class="text-end"><strong>Discount</strong></td>
-                                        <td class="text-end"><strong>-Rs.{{ number_format($createdSale->discount_amount, 2) }}</strong></td>
+                                        <td class="text-end"><strong>-Rs.{{ number_format((float)($createdSale->discount_amount ?? 0), 2) }}</strong></td>
                                     </tr>
                                     @endif
                                     <tr class="totals-row grand-total">
                                         <td colspan="6" class="text-end"><strong>Grand Total</strong></td>
-                                        <td class="text-end"><strong>Rs.{{ number_format($createdSale->total_amount, 2) }}</strong></td>
+                                        <td class="text-end"><strong>Rs.{{ number_format((float)($createdSale->total_amount ?? 0), 2) }}</strong></td>
                                     </tr>
                                     @php
                                         $paidAmount = $createdSale->payments->where('payment_method', '!=', 'credit')->sum('amount');
@@ -910,13 +910,13 @@
                                     @if($paidAmount > 0)
                                     <tr class="totals-row">
                                         <td colspan="6" class="text-end"><strong>Paid Amount</strong></td>
-                                        <td class="text-end"><strong>Rs.{{ number_format($paidAmount, 2) }}</strong></td>
+                                        <td class="text-end"><strong>Rs.{{ number_format((float)($paidAmount ?? 0), 2) }}</strong></td>
                                     </tr>
                                     @endif
                                     @if($createdSale->due_amount > 0)
                                     <tr class="totals-row">
                                         <td colspan="6" class="text-end"><strong>Due Amount</strong></td>
-                                        <td class="text-end"><strong>Rs.{{ number_format($createdSale->due_amount, 2) }}</strong></td>
+                                        <td class="text-end"><strong>Rs.{{ number_format((float)($createdSale->due_amount ?? 0), 2) }}</strong></td>
                                     </tr>
                                     @endif
                                 </tfoot>
