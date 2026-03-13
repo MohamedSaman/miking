@@ -892,12 +892,12 @@ class Billing extends Component
             } else {
                 StaffSale::create([
                     'staff_id' => $staffId,
+                    'total_quantity' => $cartTotalQuantity,
                     'sold_quantity' => $cartTotalQuantity,
                     'sold_value' => $cartTotalValue,
                     'status' => 'partial',
                 ]);
             }
-
             DB::commit();
 
             $this->lastSaleId = $sale->id;
