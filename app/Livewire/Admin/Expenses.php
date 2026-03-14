@@ -92,6 +92,7 @@ class Expenses extends Component
     public function saveDailyExpense()
     {
         $this->validate([
+            'date' => 'required|date',
             'category' => 'required',
             'amount' => 'required|numeric|min:0',
         ]);
@@ -100,7 +101,7 @@ class Expenses extends Component
             'category' => $this->category,
             'amount' => $this->amount,
             'description' => $this->description,
-            'date' => now(),
+            'date' => $this->date,
             'expense_type' => 'daily',
             'user_id' => Auth::id(),
         ]);
@@ -133,7 +134,7 @@ class Expenses extends Component
             Log::error('Failed to update POS session after daily expense: ' . $e->getMessage());
         }
 
-        $this->reset(['category', 'amount', 'description']);
+        $this->reset(['date', 'category', 'amount', 'description']);
         $this->loadExpenses();
         $this->js("swal.fire('Success!', 'Daily expense added successfully.', 'success')");
         $this->dispatch('close-modal', 'addDailyExpenseModal');
@@ -240,6 +241,7 @@ class Expenses extends Component
     public function updateExpense()
     {
         $this->validate([
+            'edit_date' => 'required|date',
             'edit_category' => 'required|string',
             'edit_amount' => 'required|numeric|min:0',
         ]);
@@ -250,15 +252,11 @@ class Expenses extends Component
             'category' => $this->edit_category,
             'description' => $this->edit_description,
             'amount' => $this->edit_amount,
+            'date' => $this->edit_date,
         ];
 
         if ($expense->expense_type === 'monthly') {
-            $this->validate(['edit_date' => 'required|date']);
-            $updateData['date'] = $this->edit_date;
             $updateData['status'] = $this->edit_status;
-        } else {
-            // For daily, use today's date
-            $updateData['date'] = now();
         }
 
         $expense->update($updateData);

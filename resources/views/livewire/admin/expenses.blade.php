@@ -92,7 +92,8 @@
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="ps-4">Category</th>
+                                    <th class="ps-4">Date</th>
+                                    <th>Category</th>
                                     <th>Description</th>
                                     <th>Amount</th>
                                     <th class="text-end pe-4">Actions</th>
@@ -102,6 +103,9 @@
                                 @forelse ($dailyExpenses as $expense)
                                 <tr>
                                     <td class="ps-4">
+                                        <span class="fw-medium text-dark">{{ $expense->date ? \Carbon\Carbon::parse($expense->date)->format('M d, Y') : 'N/A' }}</span>
+                                    </td>
+                                    <td>
                                         <span class="fw-medium text-dark">{{ $expense->category }}</span>
                                     </td>
                                     <td>{{ $expense->description ?? '—' }}</td>
@@ -120,7 +124,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">No daily expenses found</td>
+                                    <td colspan="5" class="text-center text-muted py-4">No daily expenses found</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -210,6 +214,11 @@
                 </div>
                 <div class="modal-body">
                     <form wire:submit.prevent="saveDailyExpense">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Date</label>
+                            <input type="date" class="form-control" wire:model="date" required>
+                            @error('date') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Category</label>
                             <select class="form-select" wire:model="category" required>
@@ -314,6 +323,11 @@
                 </div>
                 <div class="modal-body">
                     <form wire:submit.prevent="updateExpense">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Date</label>
+                            <input type="date" class="form-control" wire:model="edit_date" required>
+                            @error('edit_date') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Category</label>
                             <select class="form-select" wire:model="edit_category" required>
