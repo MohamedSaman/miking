@@ -226,6 +226,23 @@
                                             </button>
                                         </li>
 
+                                        <li>
+                                            <button class="dropdown-item"
+                                                wire:click="sendWhatsApp({{ $sale->id }})"
+                                                wire:loading.attr="disabled"
+                                                wire:target="sendWhatsApp({{ $sale->id }})">
+
+                                                <span wire:loading wire:target="sendWhatsApp({{ $sale->id }})">
+                                                    <i class="spinner-border spinner-border-sm me-2"></i>
+                                                    Sending...
+                                                </span>
+                                                <span wire:loading.remove wire:target="sendWhatsApp({{ $sale->id }})">
+                                                    <i class="bi bi-whatsapp text-success me-2"></i>
+                                                    Send WhatsApp
+                                                </span>
+                                            </button>
+                                        </li>
+
                                         <!-- Delete Sale -->
                                         <li>
                                             <button class="dropdown-item"
@@ -582,6 +599,14 @@
                         </button>
                         @if($selectedSale)
                         <div>
+                            <button type="button" class="btn btn-outline-success me-2" wire:click="sendWhatsApp({{ $selectedSale->id }})" wire:loading.attr="disabled" wire:target="sendWhatsApp({{ $selectedSale->id }})">
+                                <span wire:loading wire:target="sendWhatsApp({{ $selectedSale->id }})">
+                                    <i class="spinner-border spinner-border-sm me-1"></i> Sending...
+                                </span>
+                                <span wire:loading.remove wire:target="sendWhatsApp({{ $selectedSale->id }})">
+                                    <i class="bi bi-whatsapp me-1"></i> Send WhatsApp
+                                </span>
+                            </button>
                             <button type="button" class="btn btn-success me-2" wire:click="downloadInvoice({{ $selectedSale->id }})">
                                 <i class="bi bi-download me-1"></i> Download PDF
                             </button>

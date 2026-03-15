@@ -412,6 +412,12 @@
                                     wire:click="viewSaleDetails({{ $sale->id }})">
                                     <i class="bi bi-eye"></i>
                                 </button>
+                                <button class="btn btn-action btn-success ms-1"
+                                    wire:click="sendWhatsApp({{ $sale->id }})"
+                                    wire:loading.attr="disabled"
+                                    wire:target="sendWhatsApp({{ $sale->id }})">
+                                    <i class="bi bi-whatsapp"></i>
+                                </button>
                             </td>
                         </tr>
                         @empty
@@ -703,6 +709,9 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                         <i class="bi bi-x-lg me-1"></i> Close
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-action" wire:click="sendWhatsApp({{ $selectedSale->id }})" wire:loading.attr="disabled" wire:target="sendWhatsApp({{ $selectedSale->id }})">
+                        <i class="bi bi-whatsapp me-1"></i> Send WhatsApp
                     </button>
                     <button type="button" class="btn btn-primary btn-action" wire:click="printInvoice()">
                         <i class="bi bi-printer me-1"></i> Print Invoice

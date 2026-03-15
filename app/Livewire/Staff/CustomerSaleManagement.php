@@ -145,4 +145,45 @@ class CustomerSaleManagement extends Component
         $printUrl = route('staff.print.sale', $this->selectedSaleId);
         $this->js("window.open('$printUrl', '_blank', 'width=800,height=600');");
     }
+
+    public function sendWhatsApp($saleId)
+    {
+        $sale = Sale::with('customer')->findOrFail($saleId);
+        
+        if (!$sale->customer || !$sale->customer->phone) {
+            $this->js("Swal.fire('error', 'Customer phone number not found.', 'error')");
+            return;
+        }
+
+        $phone = $sale->customer->phone;
+        // Basic cleanup of phone number if needed
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        // Ensure international format (assuming Sri Lanka +94 if it starts with 0)
+        if (strlen($phone) === 10 && $phone[0] === '0') {
+            $phone = '94' . substr($phone, 1);
+        } elseif (strlen($phone) === 9 && $phone[0] !== '0') {
+            $phone = '94' . $phone;
+        }
+
+        // Construct the message
+        $invoiceLink = route('invoice.external_view', $sale->id);
+        
+        // Calculate customer total due accurately
+        $salesDue = Sale::where('customer_id', $sale->customer_id)->sum('due_amount');
+        $totalDue = $salesDue + ($sale->customer->opening_balance ?? 0) - ($sale->customer->overpaid_amount ?? 0);
+        
+        $message = "Hello " . ($sale->customer->name ?? 'Customer') . ",\n\n";
+        $message .= "Your invoice (" . $sale->invoice_number . ") has been created.\n";
+        $message .= "Total Amount: Rs." . number_format($sale->total_amount, 2) . "\n";
+        $message .= "Paid Amount: Rs." . number_format($sale->total_amount - $sale->due_amount, 2) . "\n";
+        $message .= "Current Sale Due: Rs." . number_format($sale->due_amount, 2) . "\n";
+        $message .= "Total Outstanding Balance: Rs." . number_format($totalDue, 2) . "\n\n";
+        $message .= "You can view and download your invoice online here: " . $invoiceLink . "\n\n";
+        $message .= "Thank you for your business!";
+
+        $whatsappUrl = "https://wa.me/" . $phone . "?text=" . urlencode($message);
+        
+        $this->js("window.open('$whatsappUrl', '_blank');");
+    }
 }
