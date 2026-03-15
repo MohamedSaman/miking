@@ -915,6 +915,9 @@
                     <button type="button" class="btn btn-secondary" wire:click="closeReceiptModal">
                         <i class="bi bi-x-circle me-1"></i> Close
                     </button>
+                    <button type="button" class="btn btn-outline-success" wire:click="sendWhatsApp({{ $latestPayment->id }})">
+                        <i class="bi bi-whatsapp me-1"></i> Send WhatsApp
+                    </button>
                     <button type="button" class="btn btn-success" wire:click="downloadReceipt">
                         <i class="bi bi-download me-1"></i> Download Receipt
                     </button>

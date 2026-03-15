@@ -820,6 +820,62 @@ class AddCustomerReceipt extends Component
         }
     }
 
+    public function sendWhatsApp($paymentId)
+    {
+        $payment = Payment::with(['customer', 'cheques'])->findOrFail($paymentId);
+        $customer = $payment->customer;
+
+        if (!$customer || !$customer->phone) {
+            $this->js("Swal.fire('Error', 'Customer phone number not found.', 'error')");
+            return;
+        }
+
+        $phone = $customer->phone;
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        if (strlen($phone) === 10 && $phone[0] === '0') {
+            $phone = '94' . substr($phone, 1);
+        } elseif (strlen($phone) === 9 && $phone[0] !== '0') {
+            $phone = '94' . $phone;
+        }
+
+        // Calculate total outstanding balance
+        $salesDue = Sale::where('customer_id', $customer->id)->sum('due_amount');
+        $totalOutstanding = $salesDue + ($customer->opening_balance ?? 0) - ($customer->overpaid_amount ?? 0);
+        
+        // Find allocations for this payment
+        $allocations = DB::table('payment_allocations')
+            ->join('sales', 'payment_allocations.sale_id', '=', 'sales.id')
+            ->where('payment_allocations.payment_id', $payment->id)
+            ->select('sales.invoice_number', 'payment_allocations.allocated_amount')
+            ->get();
+
+        $message = "Hello " . ($customer->name ?? 'Customer') . ",\n\n";
+        $message .= "Thank you for your payment. Here is your receipt summary:\n\n";
+        $message .= "*Receipt ID:* RCPT-" . str_pad($payment->id, 5, '0', STR_PAD_LEFT) . "\n";
+        $message .= "*Date:* " . date('d-m-Y', strtotime($payment->payment_date)) . "\n";
+        $message .= "*Amount Paid:* Rs." . number_format($payment->amount, 2) . "\n";
+        $message .= "*Payment Method:* " . ucfirst(str_replace('_', ' ', $payment->payment_method)) . "\n";
+        
+        if ($payment->payment_method === 'cheque' && $payment->cheques->count() > 0) {
+            $cheque = $payment->cheques->first();
+            $message .= "*Cheque No:* " . $cheque->cheque_number . " (" . $cheque->bank_name . ")\n";
+        }
+
+        if ($allocations->count() > 0) {
+            $message .= "\n*Allocations:*\n";
+            foreach ($allocations as $allocation) {
+                $message .= "- " . $allocation->invoice_number . ": Rs." . number_format($allocation->allocated_amount, 2) . "\n";
+            }
+        }
+
+        $message .= "\n*Total Outstanding Balance:* Rs." . number_format($totalOutstanding, 2) . "\n\n";
+        $message .= "Thank you!";
+
+        $whatsappUrl = "https://wa.me/" . $phone . "?text=" . urlencode($message);
+        
+        $this->js("window.open('$whatsappUrl', '_blank');");
+    }
+
     public function downloadReceipt()
     {
         if (!$this->latestPayment) {
