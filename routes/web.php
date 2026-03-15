@@ -115,6 +115,10 @@ Route::post('/logout', function (Request $request) {
 // Routes that require authentication
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
 
+    Route::get('/keep-alive', function () {
+        return response()->noContent();
+    })->name('keep-alive');
+
     // Profile route - accessible to all authenticated users
     Route::get('/user/profile', function () {
         return view('profile.show');

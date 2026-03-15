@@ -58,6 +58,12 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+    <script>
+        // Keep session alive by pinging the server every 5 minutes
+        setInterval(function() {
+            fetch('{{ route("keep-alive") }}');
+        }, 300000); // 5 minutes
+    </script>
     @stack('scripts')
 </body>
 

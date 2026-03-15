@@ -1466,6 +1466,12 @@
             }
         });
     </script>
+    <script>
+        // Keep session alive by pinging the server every 5 minutes
+        setInterval(function() {
+            fetch('{{ route("keep-alive") }}');
+        }, 300000); // 5 minutes
+    </script>
     @stack('scripts')
 </body>
 

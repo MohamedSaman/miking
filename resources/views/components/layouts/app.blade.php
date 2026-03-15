@@ -186,6 +186,12 @@
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     @livewireScripts
+    <script>
+        // Keep session alive by pinging the server every 5 minutes
+        setInterval(function() {
+            fetch('{{ route("keep-alive") }}');
+        }, 300000); // 5 minutes
+    </script>
 
 </body>
 
