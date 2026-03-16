@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice - {{ $sale->invoice_number }}</title>
     <style>
+        @page {
+            margin: 8mm 8mm 45mm 8mm;
+            size: A5 portrait;
+        }
+
         /* ============================================
            A5 INVOICE LAYOUT - PDF VERSION
            Matches print-layout.blade.php exactly
@@ -16,17 +21,12 @@
             box-sizing: border-box;
         }
 
-        @page {
-            margin: 8mm;
-            size: A5 portrait;
-        }
-
         body {
             margin: 0;
             padding: 0;
             font-family: "DejaVu Sans", Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.35;
+            font-size: 14px;
+            line-height: 1.4;
             background: white;
             color: #000;
         }
@@ -99,7 +99,7 @@
             width: 100%;
             border: 1px solid #999;
             margin: 8px 0 10px 0;
-            font-size: 11px;
+            font-size: 13px;
         }
 
         .info-row-table td {
@@ -117,20 +117,19 @@
         }
 
         .info-row-table p {
-            margin: 2px 0;
+            margin: 3px 0;
             line-height: 1.5;
-            font-size: 11px;
         }
 
         .info-label {
             font-weight: bold;
             display: inline-block;
-            min-width: 85px;
+            min-width: 95px;
         }
 
         .invoice-detail-table {
             width: 100%;
-            font-size: 11px;
+            font-size: 13px;
         }
 
         .invoice-detail-table td {
@@ -156,22 +155,22 @@
             width: 100%;
             border-collapse: collapse;
             margin: 0 0 10px 0;
-            font-size: 11px;
+            font-size: 13px;
         }
 
         .items-table th {
             background-color: #f0f0f0;
             border: 1px solid #000;
-            padding: 5px 6px;
+            padding: 6px 8px;
             font-weight: bold;
             text-align: center;
-            font-size: 10px;
+            font-size: 11px;
         }
 
         .items-table td {
             border: 1px solid #000;
-            padding: 4px 6px;
-            font-size: 11px;
+            padding: 5px 8px;
+            font-size: 13px;
         }
 
         /* ============================================
@@ -245,7 +244,7 @@
 
         .net-amount-row {
             text-align: right;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: bold;
             padding: 4px 0;
             border-top: 1px solid #000;
@@ -254,8 +253,16 @@
         /* ============================================
            FOOTER
            ============================================ */
+        /* ============================================
+           FOOTER - Fixed to bottom
+           ============================================ */
         .global-footer {
-            margin-top: 20px;
+            position: fixed;
+            bottom: -30px;
+            left: 0;
+            right: 0;
+            height: 160px;
+            width: 100%;
         }
 
         .sig-table {
@@ -272,33 +279,34 @@
         }
 
         .sig-dots {
-            font-size: 11px;
+            font-size: 12px;
             letter-spacing: 2px;
             font-weight: bold;
             margin-bottom: 3px;
         }
 
         .sig-label {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: bold;
             font-style: italic;
         }
 
         .footer-thankyou {
             text-align: center;
-            font-size: 12px;
+            font-size: 14px;
             font-style: italic;
             font-weight: bold;
             color: #1a237e;
-            margin: 8px 0 5px 0;
+            margin: 12px 0 5px 0;
         }
 
         .footer-info {
             text-align: center;
-            font-size: 9px;
-            color: #666;
-            border-top: 1px solid #ccc;
-            padding-top: 4px;
+            font-size: 10px;
+            color: #333;
+            border-top: 1px solid #000;
+            padding-top: 6px;
+            font-weight: bold;
         }
 
         /* ============================================
@@ -408,25 +416,25 @@
                     <div class="section-title">PAYMENT INFORMATION</div>
                     @if($sale->payments && count($sale->payments) > 0)
                         @foreach($sale->payments as $payment)
-                        <p style="font-size: 10px; margin: 2px 0;">
+                        <p style="font-size: 12px; margin: 2px 0;">
                             {{ ucfirst(str_replace('_', ' ', $payment->payment_method ?? 'Cash')) }}:
                             Rs.{{ number_format($payment->amount, 2) }}
                             @if(in_array(strtolower($payment->payment_method), ['cheque', 'cheques']) && $payment->cheques && $payment->cheques->count() > 0)
                                 @foreach($payment->cheques as $cheque)
                                     <br>
-                                    <span style="color: #444; font-size: 9px;">
+                                    <span style="color: #444; font-size: 10px;">
                                         (Bank: {{ $cheque->bank_name }}, Date: {{ $cheque->cheque_date ? $cheque->cheque_date->format('d/m/Y') : 'N/A' }}, No: {{ $cheque->cheque_number }}, Amt: Rs.{{ number_format($cheque->cheque_amount, 2) }})
                                     </span>
                                 @endforeach
                             @else
-                                <span style="color: #888; font-size: 9px;">
+                                <span style="color: #888; font-size: 10px;">
                                     ({{ $payment->created_at->format('d/m/Y') }})
                                 </span>
                             @endif
                         </p>
                         @endforeach
                     @else
-                        <p style="font-size: 10px; color: #888; margin: 2px 0;">No payment information available</p>
+                        <p style="font-size: 12px; color: #888; margin: 2px 0;">No payment information available</p>
                     @endif
                 </td>
                 <td style="width: 60%;">
@@ -497,7 +505,7 @@
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>{{ $return->product->code ?? '-' }}</td>
                         <td>{{ $return->product->name ?? '-' }}</td>
-                        <td class="text-center" style="font-size: 10px; color: #888;">Return</td>
+                        <td class="text-center" style="font-size: 12px; color: #888;">Return</td>
                         <td class="text-center">{{ number_format($return->return_quantity, 2) }}</td>
                         <td class="text-right">Rs.{{ number_format($return->selling_price, 2) }}</td>
                         <td class="text-right">Rs.{{ number_format($return->total_amount, 2) }}</td>
@@ -549,7 +557,7 @@
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>{{ $staffReturn->product->code ?? '-' }}</td>
                         <td>{{ $staffReturn->product->name ?? '-' }}</td>
-                        <td class="text-center" style="font-size: 10px; {{ $staffReturn->is_damaged ? 'color: #c0392b; font-weight: bold;' : 'color: #888;' }}">
+                        <td class="text-center" style="font-size: 12px; {{ $staffReturn->is_damaged ? 'color: #c0392b; font-weight: bold;' : 'color: #888;' }}">
                             @if($staffReturn->is_damaged)
                                 Damaged
                             @elseif($staffReturn->reason)
@@ -586,7 +594,7 @@
         @endif
 
         @if($sale->notes)
-        <div style="margin-top: 6px; padding: 5px 8px; background: #f8f9fa; border: 1px solid #dee2e6; font-size: 10px;">
+        <div style="margin-top: 6px; padding: 5px 8px; background: #f8f9fa; border: 1px solid #dee2e6; font-size: 12px;">
             <strong>Notes:</strong> {{ $sale->notes }}
         </div>
         @endif
