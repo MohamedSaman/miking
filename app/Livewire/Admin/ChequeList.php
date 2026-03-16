@@ -20,6 +20,33 @@ class ChequeList extends Component
     public $perPage = 10;
     public $search = '';
     public $statusFilter = 'all';
+    public $selectedSale = null;
+
+    public function viewSale($saleId)
+    {
+        $this->selectedSale = \App\Models\Sale::with([
+            'customer',
+            'items',
+            'user',
+            'returns' => function ($q) {
+                $q->with('product');
+            },
+            'staffReturns' => function ($q) {
+                $q->with('product');
+            },
+            'payments.cheques'
+        ])->find($saleId);
+
+        if ($this->selectedSale) {
+            $this->dispatch('showModal', 'viewModal');
+        }
+    }
+
+    public function closeModals()
+    {
+        $this->selectedSale = null;
+        $this->dispatch('hideModal', 'viewModal');
+    }
 
     public function updatedPerPage()
     {
