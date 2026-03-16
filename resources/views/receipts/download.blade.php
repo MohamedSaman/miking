@@ -386,6 +386,15 @@
                         Rs.{{ number_format($payment->amount, 2) }}
                     </p>
                     <p class="mb-1"><strong>Method:</strong> {{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</p>
+                    
+                    @if(in_array(strtolower($payment->payment_method), ['cheque', 'cheques']) && $payment->cheques && $payment->cheques->count() > 0)
+                        @foreach($payment->cheques as $cheque)
+                            <p class="mb-0" style="font-size: 11px; color: #444;">
+                                <strong>Cheque Details:</strong> Bank: {{ $cheque->bank_name }}, Date: {{ $cheque->cheque_date ? $cheque->cheque_date->format('d/m/Y') : 'N/A' }}, No: {{ $cheque->cheque_number }}, Amt: Rs.{{ number_format($cheque->cheque_amount, 2) }}
+                            </p>
+                        @endforeach
+                    @endif
+
                     @if($payment->payment_reference)
                     <p class="mb-1"><strong>Reference:</strong> {{ $payment->payment_reference }}</p>
                     @endif

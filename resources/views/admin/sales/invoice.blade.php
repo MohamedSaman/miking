@@ -409,11 +409,20 @@
                     @if($sale->payments && count($sale->payments) > 0)
                         @foreach($sale->payments as $payment)
                         <p style="font-size: 10px; margin: 2px 0;">
-                            {{ ucfirst($payment->payment_method ?? 'Cash') }}:
+                            {{ ucfirst(str_replace('_', ' ', $payment->payment_method ?? 'Cash')) }}:
                             Rs.{{ number_format($payment->amount, 2) }}
-                            <span style="color: #888; font-size: 9px;">
-                                ({{ $payment->created_at->format('d/m/Y') }})
-                            </span>
+                            @if(in_array(strtolower($payment->payment_method), ['cheque', 'cheques']) && $payment->cheques && $payment->cheques->count() > 0)
+                                @foreach($payment->cheques as $cheque)
+                                    <br>
+                                    <span style="color: #444; font-size: 9px;">
+                                        (Bank: {{ $cheque->bank_name }}, Date: {{ $cheque->cheque_date ? $cheque->cheque_date->format('d/m/Y') : 'N/A' }}, No: {{ $cheque->cheque_number }}, Amt: Rs.{{ number_format($cheque->cheque_amount, 2) }})
+                                    </span>
+                                @endforeach
+                            @else
+                                <span style="color: #888; font-size: 9px;">
+                                    ({{ $payment->created_at->format('d/m/Y') }})
+                                </span>
+                            @endif
                         </p>
                         @endforeach
                     @else
