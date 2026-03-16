@@ -433,9 +433,26 @@ use App\Models\Sale;
                         </table>
                     </div>
 
-                    {{-- ==================== TOTALS (right-aligned) ==================== --}}
                     <div class="row">
-                        <div class="col-7"></div>
+                        <div class="col-7">
+                            <h6 class="text-muted mb-2">PAYMENT INFORMATION</h6>
+                            @if($selectedSale->payments && count($selectedSale->payments) > 0)
+                                @foreach($selectedSale->payments as $payment)
+                                    <div class="mb-1">
+                                        <strong>{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}:</strong> Rs.{{ number_format($payment->amount, 2) }}
+                                        @if(in_array(strtolower($payment->payment_method), ['cheque', 'cheques']) && $payment->cheques && $payment->cheques->count() > 0)
+                                            @foreach($payment->cheques as $cheque)
+                                                <div class="small text-muted ps-2" style="font-size: 0.75rem; line-height: 1.2;">
+                                                    • {{ $cheque->bank_name }} ({{ $cheque->cheque_number }}), {{ $cheque->cheque_date ? $cheque->cheque_date->format('d/m/Y') : '-' }} - <strong>Rs.{{ number_format($cheque->cheque_amount, 2) }}</strong>
+                                                </div>
+                                            @endforeach
+                                        @endif
+                                    </div>
+                                @endforeach
+                            @else
+                                <p class="text-muted small">No payment records found.</p>
+                            @endif
+                        </div>
                         <div class="col-5">
                             <table class="table table-sm table-borderless">
                                 <tr>

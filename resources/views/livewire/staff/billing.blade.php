@@ -922,6 +922,61 @@
                                 </tfoot>
                             </table>
                         </div>
+                        
+                        {{-- ==================== PAYMENT INFORMATION ==================== --}}
+                        <div class="row mb-4 px-3">
+                            <div class="col-12">
+                                <h6 class="text-muted mb-2 border-bottom pb-1" style="font-size: 0.9rem; font-weight: bold;">PAYMENT INFORMATION</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered mb-0" style="font-size: 0.85rem !important;">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Method</th>
+                                                <th class="text-end">Amount</th>
+                                                <th>Details</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($createdSale->payments as $payment)
+                                            <tr>
+                                                <td class="text-uppercase fw-semibold">{{ str_replace('_', ' ', $payment->payment_method) }}</td>
+                                                <td class="text-end fw-bold">Rs.{{ number_format($payment->amount, 2) }}</td>
+                                                <td>
+                                                    @if(in_array(strtolower($payment->payment_method), ['cheque', 'cheques']) && $payment->cheques && $payment->cheques->count() > 0)
+                                                    <div class="small">
+                                                        @foreach($payment->cheques as $cheque)
+                                                        <div class="border-bottom pb-1 mb-1 last-child-border-0">
+                                                            <strong>No:</strong> {{ $cheque->cheque_number }} | 
+                                                            <strong>Bank:</strong> {{ $cheque->bank_name }} | 
+                                                            <strong>Date:</strong> {{ date('d/m/Y', strtotime($cheque->cheque_date)) }} | 
+                                                            <strong>Amt:</strong> Rs.{{ number_format($cheque->cheque_amount, 2) }}
+                                                        </div>
+                                                        @endforeach
+                                                    </div>
+                                                    @elseif(strtolower($payment->payment_method) == 'bank_transfer')
+                                                        <span class="small"><strong>Ref:</strong> {{ $payment->payment_reference }}</span>
+                                                    @else
+                                                        <span class="text-muted small">N/A</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                            @empty
+                                            <tr>
+                                                <td colspan="3" class="text-center text-muted small">No payment records found (Credit Sale).</td>
+                                            </tr>
+                                            @endforelse
+                                            @if($createdSale->due_amount > 0)
+                                            <tr class="table-warning">
+                                                <td class="text-uppercase fw-bold">DUE AMOUNT</td>
+                                                <td class="text-end fw-bold text-danger">Rs.{{ number_format($createdSale->due_amount, 2) }}</td>
+                                                <td class="small text-muted">Remaining Balance</td>
+                                            </tr>
+                                            @endif
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
 
                         {{-- Footer Note --}}
                         <div class="invoice-footer mt-4">
@@ -977,3 +1032,51 @@
         </div>
     </div>
 </div>
+
+@push('styles')
+<style>
+    /* Fix for excessive spacing in preview modal */
+    .sale-preview .table-responsive {
+        min-height: auto !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .sale-preview .table {
+        margin-bottom: 0 !important;
+    }
+
+    .sale-preview .invoice-table th {
+        background: #2a83df !important;
+        color: white !important;
+        padding: 8px !important;
+        font-size: 0.8rem !important;
+    }
+
+    .sale-preview .invoice-table td {
+        padding: 6px 8px !important;
+    }
+
+    .sale-preview .totals-row td {
+        padding: 4px 8px !important;
+    }
+
+    .sale-preview .grand-total {
+        background-color: #f1f7ff;
+    }
+
+    .sale-preview .invoice-footer {
+        margin-top: 1.5rem !important;
+        border-top: 2px solid #2a83df;
+        padding-top: 1.5rem !important;
+    }
+
+    /* Print specific adjustments for screen preview */
+    @media screen {
+        #saleReceiptPrintContent {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    }
+</style>
+@endpush
+

@@ -1215,6 +1215,57 @@
                             </table>
                         </div>
 
+                        {{-- PAYMENT INFORMATION --}}
+                        <div class="mb-4">
+                            <div class="section-title mb-3" style="border-bottom: 2px solid #2a83df;">
+                                <h5 class="fw-bold mb-1" style="color: #2a83df;">PAYMENT INFORMATION</h5>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Payment Method</th>
+                                            <th class="text-end">Amount</th>
+                                            <th>Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($createdSale->payments as $payment)
+                                        <tr>
+                                            <td class="text-uppercase fw-semibold">{{ str_replace('_', ' ', $payment->payment_method) }}</td>
+                                            <td class="text-end fw-bold">Rs.{{ number_format($payment->amount, 2) }}</td>
+                                            <td>
+                                                @if(in_array(strtolower($payment->payment_method), ['cheque', 'cheques']) && $payment->cheques && $payment->cheques->count() > 0)
+                                                <div class="small">
+                                                    @foreach($payment->cheques as $cheque)
+                                                    <div class="border-bottom pb-1 mb-1 last-child-border-0">
+                                                        <strong>No:</strong> {{ $cheque->cheque_number }} | 
+                                                        <strong>Bank:</strong> {{ $cheque->bank_name }} | 
+                                                        <strong>Date:</strong> {{ date('d/m/Y', strtotime($cheque->cheque_date)) }} | 
+                                                        <strong>Amt:</strong> Rs.{{ number_format($cheque->cheque_amount, 2) }}
+                                                    </div>
+                                                    @endforeach
+                                                </div>
+                                                @elseif(strtolower($payment->payment_method) == 'bank_transfer')
+                                                    <span class="small"><strong>Ref:</strong> {{ $payment->payment_reference }}</span>
+                                                @else
+                                                    <span class="text-muted small">N/A</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                        @if($createdSale->due_amount > 0)
+                                        <tr class="table-warning">
+                                            <td class="text-uppercase fw-bold">DUE AMOUNT</td>
+                                            <td class="text-end fw-bold text-danger">Rs.{{ number_format($createdSale->due_amount, 2) }}</td>
+                                            <td class="small text-muted">Remaining Balance</td>
+                                        </tr>
+                                        @endif
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         {{-- Footer Note --}}
                         <div class="invoice-footer mt-4">
                             <div class="row text-center mb-3">
