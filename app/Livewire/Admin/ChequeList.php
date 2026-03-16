@@ -29,7 +29,7 @@ class ChequeList extends Component
     public function getChequesProperty()
     {
         // Show pending cheques first, then others by cheque_date desc
-        $query = Cheque::with(['customer', 'payment'])
+        $query = Cheque::with(['customer', 'payment.allocations.sale', 'payment.sale'])
             ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END ASC")
             ->orderByDesc('cheque_date');
 

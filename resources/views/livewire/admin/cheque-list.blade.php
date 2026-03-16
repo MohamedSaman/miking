@@ -104,6 +104,7 @@
                         <tr>
                             <th class="ps-4">Cheque No</th>
                             <th>Customer</th>
+                            <th>Invoices</th>
                             <th class="text-center">Bank</th>
                             <th class="text-center">Amount</th>
                             <th class="text-center">Date</th>
@@ -116,6 +117,31 @@
                         <tr wire:key="cheque-{{ $cheque->id }}">
                             <td class="ps-4">{{ $cheque->cheque_number }}</td>
                             <td>{{ $cheque->customer->name ?? '-' }}</td>
+                            <td>
+                                @if($cheque->payment)
+                                    @php
+                                        $invoices = collect();
+                                        if ($cheque->payment->sale) {
+                                            $invoices->push($cheque->payment->sale->invoice_number);
+                                        }
+                                        if ($cheque->payment->allocations) {
+                                            foreach($cheque->payment->allocations as $allocation) {
+                                                if ($allocation->sale) {
+                                                    $invoices->push($allocation->sale->invoice_number);
+                                                }
+                                            }
+                                        }
+                                        $uniqueInvoices = $invoices->unique()->filter();
+                                    @endphp
+                                    @forelse($uniqueInvoices as $invoice)
+                                        <span class="badge bg-light text-primary border mb-1">{{ $invoice }}</span>
+                                    @empty
+                                        <span class="text-muted small">N/A</span>
+                                    @endforelse
+                                @else
+                                    <span class="text-muted small">No Payment</span>
+                                @endif
+                            </td>
                             <td class="text-center">{{ $cheque->bank_name }}</td>
                             <td class="text-center">Rs.{{ number_format($cheque->cheque_amount, 2) }}</td>
                             <td class="text-center">{{ $cheque->cheque_date ? date('M d, Y', strtotime($cheque->cheque_date)) : '-' }}</td>
@@ -179,7 +205,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
+                            <td colspan="8" class="text-center text-muted py-4">
                                 <i class="bi bi-x-circle display-4 d-block mb-2"></i>
                                 No cheques found.
                             </td>
