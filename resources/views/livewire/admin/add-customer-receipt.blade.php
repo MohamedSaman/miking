@@ -113,10 +113,13 @@
                     <tbody>
                         @forelse($customers as $customer)
                         @php
-                        $dueInvoices = $customer->sales->whereIn('payment_status', ['pending', 'partial'])->count();
-                        $totalDue = $customer->sales->whereIn('payment_status', ['pending', 'partial'])->sum(function($sale) {
-                        return $sale->due_amount;
+                        $openingBalance = (float)($customer->opening_balance ?? 0);
+                        $salesDue = $customer->sales->whereIn('payment_status', ['pending', 'partial'])->sum(function($sale) {
+                            return (float)$sale->due_amount;
                         });
+                        
+                        $dueInvoices = $customer->sales->whereIn('payment_status', ['pending', 'partial'])->count() + ($openingBalance > 0 ? 1 : 0);
+                        $totalDue = $salesDue + $openingBalance;
                         @endphp
                         <tr wire:key="customer-{{ $customer->id }}">
                             <td class="ps-4">
