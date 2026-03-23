@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\Cheque;
 use App\Models\Payment;
 use App\Models\Sale;
+use App\Models\Deposit;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -179,13 +180,32 @@ class TotalSales extends Component
         $this->paymentDateRange($incomeBank);
         $incomeBank = $incomeBank->sum('amount');
 
-        $totalIncome = $incomeCash + $incomeCheque + $incomeBank;
+        // Customer Receipt (Standalone Payments)
+        $incomeReceipts = Payment::whereNull('sale_id')
+            ->whereIn('status', ['approved', 'paid']);
+        if ($this->isStaff()) {
+            $incomeReceipts->where('created_by', auth()->id());
+        }
+        $this->paymentDateRange($incomeReceipts);
+        $incomeReceipts = $incomeReceipts->sum('amount');
+
+        // Other Income / Deposits
+        $incomeOther = Deposit::query();
+        if ($this->dateFrom) {
+            $incomeOther->whereDate('date', '>=', $this->dateFrom);
+        }
+        if ($this->dateTo) {
+            $incomeOther->whereDate('date', '<=', $this->dateTo);
+        }
+        $incomeOther = $incomeOther->sum('amount');
+
+        $totalIncome = $incomeCash + $incomeCheque + $incomeBank + $incomeReceipts + $incomeOther;
 
         return compact(
             'totalSalesCount', 'totalSalesAmount', 'totalDue',
             'cashCollected', 'chequeCollected', 'creditCollected', 'bankCollected', 'totalCollected',
             'cashSaleCount', 'chequeSaleCount', 'creditSaleCount',
-            'incomeCash', 'incomeCheque', 'incomeBank', 'totalIncome'
+            'incomeCash', 'incomeCheque', 'incomeBank', 'incomeReceipts', 'incomeOther', 'totalIncome'
         );
     }
 
@@ -296,7 +316,41 @@ class TotalSales extends Component
                 'reference'    => '-',
             ]);
 
+        $standalonePayments = Payment::with(['customer', 'allocations.sale'])
+            ->whereNull('sale_id')
+            ->whereIn('status', ['approved', 'paid'])
+            ->when($this->isStaff(), fn($q) => $q->where('created_by', auth()->id()))
+            ->when($this->dateFrom, fn($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
+            ->when($this->dateTo,   fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
+            ->get()
+            ->map(fn($p) => (object)[
+                'id'           => $p->id,
+                'type'         => 'Due Settle',
+                'type_color'   => 'dark',
+                'invoice'      => $p->allocations->map(fn($a) => $a->sale?->invoice_number)->filter()->implode(', ') ?: 'Receipt',
+                'customer'     => $p->customer->name ?? 'Walking Customer',
+                'date'         => $p->payment_date,
+                'amount'       => $p->amount,
+                'reference'    => $p->payment_method . ($p->payment_reference ? ' (' . $p->payment_reference . ')' : ''),
+            ]);
+
+        $otherIncomes = Deposit::query()
+            ->when($this->dateFrom, fn($q) => $q->whereDate('date', '>=', $this->dateFrom))
+            ->when($this->dateTo,   fn($q) => $q->whereDate('date', '<=', $this->dateTo))
+            ->get()
+            ->map(fn($d) => (object)[
+                'id'           => $d->id,
+                'type'         => 'Other Income',
+                'type_color'   => 'warning',
+                'invoice'      => '-',
+                'customer'     => 'General',
+                'date'         => $d->date,
+                'amount'       => $d->amount,
+                'reference'    => $d->description ?? '-',
+            ]);
+
         return $cashPayments->merge($chequePayments)->merge($bankPayments)
+            ->merge($standalonePayments)->merge($otherIncomes)
             ->sortByDesc('date')
             ->values();
     }

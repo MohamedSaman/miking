@@ -388,28 +388,40 @@
 
                 {{-- Income breakdown summary --}}
                 <div class="row g-3 p-4 pb-3">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="p-3 rounded text-center border" style="background:#fff8f0;">
-                            <div class="fw-bold text-success" style="font-size:1.15rem;">Rs.{{ number_format($summary['incomeCash'], 2) }}</div>
-                            <small class="text-muted"><i class="bi bi-cash-coin me-1"></i>Cash Received</small>
+                            <div class="fw-bold text-success" style="font-size:1rem;">Rs.{{ number_format($summary['incomeCash'], 2) }}</div>
+                            <small class="text-muted" style="font-size:0.75rem;"><i class="bi bi-cash-coin me-1"></i>Cash Sales</small>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="p-3 rounded text-center border" style="background:#fff8f0;">
-                            <div class="fw-bold text-info" style="font-size:1.15rem;">Rs.{{ number_format($summary['incomeCheque'], 2) }}</div>
-                            <small class="text-muted"><i class="bi bi-journal-check me-1"></i>Cleared Cheques</small>
+                            <div class="fw-bold text-info" style="font-size:1rem;">Rs.{{ number_format($summary['incomeCheque'], 2) }}</div>
+                            <small class="text-muted" style="font-size:0.75rem;"><i class="bi bi-journal-check me-1"></i>Cheques</small>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="p-3 rounded text-center border" style="background:#fff8f0;">
-                            <div class="fw-bold text-primary" style="font-size:1.15rem;">Rs.{{ number_format($summary['incomeBank'], 2) }}</div>
-                            <small class="text-muted"><i class="bi bi-bank me-1"></i>Bank Transfers</small>
+                            <div class="fw-bold text-primary" style="font-size:1rem;">Rs.{{ number_format($summary['incomeBank'], 2) }}</div>
+                            <small class="text-muted" style="font-size:0.75rem;"><i class="bi bi-bank me-1"></i>Bank Transfers</small>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <div class="p-3 rounded text-center border" style="background:#fff8f0;">
+                            <div class="fw-bold text-dark" style="font-size:1rem;">Rs.{{ number_format($summary['incomeReceipts'], 2) }}</div>
+                            <small class="text-muted" style="font-size:0.75rem;"><i class="bi bi-receipt me-1"></i>Due Settle</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="p-3 rounded text-center border" style="background:#fff8f0;">
+                            <div class="fw-bold text-warning" style="font-size:1rem;">Rs.{{ number_format($summary['incomeOther'], 2) }}</div>
+                            <small class="text-muted" style="font-size:0.75rem;"><i class="bi bi-plus-circle me-1"></i>Other Income</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
                         <div class="p-3 rounded text-center" style="background:#fff3e0;border:2px solid #fd7e14;">
-                            <div class="fw-bold" style="font-size:1.25rem;color:#fd7e14;">Rs.{{ number_format($summary['totalIncome'], 2) }}</div>
-                            <small class="text-muted fw-semibold"><i class="bi bi-graph-up-arrow me-1"></i>Total Income</small>
+                            <div class="fw-bold" style="font-size:1.1rem;color:#fd7e14;">Rs.{{ number_format($summary['totalIncome'], 2) }}</div>
+                            <small class="text-muted fw-semibold" style="font-size:0.75rem;"><i class="bi bi-graph-up-arrow me-1"></i>Total Income</small>
                         </div>
                     </div>
                 </div>
