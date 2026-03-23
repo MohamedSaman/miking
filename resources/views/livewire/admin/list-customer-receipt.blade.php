@@ -264,29 +264,92 @@
 
     <style>
         .main-table-container {
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        .table-responsive {
-            height: auto;
-            max-height: 50vh;
-            overflow-y: auto;
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 0 0 0.75rem 0.75rem;
         }
 
         .sticky-top {
             position: sticky;
             top: 0;
             z-index: 10;
-            background-color: white !important;
         }
 
-        .table th {
+        .table thead th {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             font-weight: 600;
+            padding: 1.25rem 1.5rem;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .table tbody td {
+            padding: 1rem 1.5rem;
+            vertical-align: middle;
+            color: #1f2937;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f8fafc;
+            transition: all 0.2s ease;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background-color: #ffffff !important;
+            padding: 1.5rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .card-footer {
+            background-color: #ffffff !important;
+            padding: 1.25rem 1.5rem;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        /* Pagination Style Overrides */
+        .card-footer .d-flex.mt-4 {
+            margin-top: 0 !important;
+        }
+
+        .pagination .page-link {
+            border-radius: 50% !important;
+            margin: 0 4px;
+            border: none;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #2563eb !important;
+            color: white !important;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4);
+        }
+
+        .pagination .page-link:hover:not(.disabled) {
+            background-color: #e2e8f0;
         }
 
         .badge {
-            font-size: 0.75em;
+            font-size: 0.75rem;
         }
 
         .modal.show {
@@ -300,6 +363,15 @@
         .input-group-lg .form-control {
             font-size: 1.25rem;
             font-weight: 600;
+        }
+
+        .main-table-container::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .main-table-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 3px;
         }
     </style>
 </div>
