@@ -17,10 +17,10 @@
             </h5>
             <span class="badge bg-primary">{{ $customers->total() }} customers</span>
         </div>
-        <div class="card-body p-0 overflow-auto">
-            <div class="table-responsive">
+        <div class="card-body p-0">
+            <div class="table-responsive main-table-container">
                 <table class="table table-hover mb-0">
-                    <thead class="table-light">
+                    <thead class="table-light sticky-top">
                         <tr>
                             <th class="ps-4">Customer Name</th>
                             <th class="text-center">Total Paid</th>
@@ -36,7 +36,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
+                            <td colspan="3" class="text-center text-muted py-4">
                                 <i class="bi bi-x-circle display-4 d-block mb-2"></i>
                                 No customer payments found.
                             </td>
@@ -45,16 +45,14 @@
                     </tbody>
                 </table>
             </div>
-
-            {{-- Pagination --}}
-            @if($customers->hasPages())
-            <div class="card-footer">
-                <div class="d-flex justify-content-center">
-                    {{ $customers->links('livewire.custom-pagination') }}
-                </div>
-            </div>
-            @endif
         </div>
+
+        {{-- Pagination --}}
+        @if($customers->hasPages())
+        <div class="card-footer bg-white border-top">
+            {{ $customers->links('livewire.custom-pagination') }}
+        </div>
+        @endif
     </div>
 
     {{-- Payment Details Modal --}}
@@ -223,7 +221,7 @@
                                                     <td class="text-end fw-bold text-success">Rs.{{ number_format($alloc->allocated_amount, 2) }}</td>
                                                 </tr>
                                                 @endforeach
-                                                <tr class="table-3ctive">
+                                                <tr class="table-active">
                                                     <td colspan="2" class="text-end"><strong>Total Allocated:</strong></td>
                                                     <td class="text-end fw-bold text-primary">Rs.{{ number_format($payment->allocations->sum('allocated_amount'), 2) }}</td>
                                                 </tr>
@@ -265,9 +263,22 @@
     @endif
 
     <style>
+        .main-table-container {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .table-responsive {
+            height: auto;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
         .sticky-top {
             position: sticky;
+            top: 0;
             z-index: 10;
+            background-color: white !important;
         }
 
         .table th {
@@ -282,18 +293,13 @@
             display: block !important;
         }
 
-        .btn-group-sm>.btn {
+        .btn-group-sm .btn {
             padding: 0.25rem 0.5rem;
         }
 
         .input-group-lg .form-control {
             font-size: 1.25rem;
             font-weight: 600;
-        }
-
-        .table-responsive {
-            height: 50vh;
-            overflow-y: auto;
         }
     </style>
 </div>
