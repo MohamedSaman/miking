@@ -38,12 +38,6 @@ class ListCustomerReceipt extends Component
             ->selectRaw('COUNT(payments.id) as receipts_count')
             ->leftJoin('payments', 'payments.customer_id', '=', 'customers.id');
 
-        // Filter by user for staff - only show customers with payments from their sales
-        if ($this->isStaff()) {
-            $query->leftJoin('sales', 'payments.sale_id', '=', 'sales.id')
-                ->where('sales.user_id', Auth::id())
-                ->where('sales.sale_type', 'staff');
-        }
 
         return $query->groupBy(
             'customers.id',
@@ -65,13 +59,7 @@ class ListCustomerReceipt extends Component
         $query = Payment::with(['allocations', 'allocations.sale', 'cheques'])
             ->where('customer_id', $customerId);
 
-        // Filter payments by user's sales for staff
-        if ($this->isStaff()) {
-            $query->whereHas('sale', function ($q) {
-                $q->where('user_id', Auth::id())->where('sale_type', 'staff');
-            });
-        }
-
+       
         $this->payments = $query->orderByDesc('payment_date')->get();
         $this->showPaymentModal = true;
     }
