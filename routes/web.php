@@ -162,12 +162,14 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     // API route for products (client-side caching)
     Route::get('/api/products/all', [ProductApiController::class, 'getAllProducts'])->name('api.products.all');
 
+    // Shared routes (Admin and Staff with Permission)
+    Route::middleware(['auth', 'permission:menu_financial_overview'])->prefix('admin')->name('admin.')->group(function() {
+        Route::get('/financial-overview', \App\Livewire\Admin\FinancialOverview::class)->name('financial-overview');
+    });
+
     // !! Admin routes
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', AdminDashboard::class)->name('dashboard');
-        Route::get('/financial-overview', \App\Livewire\Admin\FinancialOverview::class)
-        ->name('financial-overview')
-        ->middleware('permission:menu_financial_overview');
         Route::get('/Product-list', Products::class)->name('Productes');
         Route::get('/add-Product-brand', ProductBrandlist::class)->name('Product-brand');
         Route::get('/Product-category', ProductCategorylist::class)->name('Product-category');

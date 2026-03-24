@@ -879,6 +879,13 @@
                         <i class="bi bi-speedometer2"></i> <span>Overview</span>
                     </a>
                 </li>
+                @if(auth()->user()->role === 'admin' || \App\Models\StaffPermission::hasPermission(auth()->id(), 'menu_financial_overview'))
+                <li>
+                    <a class="nav-link {{ request()->routeIs('admin.financial-overview') ? 'active' : '' }}" href="{{ route('admin.financial-overview') }}">
+                        <i class="bi bi-wallet2"></i> <span>Financial Overview</span>
+                    </a>
+                </li>
+                @endif
 
                 {{-- Staff POS Sale - Under Overview --}}
                 @if(auth()->user()->hasPermission('menu_sales_add'))
