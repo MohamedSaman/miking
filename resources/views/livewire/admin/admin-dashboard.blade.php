@@ -264,16 +264,29 @@
 
     <!-- Overview Content -->
     <div class="container-fluid p-0">
-        <!-- Header Section -->
-        <div class="d-flex justify-content-between align-items-center mb-5">
+        <!-- Tab Navigation -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
             <div>
-                <h3 class="fw-bold text-dark mb-2">
-                    <i class="bi bi-speedometer2 text-success me-2"></i> Overview
-                </h3>
-                <p class="text-muted mb-0">Get a complete view of your product performance and stock activity.</p>
+                <h3 class="fw-bold text-dark mb-0">Overview</h3>
+            </div>
+            <div class="nav nav-pills bg-white p-1 rounded-pill shadow-sm" id="pills-tab" role="tablist">
+                <button class="nav-link rounded-pill @if($activeTab === 'dashboard') active @endif" type="button" wire:click="$set('activeTab', 'dashboard')">
+                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                </button>
+                @if(auth()->user()->role === 'admin' || \App\Models\StaffPermission::hasPermission(auth()->id(), 'menu_financial_overview'))
+                <button class="nav-link rounded-pill @if($activeTab === 'financial') active @endif" type="button" wire:click="$set('activeTab', 'financial')">
+                    <i class="bi bi-wallet2 me-1"></i> Financial Overview
+                </button>
+                @endif
             </div>
         </div>
-        <!-- Stats Cards Row - Updated to 3 cards -->
+
+        @if($activeTab === 'dashboard')
+            <!-- Header Section -->
+            <div class="mb-4">
+                <p class="text-muted mb-0">Get a complete view of your product performance and stock activity.</p>
+            </div>
+            <!-- Stats Cards Row - Updated to 3 cards -->
         <div class="row mb-4">
             <!-- Total Sold Stocks Card -->
             <div class="col-sm-6 col-lg-4 mb-3">
@@ -440,8 +453,13 @@
                     @endforelse
                 </div>
             </div>
+        </div> {{-- This closes the row at line 386 --}}
+    @elseif($activeTab === 'financial')
+        <div class="py-1">
+            @livewire('admin.financial-overview')
         </div>
-    </div>
+    @endif
+</div> {{-- This closes the container-fluid at line 266 --}}
 
     @push('scripts')
     <script>

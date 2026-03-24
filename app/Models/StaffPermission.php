@@ -106,6 +106,9 @@ class StaffPermission extends Model
 
             // Analytics
             'menu_analytics' => 'Analytics Dashboard',
+
+            // Financial Overview
+            'menu_financial_overview' => 'Financial Overview',
         ];
     }
 
@@ -186,6 +189,9 @@ class StaffPermission extends Model
             ],
             'Analytics' => [
                 'menu_analytics',
+            ],
+            'Financials' => [
+                'menu_financial_overview',
             ],
         ];
     }

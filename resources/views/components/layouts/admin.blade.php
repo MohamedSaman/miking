@@ -851,10 +851,31 @@
             <hr style="color:#fff;">
             <ul class="nav flex-column">
 
-                <li>
-                    <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
+                <li class="nav-item">
+                    <a class="nav-link dropdown-toggle" href="#overviewSubmenu" data-bs-toggle="collapse" role="button"
+                        aria-expanded="false" aria-controls="overviewSubmenu">
                         <i class="bi bi-speedometer2"></i> <span>Overview</span>
                     </a>
+                    <div class="collapse {{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.financial-overview') ? 'show' : '' }}" id="overviewSubmenu">
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
+                                    <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+                                </a>
+                            </li>
+                            @php
+                                $canViewFinancials = auth()->user()->role === 'admin' || \App\Models\StaffPermission::hasPermission(auth()->id(), 'menu_financial_overview');
+                            @endphp
+
+                            @if($canViewFinancials)
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('admin.financial-overview') ? 'active' : '' }}" href="{{ route('admin.financial-overview') }}">
+                                    <i class="bi bi-wallet2"></i> <span>Financial Overview</span>
+                                </a>
+                            </li>
+                            @endif
+                        </ul>
+                    </div>
                 </li>
 
                 <li class="nav-item">

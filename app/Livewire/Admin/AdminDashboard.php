@@ -28,6 +28,8 @@ class AdminDashboard extends Component
     public $partialPaidCount = 0;
     public $partialPaidAmount = 0;
 
+    public $activeTab = 'dashboard';
+
     public $totalStock = 0;
     public $soldStock = 0;
     public $availableStock = 0;

@@ -165,6 +165,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     // !! Admin routes
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', AdminDashboard::class)->name('dashboard');
+        Route::get('/financial-overview', \App\Livewire\Admin\FinancialOverview::class)
+        ->name('financial-overview')
+        ->middleware('staff.permission:menu_financial_overview');
         Route::get('/Product-list', Products::class)->name('Productes');
         Route::get('/add-Product-brand', ProductBrandlist::class)->name('Product-brand');
         Route::get('/Product-category', ProductCategorylist::class)->name('Product-category');
