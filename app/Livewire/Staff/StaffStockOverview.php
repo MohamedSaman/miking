@@ -16,6 +16,9 @@ class StaffStockOverview extends Component
     public $showSaleDetails = false;
     public $searchQuery = '';
     public $activeView = 'Productes'; // Default view: 'Productes' or 'batches'
+    public $sortBy = 'name'; // 'name', 'value', 'remaining'
+    public $sortOrder = 'asc'; // 'asc' or 'desc'
+    public $statusFilter = 'all'; // 'all', 'pending', 'partial', 'completed'
 
     public $totalInventory = 0;
     public $soldInventory = 0;
@@ -101,6 +104,14 @@ class StaffStockOverview extends Component
                 }
             }
             
+            $status = $ProductSoldQuantity == 0 ? 'pending' : 
+                ($ProductSoldQuantity < $ProductTotalQuantity ? 'partial' : 'completed');
+
+            // Filter by status if not 'all'
+            if ($this->statusFilter !== 'all' && $this->statusFilter !== $status) {
+                continue;
+            }
+            
             $Productes->push([
                 'Product' => $Product,
                 'total_quantity' => $ProductTotalQuantity,
@@ -110,9 +121,23 @@ class StaffStockOverview extends Component
                 'sold_value' => $ProductSoldValue,
                 'progress_percentage' => $ProductTotalQuantity > 0 ? 
                     round(($ProductSoldQuantity / $ProductTotalQuantity) * 100, 1) : 0,
-                'status' => $ProductSoldQuantity == 0 ? 'pending' : 
-                    ($ProductSoldQuantity < $ProductTotalQuantity ? 'partial' : 'completed')
+                'status' => $status
             ]);
+        }
+
+        // Apply sorting to Productes
+        if ($this->sortBy === 'name') {
+            $Productes = $this->sortOrder === 'asc' 
+                ? $Productes->sortBy(fn($p) => strtolower($p['Product']->name)) 
+                : $Productes->sortByDesc(fn($p) => strtolower($p['Product']->name));
+        } elseif ($this->sortBy === 'value') {
+            $Productes = $this->sortOrder === 'asc' 
+                ? $Productes->sortBy('sold_value') 
+                : $Productes->sortByDesc('sold_value');
+        } elseif ($this->sortBy === 'remaining') {
+            $Productes = $this->sortOrder === 'asc' 
+                ? $Productes->sortBy('remaining_quantity') 
+                : $Productes->sortByDesc('remaining_quantity');
         }
         
         // Get selected sale details with products
@@ -134,6 +159,28 @@ class StaffStockOverview extends Component
                                str_contains(strtolower($product->Product->code ?? ''), $query) || 
                                str_contains(strtolower($product->Product->brand->brand_name ?? ''), $query);
                     });
+                }
+
+                // Apply status filter if needed
+                if ($this->statusFilter !== 'all') {
+                    $batchProducts = $batchProducts->filter(function($product) {
+                        return $product->status === $this->statusFilter;
+                    });
+                }
+
+                // Apply sorting to batchProducts
+                if ($this->sortBy === 'name') {
+                    $batchProducts = $this->sortOrder === 'asc' 
+                        ? $batchProducts->sortBy(fn($p) => strtolower($p->Product->name ?? '')) 
+                        : $batchProducts->sortByDesc(fn($p) => strtolower($p->Product->name ?? ''));
+                } elseif ($this->sortBy === 'value') {
+                    $batchProducts = $this->sortOrder === 'asc' 
+                        ? $batchProducts->sortBy('sold_value') 
+                        : $batchProducts->sortByDesc('sold_value');
+                } elseif ($this->sortBy === 'remaining') {
+                    $batchProducts = $this->sortOrder === 'asc' 
+                        ? $batchProducts->sortBy(fn($p) => $p->quantity - $p->sold_quantity) 
+                        : $batchProducts->sortByDesc(fn($p) => $p->quantity - $p->sold_quantity);
                 }
             }
         }

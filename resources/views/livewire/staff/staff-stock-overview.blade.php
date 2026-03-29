@@ -95,13 +95,37 @@
                             <!-- Status filter dropdown - full width on mobile -->
                             <div class="dropdown w-100 w-md-auto">
                                 <button class="btn btn-outline-secondary dropdown-toggle w-100 w-md-auto" type="button" id="statusFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-funnel me-1"></i> All Statuses
+                                    <i class="bi bi-funnel me-1"></i> Status: {{ $statusFilter == 'all' ? 'All' : ucfirst($statusFilter) }}
                                 </button>
                                 <ul class="dropdown-menu" aria-labelledby="statusFilterDropdown">
-                                    <li><a class="dropdown-item status-filter" href="#" data-status="all">All Statuses</a></li>
-                                    <li><a class="dropdown-item status-filter" href="#" data-status="pending">Pending</a></li>
-                                    <li><a class="dropdown-item status-filter" href="#" data-status="partial">Partial</a></li>
-                                    <li><a class="dropdown-item status-filter" href="#" data-status="completed">Completed</a></li>
+                                    <li><button class="dropdown-item" wire:click="$set('statusFilter', 'all')">All Statuses</button></li>
+                                    <li><button class="dropdown-item" wire:click="$set('statusFilter', 'pending')">Pending</button></li>
+                                    <li><button class="dropdown-item" wire:click="$set('statusFilter', 'partial')">Partial</button></li>
+                                    <li><button class="dropdown-item" wire:click="$set('statusFilter', 'completed')">Completed</button></li>
+                                </ul>
+                            </div>
+
+                            <!-- Sorting dropdown -->
+                            <div class="dropdown w-100 w-md-auto">
+                                <button class="btn btn-outline-secondary dropdown-toggle w-100 w-md-auto" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-sort-down me-1"></i> Sort: 
+                                    @if($sortBy == 'name' && $sortOrder == 'asc') A to Z
+                                    @elseif($sortBy == 'name' && $sortOrder == 'desc') Z to A
+                                    @elseif($sortBy == 'value' && $sortOrder == 'asc') Low to High (Value)
+                                    @elseif($sortBy == 'value' && $sortOrder == 'desc') High to Low (Value)
+                                    @elseif($sortBy == 'remaining' && $sortOrder == 'asc') Low Stock First
+                                    @else Default
+                                    @endif
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                                    <li><button class="dropdown-item" wire:click="$set('sortBy', 'name'); $set('sortOrder', 'asc')">A to Z</button></li>
+                                    <li><button class="dropdown-item" wire:click="$set('sortBy', 'name'); $set('sortOrder', 'desc')">Z to A</button></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><button class="dropdown-item" wire:click="$set('sortBy', 'value'); $set('sortOrder', 'asc')">Value: Low to High</button></li>
+                                    <li><button class="dropdown-item" wire:click="$set('sortBy', 'value'); $set('sortOrder', 'desc')">Value: High to Low</button></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><button class="dropdown-item" wire:click="$set('sortBy', 'remaining'); $set('sortOrder', 'asc')">Remaining: Low to High</button></li>
+                                    <li><button class="dropdown-item" wire:click="$set('sortBy', 'remaining'); $set('sortOrder', 'desc')">Remaining: High to Low</button></li>
                                 </ul>
                             </div>
                         </div>
@@ -116,6 +140,7 @@
                                     id="stockSearchInput"
                                     class="form-control border-start-0" 
                                     placeholder="Search Productes..."
+                                    wire:model.live.debounce.300ms="searchQuery"
                                     autocomplete="off">
                             </div>
                         </div>
@@ -429,163 +454,14 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize search functionality
-    initializeSearch();
-    initializeStatusFilter();
-    
-    // Initialize again after Livewire updates
-    window.addEventListener('livewire:load', function() {
-        initializeSearch();
-        initializeStatusFilter();
-    });
-    
-    window.addEventListener('livewire:update', function() {
-        initializeSearch();
-        initializeStatusFilter();
-    });
-    
-    function initializeStatusFilter() {
-        const statusFilters = document.querySelectorAll('.status-filter');
-        const statusDropdownButton = document.querySelector('#statusFilterDropdown');
-        let currentStatusFilter = 'all';
-        
-        statusFilters.forEach(filter => {
-            filter.addEventListener('click', function(e) {
-                e.preventDefault();
-                const status = this.getAttribute('data-status');
-                currentStatusFilter = status;
-                
-                // Update dropdown button text
-                statusDropdownButton.innerHTML = `<i class="bi bi-funnel me-1"></i> ${this.textContent}`;
-                
-                // Apply both filters (search and status)
-                applyFilters(document.getElementById('stockSearchInput').value, status);
-            });
+    // Search input highlight logic can stay but the filtering is now done by Livewire
+    const searchInput = document.getElementById('stockSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('focus', function() {
+            this.parentElement.classList.add('border-primary');
         });
-    }
-    
-    function applyFilters(searchTerm, statusFilter) {
-        searchTerm = searchTerm.toLowerCase();
-        
-        // Determine which view is active
-        const isProductView = document.querySelector('.btn-primary[wire\\:click="switchView(\'Productes\')"]') !== null;
-        
-        if (isProductView) {
-            filterProductView(searchTerm, statusFilter);
-        } else {
-            filterBatchView(searchTerm, statusFilter);
-        }
-    }
-    
-    function filterProductView(searchTerm, statusFilter) {
-        const ProductTable = document.querySelector('#ProductViewTable');
-        if (!ProductTable) return;
-        
-        const rows = ProductTable.querySelectorAll('tbody tr:not(.no-results-row)');
-        let visibleCount = 0;
-        
-        rows.forEach(row => {
-            const ProductName = row.querySelector('h6.mb-0')?.textContent || '';
-            const ProductCode = row.querySelector('small.text-muted')?.textContent || '';
-            const ProductBrand = row.querySelector('.badge')?.textContent || '';
-            const statusBadge = row.querySelector('td:last-child .badge')?.textContent?.toLowerCase() || '';
-            
-            const matchesSearch = searchTerm === '' || 
-                ProductName.toLowerCase().includes(searchTerm) || 
-                ProductCode.toLowerCase().includes(searchTerm) || 
-                ProductBrand.toLowerCase().includes(searchTerm);
-                
-            const matchesStatus = statusFilter === 'all' || 
-                statusBadge.includes(statusFilter.toLowerCase());
-            
-            if (matchesSearch && matchesStatus) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-        
-        updateNoResultsMessage(ProductTable, visibleCount, rows.length);
-    }
-    
-    function filterBatchView(searchTerm, statusFilter) {
-        const batchTable = document.querySelector('#batchViewTable');
-        if (!batchTable) return;
-        
-        const rows = batchTable.querySelectorAll('tbody tr:not(.no-results-row)');
-        let visibleCount = 0;
-        
-        rows.forEach(row => {
-            const ProductInfo = row.querySelector('td:first-child');
-            if (!ProductInfo) return;
-            
-            const ProductName = ProductInfo.querySelector('h6')?.textContent || '';
-            const ProductCode = ProductInfo.querySelector('small:nth-child(1)')?.textContent || '';
-            const ProductBrand = ProductInfo.querySelector('small:nth-child(2)')?.textContent || '';
-            const statusBadge = row.querySelector('td:last-child .badge')?.textContent?.toLowerCase() || '';
-            
-            const matchesSearch = searchTerm === '' || 
-                ProductName.toLowerCase().includes(searchTerm) || 
-                ProductCode.toLowerCase().includes(searchTerm) || 
-                ProductBrand.toLowerCase().includes(searchTerm);
-                
-            const matchesStatus = statusFilter === 'all' || 
-                statusBadge.includes(statusFilter.toLowerCase());
-            
-            if (matchesSearch && matchesStatus) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-        
-        updateNoResultsMessage(batchTable, visibleCount, rows.length);
-    }
-    
-    function updateNoResultsMessage(table, visibleCount, totalCount) {
-        const tbody = table.querySelector('tbody');
-        const noResultsRow = table.querySelector('tbody tr.no-results-row');
-        
-        if (noResultsRow) noResultsRow.remove();
-        
-        if (visibleCount === 0 && totalCount > 0) {
-            const newRow = document.createElement('tr');
-            newRow.className = 'no-results-row';
-            newRow.innerHTML = `
-                <td colspan="7" class="text-center py-4">
-                    <i class="bi bi-search fs-1 text-muted"></i>
-                    <p class="text-muted mt-2">No Productes match your current filters.</p>
-                </td>
-            `;
-            tbody.appendChild(newRow);
-        }
-    }
-    
-    function initializeSearch() {
-        const searchInput = document.getElementById('stockSearchInput');
-        if (!searchInput) return;
-        
-        searchInput.addEventListener('keyup', function() {
-            // Get current status filter
-            const statusDropdownButton = document.querySelector('#statusFilterDropdown');
-            const currentStatus = statusDropdownButton.textContent.trim().includes('All') ? 
-                'all' : statusDropdownButton.textContent.trim().replace(/[^a-zA-Z]/g, '').toLowerCase();
-                
-            applyFilters(this.value, currentStatus);
-        });
-        
-        // Clear search when switching views
-        document.querySelectorAll('.btn-group button').forEach(button => {
-            button.addEventListener('click', function() {
-                searchInput.value = '';
-                // Also reset status filter
-                const statusDropdownButton = document.querySelector('#statusFilterDropdown');
-                statusDropdownButton.innerHTML = '<i class="bi bi-funnel me-1"></i> All Statuses';
-                // Trigger a keyup event to reset search
-                searchInput.dispatchEvent(new Event('keyup'));
-            });
+        searchInput.addEventListener('blur', function() {
+            this.parentElement.classList.remove('border-primary');
         });
     }
 });
