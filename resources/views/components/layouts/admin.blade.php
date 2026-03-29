@@ -68,9 +68,11 @@
             letter-spacing: -0.01em;
         }
 
-        /* Ensure dropdowns in table are not clipped */
-        .table-responsive {
-            overflow: visible !important;
+        /* Ensure dropdowns in table are not clipped - desktop only */
+        @media (min-width: 768px) {
+            .table-responsive {
+                overflow: visible !important;
+            }
         }
 
         .dropdown-menu {
@@ -704,9 +706,11 @@
         .modal.show {
             z-index: 1050 !important;
         }
-        .table-responsive {
-            min-height: 50vh;
-            overflow-y: auto;
+        @media (min-width: 768px) {
+            .table-responsive {
+                min-height: 50vh;
+                overflow-y: auto;
+            }
         }
 
         .table th {
@@ -792,7 +796,6 @@
             #sidebarToggler {
                 width: 50px !important;
                 height: 50px !important;
-                
             }
 
             #sidebarToggler i {
@@ -802,7 +805,6 @@
             .sidebar {
                 transform: translateX(-100%);
                 width: 250px;
-                /* Ensure sidebar takes full height but allows scrolling on mobile */
                 height: 100%;
                 bottom: 0;
                 top: 0;
@@ -817,9 +819,9 @@
             .sidebar.collapsed.show {
                 width: 250px;
             }
-            .none{
-                display:none;
 
+            .none {
+                display: none;
             }
 
             .top-bar {
@@ -829,6 +831,127 @@
             .main-content {
                 margin-left: 0;
                 width: 100%;
+                padding: 10px !important;
+            }
+
+            /* ===== MOBILE TABLE RESPONSIVENESS ===== */
+            .table-responsive {
+                overflow-x: auto !important;
+                overflow-y: visible !important;
+                -webkit-overflow-scrolling: touch;
+                max-width: 100%;
+                min-height: auto;
+            }
+
+            .table {
+                min-width: 600px;
+            }
+
+            .table th,
+            .table td {
+                font-size: 11px !important;
+                padding: 0.3rem 0.4rem !important;
+                white-space: nowrap;
+            }
+
+            .table td:first-child,
+            .table th:first-child {
+                white-space: normal;
+                min-width: 120px;
+                max-width: 180px;
+            }
+
+            /* ===== MOBILE NAV TABS ===== */
+            .nav-tabs {
+                flex-wrap: nowrap !important;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+
+            .nav-tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .nav-tabs .nav-link {
+                white-space: nowrap;
+                font-size: 0.75rem !important;
+                padding: 0.5rem 0.75rem !important;
+            }
+
+            .nav-tabs .nav-item {
+                flex-shrink: 0;
+            }
+
+            /* ===== MOBILE CARDS ===== */
+            .container-fluid {
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+            }
+
+            .card-body {
+                padding: 0.5rem !important;
+            }
+
+            .card-header {
+                padding: 0.5rem !important;
+            }
+
+            .col-md-3 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+
+            .stat-value, .card h3 {
+                font-size: 1.1rem !important;
+            }
+
+            .stat-label, .card h6 {
+                font-size: 0.7rem !important;
+            }
+
+            /* ===== MOBILE FILTER CONTROLS ===== */
+            .d-flex.flex-md-row {
+                flex-direction: column !important;
+            }
+
+            .btn-group {
+                width: 100%;
+            }
+
+            .btn-group .btn {
+                font-size: 11px !important;
+            }
+
+            .dropdown .btn {
+                width: 100%;
+                text-align: left;
+            }
+
+            /* ===== MOBILE PROGRESS BARS ===== */
+            .progress {
+                min-width: 60px;
+            }
+
+            /* ===== MOBILE IMAGES IN TABLES ===== */
+            .table img {
+                max-width: 35px !important;
+                max-height: 35px !important;
+            }
+
+            /* ===== MOBILE MODAL FIXES ===== */
+            .modal-dialog {
+                margin: 0.5rem !important;
+                max-width: calc(100vw - 1rem) !important;
+            }
+
+            .modal-body {
+                padding: 0.75rem !important;
+            }
+
+            /* ===== W-MD-AUTO HELPER ===== */
+            .w-md-auto {
+                width: 100% !important;
             }
         }
     </style>
