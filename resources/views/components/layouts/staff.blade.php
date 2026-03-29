@@ -78,7 +78,7 @@
 
             left: auto !important;
             right: 0 !important;
-            top: 30% !important;
+            top: 100% !important;
             margin-top: 0.2rem;
             min-width: 160px;
             z-index: 9999 !important;
@@ -1608,6 +1608,31 @@
         });
     </script>
     <script>
+        // Global fix for dropdowns in responsive tables
+        document.addEventListener('shown.bs.dropdown', function (event) {
+            const dropdown = event.target.closest('.dropdown');
+            if (!dropdown) return;
+            
+            const tableResponsive = dropdown.closest('.table-responsive');
+            if (tableResponsive) {
+                const menu = dropdown.querySelector('.dropdown-menu');
+                if (menu) {
+                    // Set z-index to ensure it's on top
+                    menu.style.zIndex = '9999';
+                }
+            }
+        });
+
+        // Ensure all dropdowns in tables are window-bounded for Bootstrap 5
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdowns = document.querySelectorAll('.table .dropdown-toggle');
+            dropdowns.forEach(function(dropdown) {
+                if (!dropdown.hasAttribute('data-bs-boundary')) {
+                    dropdown.setAttribute('data-bs-boundary', 'window');
+                }
+            });
+        });
+
         // Keep session alive by pinging the server every 5 minutes
         setInterval(function() {
             fetch('{{ route("keep-alive") }}');
